@@ -1,0 +1,17 @@
+Version 3.7.0
+
+Bug fixes:
+  - HTMLOutputHandler::conver_interlink. Corrected step number generation for
+    steps less than 10 without a leading zero.
+
+Additions:
+  - [bug 1] Page transclusion using {{Template}} syntax supported. Limited support
+    does not include full template variable processing.
+
+  - [bug 9] wiki2course: local tags may contain wiki links to transclude pages 
+    using the syntax [local][[NS:Page]][/local]
+
+  - [bug 17] wiki2course converts <math>...</math> equations to internally 
+    supported [latex]$...$[/latex] tags during export.
+
+  

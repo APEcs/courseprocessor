@@ -1,0 +1,38 @@
+/***
+ *** Styles to make printed output look better.
+ ***/
+
+
+/* Need to use @media print to ensure works in IE */
+@media print { 
+	#page {
+		width: auto;
+	}
+	#header #main {
+		display: none;
+		height: 0px;
+	}
+	#breadcrumb .middle-center {
+		border-width: 1px 0;
+		border-style: solid none;
+		padding-bottom: 2px;
+	}
+	#page-body .middle-center {
+		min-height: 0;
+		height: auto;
+	}
+	#backtotop a {
+		display: none;
+	}
+	#footer {
+		border-top: 1px solid #555;
+	}
+	#footer ul li {
+		display: none;
+	}
+	#footer ul li.first {
+		display: inline;
+	}
+}
+
+

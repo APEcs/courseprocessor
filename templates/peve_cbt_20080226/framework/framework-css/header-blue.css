@@ -1,0 +1,71 @@
+/**
+ ** Header colors and backgrounds
+ **/
+ 
+ 
+/**
+ ** Main section
+ **/
+ 
+#header #resources,
+#header #resources a:visited,
+#header #resources a:link {
+	color: #317ab7;
+}
+#header #resources ul.link-list li {
+	border-left-color: #21527A;
+}
+
+#nav li a:visited,
+#nav li a:link {
+	color: #5d8eb7;
+}
+#nav li.menu:hover,
+#nav li a.menu:hover {
+	background-image: url(../framework-images/header/blue/main-middle-nav-hover.gif);
+}
+
+#header #main {
+	background-color: #16588f;
+	background-image: url(../framework-images/header/blue/main-middle-center.gif);
+}
+#header .main-right {
+	background-image: url(../framework-images/header/blue/main-middle-right.gif);
+}
+
+
+
+
+/**
+ ** Breadcrumb bar
+ **/
+
+#breadcrumb,
+#breadcrumb a:visited,
+#breadcrumb a:link {
+	color: #FFF;
+}
+#breadcrumb .sep, 
+#breadcrumb .current {
+	color: #CCC;
+}
+
+#breadcrumb .middle-right {
+	background-image: url(../framework-images/header/blue/breadcrumb-middle-right.gif);
+}
+#breadcrumb .middle-center {
+	background-color: #1c70b7;
+	background-image: url(../framework-images/header/blue/breadcrumb-middle-center.gif);
+	border-color: #1b6baf;
+	
+}
+#breadcrumb .bottom-left {
+	background-image: url(../framework-images/header/blue/breadcrumb-bottom-left.gif);
+}
+#breadcrumb .bottom-right {
+	background-image: url(../framework-images/header/blue/breadcrumb-bottom-right.gif);
+}
+#breadcrumb .bottom-center {
+	background-image: url(../framework-images/header/blue/breadcrumb-bottom-center.gif);
+}
+

@@ -1,0 +1,15 @@
+/* CSS Document */
+
+@import "core.css";
+@import "popup-core.css";
+@import "printing.css";
+
+
+#popup #header #main {
+	background-image: url(../framework-images/header/green/main-middle-center.gif);
+}
+
+#popup #main .right a:visited,
+#popup #main .right a:link {
+	color: #7fd162;
+}

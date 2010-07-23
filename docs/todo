@@ -1,0 +1,17 @@
+x convert document comments to Doxygen Perl Filter format
+
+x reference handling
+^ reference link templating
+
+- learning outcomes for each theme. If optional <outcomes></outcomes> section is present in the theme metadata,
+  generate an outcomes page containing the data.
+
+V hotpotatoes pasing
+V hotpotatoes pasing
+V allow local tags in latex to use src=
+
+
+- fix references in TAAIB and Ontologies
+- add <!-- id="content" --> to top level framework files.
+
+x = partial done, ^ = priority, - = normal, v = low pri, V = very low pri 

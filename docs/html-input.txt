@@ -1,0 +1,136 @@
+Course Processor Documentation - HTML Input Plugin
+$Id$
+
+Contact: chris@starforge.co.uk
+Bugs: http://octette.cs.man.ac.uk/bugzilla/
+
+1. Introduction
+
+The HTMLInputHandler allows HTML pages arranged in a course-like heirarchy to
+be processed into the intermediate form the course processor uses to store
+course text between the input and output handlers. This document contains the
+details of the layout HTML pages must be stored in and the restrictions on the
+content of the files.
+
+If the course processor is run on a course containing HTML files and it reports
+that the HTMLInputhandler can not be run on the course then it means that 
+the files are not organised or named correctly in the course data, and you 
+need to double-check that they conform to the guidelines given here.
+
+Courses may contain a mix of HTML and LaTeX files, or any other file for which
+an input handler exists, and the appropriate plugins will be applied to the 
+files during processing.
+
+
+2. File hierarchy layout
+
+The file placement for HTML input is based around the same structure as the
+courses produced by the HTMLOuputHandler: the course data directory contains
+one directory per theme, each theme contains one or more module directories
+and each module contains one or more steps. It is these steps that the HTML
+input handler reads and processes into the intermediate format the course
+processor uses to store course text between the input and output stages. 
+The file structure is shown diagramatically below, note that, while the 
+names of the directories are not important, the file names must be treated 
+carefully as descussed below
+
+coursedata/
+    theme1/
+        module1/
+            step01.html
+            step02.html
+            step03.html
+        module2/
+            step01.html
+            step02.html
+    theme2/
+        module1/
+            step01.html
+            step02.html
+        module2/
+            step01.html
+            step02.html
+            step03.html
+
+When naming your steps, you should be aware that several rules apply:
+
+- the last one or two digits of the filename before the extension must
+  be digits. The digits correspond to the destination step number. The
+  leading zero is not vital, but is recommended.
+
+- step numbers must be in the range 01 to 99, numbers below 1 or above
+  99 will cause the processor to exit (and if you have a module with
+  99 steps you should consider revising your course structure)
+
+- filenames must consist of alphanumerics (lowercase or uppercase), - or _
+  No special characters are permitted, and the extension must be .html or
+  .htm Do not include any '.'s other than the one as part of the extension,
+  or the processor may not identify the file correctly.
+
+- the filename itself is ignored, and each file can have completely
+  different names: the only part of each name that matters is the two
+  digit step number and the extension, the rest can be whatever you want.
+
+
+3. File contents
+
+When composing your files you do not _need_ to take any special precautions,
+however the most basic mode the HTMLInputHandler operates in is to simply
+extract the HTML page <title> and _everything_ in the <body> and stored them
+in the intermediate format for processing. This means that, should your HTML
+contain any fancy peripheral formatting - menus etc - they /will be included/
+in the intermediate files and therefore passed on to the output handler for
+processing. 
+
+In general this is not what you want to happen.
+
+If you want a portion of the <body> to be stored for processing, you must
+include markers for the start and end of the block to be stored. The 
+start of the block should be marked
+
+<div id="content">
+
+and the end should be marked
+
+</div><!-- id="content" -->
+
+Alternative markers can be provided in the processor on request if these 
+would result in broken or clumbersome formatting in your code.
+
+
+4. Special tags
+
+The HTMLInputHandler provides one special tag, in addition to any provided by
+the target output handler (at present, this means any of the special tags 
+provided by the HTMLOutputHandler as described in html-output.txt). The
+HTMLInputhandler provides the ability to embed LaTeX code in HTML, providing
+the means to include complex mathematical equations and similar generated
+content in course material without the need to hand-craft images or rely on 
+the presence of MathML or similar support.
+
+4.1 The [latex] tag
+
+To include a chunk of LaTeX in a HTML document, surround the latex with [latex]
+[/latex] tags. For exmaple:
+
+[latex]$\sqrt{5-x}$[/latex]
+
+The LaTeX included this way should not include any header, section or subsection
+information - the LaTeX is passed through latex2html and various preprocessing
+steps are applied to ensure that the correct output is generated. If you need 
+to use any special modules, you may provide a custom LaTeX header which the
+course processor will use for all [latex] tag conversions - place the header in
+a filed called
+
+htmlinput-latexintro.txt
+
+in the coursedata directory. The contents should, at a minimum, be something 
+like
+
+\documentclass[12pt]{article}
+\usepackage{html}
+\usepackage[dvips]{color}
+\pagecolor{white}
+
+If you are not using the default templates then you will probably need to at
+least change the colour used. 

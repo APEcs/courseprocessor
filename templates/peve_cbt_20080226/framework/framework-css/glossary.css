@@ -1,0 +1,79 @@
+@import "core.css";
+@import "header-core.css";
+@import "header-blue.css";
+@import "printing.css";
+
+
+/**
+ ** Header layout
+ **/
+#glossary #header #resources {
+	float: none;
+}
+
+#glossary #header #nav {
+	position: relative;
+	text-align: center;
+	top: 0.5em;
+	float: none;
+}
+
+#glossary #main .center {
+	margin-right: 0;
+}
+
+
+/**
+ ** Header styling
+ **/
+#glossary #nav ul.link-list li {
+	padding: 0;
+}
+#glossary #nav {
+ 	font-size: 1.4em;
+	font-weight: bold;
+	color: #435478;
+}
+#glossary #nav li a,
+#glossary #nav ul.link-list li.nolink,
+#glossary #nav ul.link-list li.current {
+	padding: 2px;
+	margin: 0;
+}
+
+#glossary #nav li a:visited,
+#glossary #nav li a:link {
+	text-decoration: none;
+}
+#nav li a:hover {
+	background: url(../framework-images/header/blue/main-middle-nav-hover.gif) bottom repeat-x;
+}
+#glossary #nav li a:visited,
+#glossary #nav li a:link {
+	color: #A7C1D8;
+	text-decoration: none;
+}
+#glossary #nav li.current {
+	color: #FFF;
+	background-color: #5D8EB7;
+}
+
+/**
+ ** Glossary list styling
+ **/
+
+#glossary #content :target {
+	background-color: #FFFF00;
+	padding: 0 2px;
+}
+#glossary dl dt a:hover {
+	text-decoration: none;
+}
+#glossary dl dt {
+	font-size: 1.3em;
+	font-weight: bold;
+	color: #555;
+}
+#glossary dl dd {
+	margin-bottom: 2em;
+}

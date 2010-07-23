@@ -1,0 +1,78 @@
+/* CSS Document */
+
+@import "core.css";
+@import "header-core.css";
+@import "menus.css";
+@import "printing.css";
+
+/**
+ ** Header colors and backgrounds
+ **/
+ 
+ 
+/**
+ ** Main section
+ **/
+ 
+#header #resources,
+#header #resources a:visited,
+#header #resources a:link {
+	color: #51bf3a;
+}
+#header #resources ul.link-list li {
+	border-left-color: #317223;
+}
+
+#navmenus li a:visited,
+#navmenus li a:link {
+	color: #7fd162;
+}
+#navmenus li.menu:hover,
+#navmenus li a.menu:hover {
+	background-image: url(../framework-images/header/green/main-middle-nav-hover.gif);
+}
+
+#header #main {
+	background-color: #3f673b;
+	background-image: url(../framework-images/header/green/main-middle-center.gif);
+}
+#header .main-right {
+	background-image: url(../framework-images/header/green/main-middle-right.gif);
+}
+
+
+
+
+/**
+ ** Breadcrumb bar
+ **/
+
+#breadcrumb,
+#breadcrumb a:visited,
+#breadcrumb a:link {
+	color: #FFF;
+}
+#breadcrumb .sep, 
+#breadcrumb .current {
+	color: #DDD;
+}
+
+#breadcrumb .middle-right {
+	background-image: url(../framework-images/header/green/breadcrumb-middle-right.gif);
+}
+#breadcrumb .middle-center {
+	background-color: #44b71c;
+	background-image: url(../framework-images/header/green/breadcrumb-middle-center.gif);
+	border-color: #54b133;
+	
+}
+#breadcrumb .bottom-left {
+	background-image: url(../framework-images/header/green/breadcrumb-bottom-left.gif);
+}
+#breadcrumb .bottom-right {
+	background-image: url(../framework-images/header/green/breadcrumb-bottom-right.gif);
+}
+#breadcrumb .bottom-center {
+	background-image: url(../framework-images/header/green/breadcrumb-bottom-center.gif);
+}
+

@@ -1,0 +1,6 @@
+<!-- start next_enabled.tem -->
+<img src="../../framework-images/header/***level***/nav-button-right-active.gif" name="nav_right" width="57" height="60" border="0" id="nav_right" usemap="#m_navbuttonrightactive" alt="Next step" />
+<map name="m_navbuttonrightactive" id="m_navbuttonrightactive">
+    <area shape="circle" coords="29,30, 25" tabindex="2" href="***nextlink***" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('nav_right','','../../framework-images/header/***level***/nav-button-right-hover.gif',1)" alt="Next step" />
+</map>
+<!-- end next_enabled.tem -->

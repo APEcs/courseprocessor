@@ -1,0 +1,7 @@
+<!-- start stepdrop.tem -->
+    <li id="menu-steps" class="menu"><a href="moduleindex.html" class="menu" title="Links to the list of steps for the current module">Steps</a><a href="#breadcrumb"><img src="../../framework-images/accessibility/1px.gif" alt="Skip to breadcrumb trail" border="0" /></a>
+        <ul>
+***entries***
+        </ul>
+    </li>
+<!-- end stepdrop.tem -->

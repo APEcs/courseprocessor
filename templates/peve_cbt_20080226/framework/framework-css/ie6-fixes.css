@@ -1,0 +1,14 @@
+/**
+ ** IE6 only fixes
+ **/
+
+#header #main {
+	height: 75px;
+}
+
+#page-body .middle-center {
+	height: 375px;
+}
+#page-body #backtotop.middle-center {
+	height: auto;
+}

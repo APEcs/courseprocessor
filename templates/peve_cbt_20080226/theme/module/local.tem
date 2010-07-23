@@ -1,0 +1,76 @@
+<!-- start local.tem -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    
+    <title>***title***</title>
+
+    <link href="../../framework-css/popup-***level***.css" rel="stylesheet" type="text/css" />
+    <!--[if lt IE 7]>
+	    <link href="../../framework-css/ie6-fixes.css" rel="stylesheet" type="text/css" />
+    <![endif]-->
+    <script type="text/javascript" src="../../framework-javascript/core.js"></script>
+</head>
+
+<body id="popup" onload="formatBackToTopLink();">
+    <a tabindex="1" href="#content" class="accesshide"><img src="../../framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>
+    <div id="page">
+        <div id="header">
+            <div id="main">
+
+                <div class="left"><img src="../../framework-images/header/blue/popup-small-logo.gif" alt="PEVE logo" width="52" height="27" /></div>
+                <div class="right">
+                    <script language="javascript" type="text/javascript">
+                    <!--
+                    document.write('<a href="javascript:window.print();">Print page<img src="../../framework-images/header/blue/popup-printer.gif" alt="Print page" width="26" height="27" border="0" align="absmiddle" /></a>');
+
+                    document.write('<a href="javascript:window.close();">Close window<img src="../../framework-images/header/blue/popup-close.gif" alt="Close window" width="26" height="27" border="0" align="absmiddle" /></a>');
+                    -->
+                    </script>
+                    <noscript>
+                        <!-- No javascript enabled -->
+                    </noscript>
+                </div>
+            </div><!--id="main"-->
+        </div><!--id="header"-->
+
+        <div id="page-body">
+            <div class="top-left"><div class="top-right"><div class="top-center"></div></div></div>
+            <div class="middle-left">
+                <div class="middle-right">
+                    <div class="middle-center">
+                        <h1 class="main">***title***</h1>
+                        <div id="content">
+                        ***body***
+                        </div><!-- id="content" -->
+                        <div class="clearer"></div>
+                    </div><!-- id="middle-center" -->
+                </div><!-- id="middle-right" -->
+            </div><!-- id="middle-left" -->
+            <div class="middle-left"><div class="middle-right"><div id="backtotop" class="middle-center">
+                <a href="#page">Back to top</a>
+            </div></div></div>
+
+            <div class="bottom-left"><div class="bottom-right"><div class="bottom-center"></div></div></div>
+        </div><!-- id="page-body" -->
+
+        <div id="footer">
+            <h2 class="accesshide">Footer links</h2>
+            <ul class="link-list">
+                <li class="first">
+                    <strong>&copy;</strong>
+                    <script type="text/javascript" language="javascript">
+                    <!--
+                    	writeCurrentYear();
+                    -->
+                    </script>
+                    <noscript>2007</noscript>
+                    <a target="_blank" href="http://www.manchester.ac.uk/">University of Manchester</a>, version: ***version***
+                </li>
+            </ul>
+        </div><!--footer-->
+    </div><!-- id="page" -->
+</body>
+</html>
+<!-- end local.tem -->

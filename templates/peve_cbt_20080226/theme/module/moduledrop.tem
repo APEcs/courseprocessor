@@ -1,0 +1,7 @@
+<!-- start moduledrop.tem -->
+    <li id="menu-modules" class="menu"><a href="../index.html" class="menu" title="Links to the list of modules for the current theme">Modules</a><a href="#menu-steps"><img src="../../framework-images/accessibility/1px.gif" alt="Skip to steps list" border="0" /></a>
+        <ul>
+***entries***
+        </ul>
+    </li>
+<!-- end moduledrop.tem -->

@@ -1,0 +1,10 @@
+<!-- begin courseindex-module.tem -->
+<dl>
+    <dt class="***level***" title="***difficulty*** level module"><a name="***name***"></a><a href="***stepurl***">***title***</a></dt>
+	<dt class="dependencies">
+    ***prereqs***
+	***leadsto***
+	</dt>
+    ***steps***
+</dl>
+<!-- end courseindex-module.tem -->

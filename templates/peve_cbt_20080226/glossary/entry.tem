@@ -1,0 +1,6 @@
+<!-- start entry.tem -->
+    <dt><a name="***termname***"></a>***term***</dt>
+    <dd>***definition***
+        <div>[ ***backlinks*** ]</div>
+    </dd>
+<!-- end entry.tem -->

@@ -1,0 +1,71 @@
+<!-- start header.tem -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>***title***</title>
+
+    <link href="../framework-css/glossary.css" rel="stylesheet" type="text/css" />
+    <!--[if lte IE 6]>
+        <link href="../framework-css/ie6-fixes.css" rel="stylesheet" type="text/css" />
+    <![endif]-->
+
+    <script type="text/javascript" src="../framework-javascript/core.js"></script>
+
+    <link rel="start" href="../frontpage.html" title="Course front page">
+    <link rel="index" href="../sitemap.html" title="Site map">
+    <link rel="glossary" href="index.html" title="Glossary">
+    <link rel="appendix" href="../references.html" title="References">
+    <link rel="help" href="../framework-docs/somehelpdoc.html" title="Help">
+
+    <link rel="up" href="../frontpage.html" title="Course front page">
+
+    ***include***
+
+</head>
+<body id="glossary" onload="initializeFrameworkPage(2);">
+<a tabindex="1" href="#content" class="accesshide"><img src="../framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>
+<div id="page">
+    <div id="header">
+        <div class="main-right">
+            <div id="main">
+                <div class="left">
+                    <img src="../framework-images/header/blue/logo-active.gif" name="logo" width="125" height="75" border="0" usemap="#logoMap" id="logo" alt="Link to front page" />
+                    <map name="logoMap" id="logoMap">
+                    <area shape="poly" coords="10,37,14,26,26,17,43,11,64,9,84,11,101,17,113,26,117,37,113,48,101,57,84,63,64,65,43,63,26,57,14,48,10,37,10,37" tabindex="2" href="../frontpage.html" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('logo','','../framework-images/header/blue/logo-hover.gif',1)" alt="Link to front page" />
+                    </map>
+                </div>
+
+                <div class="center">
+***glosrefblock***
+***index***
+                </div><!-- class="center" -->
+            </div><!-- id="main" -->
+        </div><!-- class="main-right" -->
+
+        <div id="breadcrumb">
+            <div class="middle-right">
+                <div class="middle-center">
+                    <h2 class="accesshide">You are here</h2>
+                    <ul class="link-list">
+                        <li><a href="../frontpage.html" title="Links to the front page">Home</a></li>
+***breadcrumb*** 
+                   </ul>
+                </div>
+            </div>
+            <div class="bottom-left">
+                <div class="bottom-right">
+                    <div class="bottom-center"></div>
+                </div>
+            </div>
+        </div>
+    </div><!-- id="header" -->
+
+    <div id="page-body">
+        <div class="top-left"><div class="top-right"><div class="top-center"></div></div></div>
+        <div class="middle-left"><div class="middle-right"><div class="middle-center">
+
+            <h1 class="main">***title***</h1>
+            <div id="content">
+	            <dl>
+<!-- end header.tem -->

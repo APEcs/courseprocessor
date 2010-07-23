@@ -1,0 +1,86 @@
+@import "core.css";
+@import "header-core.css";
+@import "header-blue.css";
+@import "menus.css";
+@import "printing.css";
+
+/**
+ ** Index styles
+ **/
+ 
+ 
+/* Course index styles */
+.index ul#courseindex {
+	margin-top: 3em;
+	list-style-image: url(../framework-images/theme/bullet-blue-theme.gif);
+	list-style-position: outside;
+}
+.index ul#courseindex li div {
+	border-bottom: 1px solid #999;
+}
+.index ul#courseindex li div {
+	font-size: 1.6em;
+	font-weight: bold;
+}
+.index #content ul#courseindex li div,
+.index #content ul#courseindex li div a:link,
+.index #content ul#courseindex li div a:visited {
+	color: #444;
+}
+.index ul#courseindex li {
+	margin-top: 1.6em;
+}
+
+/* Module list styles */
+.index dl {
+	margin-top: 1.2em;
+	margin-left: 30px;
+}
+.index dl dt {
+	font-size: 1.4em;
+	font-weight: bold;
+	text-indent: 20px;
+	background-repeat: no-repeat;
+	background-position: left center;
+}
+.index dl dt.dependencies {
+	font-size: 1em;
+	font-weight: normal;
+	margin-bottom: 1em;
+}
+.index #content dl,
+.index #content dl a:link,
+.index #content dl a:visited {
+	color: #555;
+}
+.index #content dl dt.dependencies,
+.index #content dl dt.dependencies a:link,
+.index #content dl dt.dependencies a:visited  {
+	color: #999;
+}
+.index dl dt.dependencies span {
+	display: block;
+}
+.index dl dd {
+	line-height: 1.3em;
+}
+
+dt.green {
+	background-image:url(../framework-images/module/bullet-green.gif);
+}
+dt.yellow {
+	background-image:url(../framework-images/module/bullet-yellow.gif);
+}
+dt.orange {
+	background-image:url(../framework-images/module/bullet-orange.gif);
+}
+dt.red {
+	background-image:url(../framework-images/module/bullet-red.gif);
+}
+
+/**
+ ** Map styles
+ **/
+#thememap #content {
+	text-align: center;
+}

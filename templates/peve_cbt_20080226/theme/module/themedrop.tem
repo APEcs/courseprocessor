@@ -1,0 +1,7 @@
+<!-- start themedrop.tem -->
+    <li id="menu-themes" class="menu"><a href="../../courseindex.html" class="menu" title="Links to the list of themes for the course">Themes</a><a href="#menu-modules"><img src="../../framework-images/accessibility/1px.gif" alt="Skip to module list" border="0" /></a>
+        <ul>
+***entries***
+        </ul>
+    </li>
+<!-- end themedrop.tem -->

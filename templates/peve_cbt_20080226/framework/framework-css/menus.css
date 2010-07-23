@@ -1,0 +1,149 @@
+/**
+ ** Drop-down menus
+ **/
+ 
+ 
+ 
+/**
+ ** Layout
+ **/
+#navmenus, #navmenus ul {
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+#navmenus a {
+	display: block;
+}
+#navmenus li a.menu {
+	padding: 15px;
+}
+#navmenus li {
+	float: left;
+	width: 7em;
+}
+#navmenus li ul {
+	position: absolute;
+	left: -999em;
+	margin: 0;
+    z-index: 100;
+}
+
+#navmenus li#menu-themes ul,
+#navmenus li#menu-modules ul  {
+	width: 10em;
+}
+#navmenus li#menu-modules ul span {
+	display: list-item;
+	list-style-position: outside;
+	margin-left: 5px;
+	padding-left: 20px;
+}
+#navmenus li#menu-steps ul {
+	width: 15em;
+}
+
+#navmenus li:hover ul,
+#navmenus li.sfhover ul {
+	left: auto;
+}
+
+#navmenus li li {
+	width: 100%;
+	height: auto;
+}
+#navmenus li li span {
+	display: block;
+	margin: 0;
+	padding: 3px 4px 3px 7px;
+	position: relative;
+}
+
+
+
+/**
+ ** Styling
+ **/
+#navmenus li ul {
+	font-weight: bold;
+}
+#navmenus li a:visited,
+#navmenus li a:link {
+	font-weight: bold;
+	font-size: 1.2em;
+}
+
+#navmenus li.menu:hover,
+#navmenus li a.menu:hover {
+	background-position: bottom;
+	background-repeat: repeat-x;
+}
+
+#navmenus li ul a:visited,
+#navmenus li ul a:link  {
+	font-weight: normal;
+	color: #330066;
+}
+
+#navmenus li ul a:visited,
+#navmenus li ul a:link,
+#navmenus li ul span.current {
+	font-size: 0.7em;
+}
+#navmenus li ul li:hover, #navmenus li ul li.sfhover {
+	background-color: #CCCCCC;
+}
+#navmenus li ul {
+	background-color: #EEE;
+	border: 1px solid #CCC;
+	border-bottom: 4px solid #AAA;
+}
+#navmenus li li {
+	border-bottom: 1px solid #CCC;
+}
+
+
+/* Menu bullets - green */
+#navmenus li#menu-modules span.green {
+	background: url(../framework-images/module/bullet-green.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.green-prerequisite {
+	background: url(../framework-images/module/bullet-green-prerequisite.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.green-leadsto {
+	background: url(../framework-images/module/bullet-green-leadsto.gif) no-repeat 0 50%;
+}
+
+/* Menu bullets - yellow */
+#navmenus li#menu-modules span.yellow {
+	background: url(../framework-images/module/bullet-yellow.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.yellow-prerequisite {
+	background: url(../framework-images/module/bullet-yellow-prerequisite.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.yellow-leadsto {
+	background: url(../framework-images/module/bullet-yellow-leadsto.gif) no-repeat 0 50%;
+}
+
+/* Menu bullets - orange */
+#navmenus li#menu-modules span.orange {
+	background: url(../framework-images/module/bullet-orange.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.orange-prerequisite {
+	background: url(../framework-images/module/bullet-orange-prerequisite.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.orange-leadsto {
+	background: url(../framework-images/module/bullet-orange-leadsto.gif) no-repeat 0 50%;
+}
+
+/* Menu bullets - red */
+#navmenus li#menu-modules span.red {
+	background: url(../framework-images/module/bullet-red.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.red-prerequisite {
+	background: url(../framework-images/module/bullet-red-prerequisite.gif) no-repeat 0 50%;
+}
+#navmenus li#menu-modules span.red-leadsto {
+	background: url(../framework-images/module/bullet-red-leadsto.gif) no-repeat 0 50%;
+}
+

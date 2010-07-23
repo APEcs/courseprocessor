@@ -1,0 +1,31 @@
+@import "core.css";
+@import "header-core.css";
+@import "header-blue.css";
+@import "printing.css";
+
+
+
+/**
+ ** References list styling
+ **/
+
+#references #content :target {
+	background-color: #FFFF00;
+	padding: 0 2px;
+}
+#references dl dt a.ref-id:hover {
+	text-decoration: none;
+}
+#references dl dt .underline {
+	text-decoration: underline;
+}
+#references dl dt .italic {
+	font-style: italic;
+}
+#references dl dd div {
+	font-weight: bold;
+}
+#references dl dd {
+	margin-bottom: 2em;
+}
+

@@ -1,0 +1,294 @@
+/* CSS Document */
+
+/**
+ ** Core
+ **/
+
+body {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+	font-family: arial,verdana,sans-serif;
+	background-color: #EEE;
+}
+#page {
+	width: 1000px;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: left;
+	top: 0;
+}
+
+.accesshide {
+	font-size:1em;
+	font-weight:normal;
+	left:10px;
+	position:absolute;
+	top:-1000px;
+}
+
+.clearer {
+  clear:both;
+  margin:0;
+  padding:0;
+  height:1px;
+  border:none;
+  background:transparent;
+  display:block;
+}
+
+
+
+
+/**
+ ** Flattened lists
+ **/
+ 
+ul.link-list {
+	list-style-image:none;
+	list-style-position:outside;
+	list-style-type:none;
+	margin:0;
+	padding:0;
+	text-indent:0;
+}
+ul.link-list li {
+	display: inline;
+	padding-left: 4px;
+}
+
+/* Link lists with a border separater */
+#header #resources ul.link-list li,
+#footer ul.link-list li {
+	border-left-style: solid;
+	border-left-width: 1px;
+}
+
+#header #resources ul.link-list li.first,
+#footer ul.link-list li.first {
+	border: none;
+}
+
+
+
+
+/**
+ ** Global link text styles
+ **/
+ 
+a:link,
+a:visited {
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+
+/**
+ ** Global page body text styles
+ **/
+#page-body {
+	margin-top: 0px;
+	background-color: #FFF;
+	color: #333;
+}
+#page-body h1.main {
+	margin: 0 0 20px 0;
+	padding: 0 10px;
+	letter-spacing: -1px;
+	color: #444;
+}
+#content {
+	font-size: 0.8em;
+	padding: 0 20px 0px 20px;
+	line-height: 1.5em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	color: #555;
+	line-height: 1em;
+}
+
+#content h1 {
+	font-size: 2em;
+}
+#content h2 {
+	font-size: 1.5em;
+}
+#content h3 {
+	font-size: 1.2em;
+}
+#content h4 {
+	font-size: 1em;
+}
+#content h5 {
+	font-size: 0.85em;
+}
+#content h6 {
+	font-size: 0.75em;
+}
+#content tt, #content code, #content pre {
+    font-family: "Courier New", Courier, monospace;
+	font-size: 1em;
+}
+#content tt, #content code {
+    background-color:#F9F9F9;
+	color: #A96300;
+}
+#content pre {
+	background-color: #F9F9F9;
+	border: 1px dashed #2F6FAB;
+	color: black;
+	line-height: 1.1em;
+	padding: 1em;
+}
+
+#content a.external {
+	padding-right: 13px;
+	background: url(../framework-images/body/external.gif) center right no-repeat;
+}
+
+#content a:link{
+	color: #002BB8;
+}
+#content a:visited {
+	color: #CC33CC;
+}
+#content a:active {
+	color: #FAA700;
+}
+
+#content a.glossary:link,
+#content a.glossary:visited,
+#content a.reference:link,
+#content a.reference:visited  {
+	color: #333;
+	border-bottom: 1px dotted #002BB8;
+}
+#content a.glossary:hover,
+#content a.reference:hover {
+	text-decoration: none;
+	border-bottom: none;
+	background-color: #002BB8;
+	color: #FFF;
+	cursor: help;
+}
+
+hr {
+	border-top: 1px solid #555;
+	border-bottom: none;
+	border-left: none;
+	border-right: none;
+	height: 1px;
+}
+
+.shadedbox {
+	background-color: #EEEEEE;
+	border: 2px solid #CCCCCC;
+	padding: 0 1em;
+}
+
+
+/* warn, error, rwarn are all used to flag problems in courseprocessor */
+.error, .warn, .rwarn  { 
+	font-weight: bold; 
+}
+.error {
+    color: red; 
+}
+.warn, .rwarn {
+    color: #FF9900; 
+}
+.rwarn {
+    text-align: right; 
+}
+
+
+/**
+ ** Back to top link
+ **/
+ 
+#page-body #backtotop.middle-center {
+	min-height: 0; 
+}
+
+#backtotop {
+	text-align: right;
+	padding: 0 20px 0px 20px;
+	font-size: 0.7em;
+}
+#backtotop,
+#backtotop a:link, 
+#backtotop a:visited {
+	color:#999;
+	text-transform: lowercase;
+}
+#backtotop a:hover {
+	color:#444;
+}
+#backtotop a {
+	margin-right: 7px;
+	background: url(../framework-images/body/arrowup.gif) right center no-repeat;
+	padding-right: 12px;
+}
+
+/**
+ ** Page body structure and border style
+ **/
+
+/* Set a minimum height for main content area (ignored by IE6) */
+#page-body .middle-center {
+	min-height: 375px;
+}
+
+/* Page-body border */
+#page-body .top-left {
+	background: #EEE url(../framework-images/body/body-top-left.gif) no-repeat bottom left;
+}
+#page-body .top-right {
+	background: url(../framework-images/body/body-top-right.gif) no-repeat bottom right;
+}
+#page-body .top-center {
+	background: #EEE url(../framework-images/body/body-top-center.gif) repeat-x bottom;
+	background-repeat: repeat-x;
+	margin: 0 16px 0 6px;
+	height: 8px;
+}
+
+#page-body .middle-right {
+	background: url(../framework-images/body/body-middle-right.gif) repeat-y bottom right;
+}
+#page-body .middle-left {
+	background: url(../framework-images/body/body-middle-left.gif) repeat-y bottom left;
+}
+#page-body .bottom-left {
+	background: #EEE url(../framework-images/body/body-bottom-left.gif) no-repeat top left;
+}
+#page-body .bottom-right {
+	background: url(../framework-images/body/body-bottom-right.gif) no-repeat top right;
+}
+#page-body .bottom-center {
+	background: #EEE url(../framework-images/body/body-bottom-center.gif) repeat-x top;
+	background-repeat: repeat-x;
+	margin: 0 16px 0 6px;
+	height: 16px;
+}
+
+
+/**
+ ** Footer
+ **/
+#footer {
+	font-size: 0.65em;
+	text-transform: lowercase;
+	text-align: left;
+	padding-bottom: 15px;
+}
+#footer,
+#footer a:link, 
+#footer a:visited {
+	color:#999;
+}
+#footer a:hover {
+	color:#444;
+}

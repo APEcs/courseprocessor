@@ -1,0 +1,100 @@
+/**
+ ** Header
+ **/
+ 
+ 
+/**
+ ** Main section
+ **/
+#header #main {
+	background-repeat: repeat-x;
+	background-position: top;
+	margin-right: 7px;
+	width: 993px;
+	height: 5em;
+	min-height: 75px;
+}
+#header .main-right {
+	background-repeat: repeat-y;
+	background-position: right;
+}
+
+
+#main .left {
+	float: left;
+	width: 130px;
+}
+#main .right {
+	float: right;
+	width: 120px;
+}
+#main .center {
+	/* Set these to widths of .left and .right */
+	margin: 0 120px 0 130px; 
+	position: relative;
+}
+
+#header #resources {
+	float: left;
+	font-size: 0.7em;
+}
+
+#main .right img {
+	float: left;
+	margin: 8px 3px 0 0;
+}
+
+#header #nav {
+	float: right;
+	position: relative;
+	top: 15px;
+}
+
+
+
+/**
+ ** Breadcrumb bar
+ **/
+#breadcrumb {
+	clear: both;
+}
+#breadcrumb .middle-right {
+	background-repeat: repeat-y;
+	background-position: bottom right;
+}
+#breadcrumb .middle-center {
+	background-repeat: repeat-x;
+	background-position: bottom;
+	margin-right: 8px;
+	padding: 0 12px 0 12px;
+	border-top-width: 1px;
+	border-top-style: solid;
+	font-size: 0.7em;
+	overflow: hidden;
+	height: 100%;
+}
+
+#breadcrumb .bottom-left {
+	background-repeat: no-repeat;
+	background-position: top left;
+}
+#breadcrumb .bottom-right {
+	background-repeat: no-repeat;
+	background-position: top right;
+}
+#breadcrumb .bottom-center {
+	background-repeat: repeat-x;
+	background-position: top;
+	margin: 0 16px 0 10px;
+	height: 17px;
+}
+#breadcrumb li span.sep {
+	margin-right: 4px;
+}
+
+#breadcrumb .trail {
+	float: left;
+}
+#breadcrumb .difficulty-color {
+	float: right;
+}

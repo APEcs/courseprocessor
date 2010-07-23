@@ -1,0 +1,38 @@
+<!-- start footer.tem -->
+                </dl>
+            </div><!-- id="content" -->
+            <div class="clearer"></div>
+
+        </div><!-- id="middle-center" --></div><!-- id="middle-right" --></div><!-- id="middle-left" -->
+
+        <div class="middle-left"><div class="middle-right"><div id="backtotop" class="middle-center">
+            <a href="#page">Back to top</a>
+        </div></div></div>
+
+        <div class="bottom-left"><div class="bottom-right"><div class="bottom-center"></div></div></div>
+    </div><!-- id="page-body" -->
+
+    <div id="footer">
+        <h2 class="accesshide">Footer links</h2>
+        <ul class="link-list">
+            <li class="first">
+                <strong>&copy;</strong>
+                <script type="text/javascript" language="javascript">
+                <!--
+                	writeCurrentYear();
+                 -->
+                </script>
+                <noscript>2007</noscript>
+                <a target="_blank" href="http://www.manchester.ac.uk/">University of Manchester</a>, version: ***version***
+            </li>
+            <li><a href="peve.html">About PEVE</a></li>
+            <li><a href="privacy.html">Privacy and Cookies Policy</a></li>
+            <li><a href="disclaimer.html">Disclaimer</a></li>
+            <li><a href="feedback.html">Feedback &amp; Support</a></li>
+        </ul>
+    </div><!--footer-->
+
+</div><!-- id="page" -->
+</body>
+</html>
+<!-- end footer.tem -->

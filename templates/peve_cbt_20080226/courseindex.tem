@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>Course Themes</title>
+
+    <link href="framework-css/index.css" rel="stylesheet" type="text/css" />
+    <!--[if lt IE 7]>
+	    <link href="framework-css/ie6-fixes.css" rel="stylesheet" type="text/css" />
+    <![endif]-->
+    <script type="text/javascript" src="framework-javascript/core.js"></script>
+    <script language="javascript" type="text/javascript">
+    <!--
+        setLastViewedPage(1);
+    -->
+    </script>
+
+    <link rel="start" href="frontpage.html" title="Course front page" />
+    <link rel="glossary" href="glossary/index.html" title="Glossary" />
+    <link rel="appendix" href="references.html" title="References" />
+    <link rel="help" href="framework-docs/somehelpdoc.html" title="Help" />
+    <link rel="up" href="frontpage.html" title="Course front page" />
+
+    ***include***
+</head>
+<body id="courseindex" class="index" onload="initializeCourseIndexPage();">
+<a tabindex="1" href="#content" class="accesshide"><img src="framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>
+<div id="page">
+    <div id="header">
+        <div class="main-right">
+            <div id="main">
+                <div class="left">
+                    <img src="framework-images/header/blue/logo-active.gif" name="logo" width="125" height="75" border="0" usemap="#logoMap" id="logo" alt="Link to front page" />
+                    <map name="logoMap" id="logoMap">
+                        <area shape="poly" coords="10,37,14,26,26,17,43,11,64,9,84,11,101,17,113,26,117,37,113,48,101,57,84,63,64,65,43,63,26,57,14,48,10,37,10,37" tabindex="4" href="frontpage.html" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('logo','','framework-images/header/blue/logo-hover.gif',1)" alt="Link to front page" />
+                    </map>
+                </div>
+
+                <div class="right">
+                    <img src="framework-images/header/blue/nav-button-coursemap-active.gif" name="nav_coursemap" width="56" height="60" border="0" id="nav_coursemap" usemap="#m_navbuttoncoursemap" alt="Course map view" /><map name="m_navbuttoncoursemap" id="m_navbuttoncoursemap">
+                        <area shape="circle" coords="29,30, 25" tabindex="2" href="coursemap.html" onclick="setCourseView('coursemap')" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('nav_coursemap','','framework-images/header/blue/nav-button-coursemap-hover.gif',1)" alt="Switch to course map view" />
+                    </map>
+                    <img src="framework-images/header/blue/nav-button-courseindex-selected.gif" name="nav_courseindex" width="57" height="60" border="0" id="nav_courseindex" alt="Course index view" />
+                </div>
+
+                <div class="center">
+***glosrefblock***
+                    <div id="nav"></div>
+                </div><!-- class="center" -->
+            </div><!-- id="main" -->
+        </div><!-- class="main-right" -->
+
+        <div id="breadcrumb">
+	        <div class="middle-right">
+	            <div class="middle-center">
+	                <h2 class="accesshide">You are here</h2>
+	                <ul class="link-list">
+		                <li><a href="frontpage.html" title="Links to the front page">Home</a></li>
+		                <li class="current">
+			                <span class="accesshide">/ </span>
+			                <span class="sep">&#x25BA;</span>
+			                Course Index</li>
+	                </ul>
+	            </div>
+	        </div>
+	        <div class="bottom-left">
+	            <div class="bottom-right">
+	                <div class="bottom-center"></div>
+	            </div>
+	        </div>
+        </div>
+    </div><!-- id="header" -->
+
+    <div id="page-body">
+        <div class="top-left"><div class="top-right"><div class="top-center"></div></div></div>
+        <div class="middle-left"><div class="middle-right"><div class="middle-center">
+
+                    <h1 class="main">***title***</h1>
+                    <div id="content">
+                        <ul id="courseindex">
+***body***
+                        </ul>
+                    </div><!-- id="content" -->
+                    <div class="clearer"></div>
+                </div><!-- id="middle-center" --></div><!-- id="middle-right" --></div><!-- id="middle-left" -->
+        <div class="middle-left"><div class="middle-right"><div id="backtotop" class="middle-center">
+                    <a href="#page">Back to top</a>
+        </div></div></div>
+
+        <div class="bottom-left"><div class="bottom-right"><div class="bottom-center"></div></div></div>
+    </div><!-- id="page-body" -->
+
+    <div id="footer">
+        <h2 class="accesshide">Footer links</h2>
+        <ul class="link-list">
+            <li class="first">
+                <strong>&copy;</strong>
+                <script type="text/javascript" language="javascript">
+                    <!--
+	                    writeCurrentYear();
+                      -->
+                </script>
+                <noscript>2007</noscript>
+                <a target="_blank" href="http://www.manchester.ac.uk/">University of Manchester</a>, version: ***version***
+            </li>
+            <li><a href="peve.html">About PEVE</a></li>
+            <li><a href="privacy.html">Privacy and Cookies Policy</a></li>
+            <li><a href="disclaimer.html">Disclaimer</a></li>
+            <li><a href="feedback.html">Feedback &amp; Support</a></li>
+        </ul>
+    </div><!--footer-->
+</div><!-- id="page" -->
+</body>
+</html>
