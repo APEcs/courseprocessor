@@ -457,7 +457,7 @@ sub process_streamflv {
 }
 
 
-## @fn $ process_entities($wikih, $text, $path, $level, $nolocal, $maxlevel)
+## @fn $ process_entities_html($wikih, $text, $path, $level, $nolocal, $maxlevel)
 # Process the entities in the specified text, allowing through only approved tags, and
 # convert wiki markup to html.
 #
@@ -469,7 +469,7 @@ sub process_streamflv {
 # @param nolocal  The level at which local tags cease to be processed (defaults to 1)
 # @param maxlevel The level at which recursion halts (defaults to 5).
 # @return The processed text.
-sub process_entities {
+sub process_entities_html {
     my $wikih    = shift;
     my $text     = shift;
     my $path     = shift;
@@ -908,7 +908,7 @@ sub wiki_export_module {
 
                             if($convert) {
                                 print "NOTE: Converting mediawiki markup in $stepname to html.\n";
-                                $body = process_entities($wikih, $body, $title);
+                                $body = process_entities_html($wikih, $body, $title);
                             }
 
                             open(STEP, "> $stepname")
