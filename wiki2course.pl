@@ -457,44 +457,6 @@ sub process_streamflv {
 }
 
 
-## @fn $ process_transclude($wikih, $title, $path, $level, $nolocal, $maxlevel)
-# Obtain the page content for the specified page, and process it ready for inclusion in
-# another page.
-#
-# @param wikih    The wiki API handle to issue requests through if needed.
-# @param title    The title of the page to fetch.
-# @param path     A string containing the recursion path.
-# @param level    The current recursion level.
-# @param nolocal  The level at which local tags cease to be processed.
-# @param maxlevel The level at which recursion halts.
-# @return The processed page text.
-sub process_transclude {
-    my $wikih    = shift;
-    my $title    = shift;
-    my $path     = shift;
-    my $level    = shift;
-    my $nolocal  = shift;
-    my $maxlevel = shift;
-
-    # Check for recusion overflow and halt immediately if needed
-    die "ERROR: Maximum level of allowed recursion ($maxlevel levels) reached while transcluding page '$title'\nRecursion path is: $path\n"
-        if($level >= $maxlevel);
-    
-    # Okay, does the requested page exist?
-    my $page = $wikih -> get_page({ title => $title } )
-        or die "ERROR: Unable to fetch page '$title'. Error from the API was:\n".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
-
-    # Do we have any content? If not, bomb now
-    if(!$page -> {"*"}) {
-        print "WARNING: No content for page '$title' during page transclusion.\nRecursion path is: $path\n";
-        return "";
-    }
-
-    # okay, we have content, process and return it
-    return process_entities($wikih, $page -> {"*"}, $path, $level, $nolocal, $maxlevel);
-}
-
-
 ## @fn $ process_entities($wikih, $text, $path, $level, $nolocal, $maxlevel)
 # Process the entities in the specified text, allowing through only approved tags, and
 # convert wiki markup to html.
@@ -585,19 +547,16 @@ sub process_entities {
     $text =~ s{^\s*([^<])}{<p>$1}o;
     $text =~ s{([^>])\s*$}{$1</p>}o;
 
-    # page transclusion.
-    $text =~ s/{{(.*?)}}/process_transclude($wikih, $1, "$path -> $1", $level + 1, $nolocal, $maxlevel)/ges;
-
-    # Popups - convert to html
-    $text =~ s{\[local\s*(.*?)\](.*?)[/local]}{process_popup($1, $2)}gmse if($level < $nolocal);
-    $text =~ s{<popup\s*(.*?)>(.*?)</popup>}{process_popup($1, $2)}gmse if($level < $nolocal);
-
     # pre processing...
     for($count = 0; $count < scalar(@prebodies); ++$count) {
         # And replace the pre in the text
         my $target = sprintf("<pre:00>:marker%02d:</pre:00>", $count);
         $text =~ s{$target}{"<pre>".$prebodies[$count]."</pre>"}ge;
     }
+
+    # Popups - convert to html
+    $text =~ s{\[local\s*(.*?)\](.*?)[/local]}{process_popup($1, $2)}gmse;
+    $text =~ s{<popup\s*(.*?)>(.*?)</popup>}{process_popup($1, $2)}gmse;
 
     return $text;
 }
@@ -926,10 +885,7 @@ sub wiki_export_module {
 
     # Sort out the directory
     if(makedir($moduledir)) {
-
-        # Do not transclude content when fetching module pages - process_entites 
-        # is needed to handle it safely
-        my $mpage = wiki_fetch($wikih, $module);
+        my $mpage = wiki_fetch($wikih, $module, 1);
 
         # Do we have any content? If not, bomb now
         if($mpage) {
