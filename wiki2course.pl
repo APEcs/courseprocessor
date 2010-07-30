@@ -35,20 +35,18 @@ BEGIN {
 }
 
 use lib ("$path/modules"); # Add the script path for module loading
+use Digest;
+use Encode qw(encode);
 use File::Path;
+use Getopt::Long;
 use MediaWiki::API;
 use MIME::Base64;
-use Encode qw(encode);
-use XML::Simple;
-use Getopt::Long;
 use Pod::Usage;
+use XML::Simple;
 
 # Constants used in various places in the code
 # The current version
-use constant VERSION  => "1.5 (26 March 2010) [Course Processor v3.7.0 (26 March 2010)]";
-
-# Local tags cease to be processed at this level of recursion or later (recommended = 1) 
-use constant NOLOCAL  => 1;  
+use constant VERSION  => "1.7 (30 July 2010) [Course Processor v3.7.0 (30 July 2010)]";
 
 # The maximum number of levels of page transclusion that may be processed
 use constant MAXLEVEL => 5;
@@ -57,7 +55,7 @@ use constant MAXLEVEL => 5;
 use constant WIKIURL  => 'http://elearn.cs.man.ac.uk/devwiki/api.php';
 
 
-# Settings for flash export
+# Settings for flash export, generally shouldn't need modifying
 my $flashversion = "7,0,0,0"; # Flash version
 my $flashaccess  = "false";   # Allow or disallow script access (false is a Good Idea)
 my $flashconnect = "false";   # do not start up java connector
@@ -65,6 +63,10 @@ my $flashconnect = "false";   # do not start up java connector
 my %flashargs    = ("play"  => 1, "loop"   => 1, "quality" => 1, "devicefont" => 1, "bgcolor" => 1, "scale" => 1,
                     "align" => 1, "salign" => 1, "base" => 1, "meni" => 1, "vmode" => 1, "SeamlessTabbing" => 1, 
                     "flashvars" => 1, "name" => 1, "id" => 1 );
+
+
+# Where is Andre Simon's `highlight`?
+my $highlight = "/usr/bin/highligh";
 
 # various globals set via the arguments
 my ($basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir) = ('', '', '', '', WIKIURL, '', '', 0, 'media');
@@ -177,6 +179,162 @@ sub get_password {
 
     # Otherwise send back the string
     return $word;
+}
+
+
+## @fn $ make_highlight_cmd($lang, $style, $linenumber, $linestart, $tabwidth, $outfile, $cssfile)
+# Generate the command line to use when invoking highlight (as part of source tag
+# conversion). This generates a command that is intended to be invoked via a pipe,
+# such that this script writes the code the be highlighted over the pipe, and the
+# results are saved to files.
+#
+# @note As stated in the desceiption, this command assumes that it will be invoked such that
+#       the content to be highlighted will be passed over a pipe to highlight, and then 
+#       highlight will write the corresponding html and css to temporary files. This method
+#       is the most straightforward option - the alternatives involve things like messing with
+#       IPC::Open2/3 or IPC::Run, and using read and write pipes. While this is doable, it is
+#       a royal pain in the arse to do without possible blocking issues and other IPC
+#       nightmares. Writing over a pipe, and then parsing the result files is more wasteful 
+#       in terms of filesystem access, but it is massively simpler and more reliable.
+#
+# @param lang       The language used in the source content.
+# @param style      The highlight style
+# @param linenumber True to enable line numbering, false otherwise. Defaults to false.
+# @param linestart  The line number to start numbering from, defaults to 1.
+# @param tabwidth   If set, tabs are replaced with this many spaces. Defaults to undef.
+# @param outfile    The file to write highlighted content to.
+# @param cssfile    The file to write css information to.
+# @return The command to issue to highlight source.
+sub make_highlight_cmd {
+    my ($lang, $style, $linenumber, $linestart, $tabwidth, $outfile, $cssfile) = @_;
+    my $result = $highlight;
+
+    # We will always have fragment, lang, style, output, and css output
+    $result .= " -f -O /tmp -o ".quotemeta($outfile).
+                          " -S ".quotemeta($lang).
+                          " -s ".quotemeta($style).
+                          " -c ".quotemeta($cssfile);
+
+    # Handle line numbering if needed
+    $result .= " -l " if($linenumber);
+    $result .= " -m $linestart" if($linestart && $linestart =~ /^\d+$/);
+
+    # And tabs
+    $result .= " -t $tabwidth" if($tabwidth && $tabwidth =~ /^\d+$/);
+
+    return $result;
+}
+
+
+## @fn $ process_hilight_files($id, $outfile, $cssfile)
+# Load the contents of the specified hilight output files, and generate a stylesheet definition
+# and pre block from them.
+#
+# @param id         The page-unique id of the source block.
+# @param outfile    The file containing processed source.
+# @param cssfile    The file containing the stylesheet information.
+# @return The highlighted, processed source.
+sub process_hilight_files {
+    my $id = shift;
+    my $outfile = shift;
+    my $cssfile = shift;
+
+    # We don't need no steenking newlines
+    my $oldnl = $/;
+    undef $/;
+
+    # Read in the highlighted source html
+    open(OUTF, $outfile)
+        or die "ERROR: Unable to read highlight output file: $!\n";
+
+    my $source = <OUTF>;
+    close(OUTF);
+
+    # And now the stylesheet
+    open(CSSF, $cssfile)
+        or die "ERROR: Unable to read highlight css file: $!\n";
+
+    my $css = <CSSF>;
+    close(CSSF);
+
+    # Best out newlines back now
+    $/ = $oldnl;
+
+    # First, trash everything in the css up to the pre, we don't need or want it,
+    # and remove any trailing whitespace as that's not needed either
+    $css =~ s/^.*?^\.hl/.hl/sm;
+    $css =~ s/\s*$//;
+    
+    # Now shove the id into the class names, this allows for multiple styles on the same page
+    $css =~ s/.hl/.hlid$id/g;
+
+    # Same for the html
+    $source =~ s/class="hl /class="hlid$id /g;
+
+    # Compose the result, throwing out the stylesheet and then the pre block
+    return "<style type=\"text/css\">/*<![CDATA[*/\n".$css."\n/*]]>*/</style>\n<pre>$source</pre>";
+}    
+
+
+## @fn $ highlight_fragment($id, $args, $source)
+# Run Andre Simon's highlight over the specified source, with the provided args. This
+# will generare a string containing an inline stylesheet and pre block with the specified
+# source pocessed through highlight.
+#
+# @param id     Page-unique id of the source block to process.
+# @param args   A reference to a hash containing options to control the highlighting. This
+#               <b>must</b> minimally contain 'lang' and 'style' values.
+# @param source The source to highlight.
+# @return A string containing the highlighted source, and the stylesheet to support it.
+sub highlight_fragment {
+    my $id     = shift;
+    my $args   = shift;
+    my $source = shift;
+
+    # Check that we have the required gubbins
+    if(!$args -> {"lang"} || !$args -> {"style"}) {
+        print "ERROR: Attempt to invoke highlight without sufficient information.\n";
+        return "<p style=\"error\">Uhable to highlight source, missing lang or style.</p><pre>$source</pre>";
+    }
+
+    # Get a unique id for the source
+    my $sha1 = Digest -> new("SHA-1");
+    # The first two may not be system-wide unique if two w2cs are working in parallel, time is likely to be, pid *will* be
+    $sha1 -> add($source, $id, time(), $$); 
+    my $uid = $sha1 -> hexdigest();
+
+    # Now we need temp files for the source output and stylesheet
+    # This shouldn't be a security risk
+    my $outfile = "w2c_hlout_$uid.frag";
+    my $cssfile = "w2c_hlcss_$uid.css";
+
+    # Make the command we need
+    my $cmd = make_highlight_cmd($args -> {"lang"}, $args -> {"style"}, 
+                                 $args -> {"line"}, $args -> {"start"},
+                                 $args -> {"tabwidth"},
+                                 $outfile, $cssfile);
+
+    # run highlight, and throw the source at it
+    open(HLIGHT, "|-", $cmd)
+        or die "ERROR: Unable to launch highlight: $!\n";
+
+    print HLIGHT $source;
+
+    close(HLIGHT);
+
+    # Okay, do we have output files? If we are missing either, print out an error...
+    if(!-f path_join("/tmp", $outfile)) {
+        unlink path_join("/tmp", $cssfile) if(-f path_join("/tmp", $cssfile));
+        print "ERROR: highlight did not produce any output. Unable to process source.\n";
+        return "<p style=\"error\">Uhable to highlight source, highlight did not produce any output.</p><pre>$source</pre>";
+    }        
+    if(!-f path_join("/tmp", $cssfile)) {
+        unlink path_join("/tmp", $outfile) if(-f path_join("/tmp", $outfile));
+        print "ERROR: highlight did not produce any stylesheet output. Unable to process source.\n";
+        return "<p style=\"error\">Uhable to highlight source, highlight did not produce any stylesheet output.</p><pre>$source</pre>";
+    }        
+
+    return process_hilight_files($id, path_join("/tmp", $outfile), path_join("/tmp", $cssfile));
 }
 
 
@@ -355,10 +513,10 @@ sub process_flash {
     my ($embedargs, $objectargs) = ("", "");
 
     # Go through the args we have, and if it's acceptable, add it to the arg strings
-    foreach my $arg (keys($opts)) {
+    foreach my $arg (keys(%opts)) {
         if($flashargs{$arg}) {
             $embedargs .= ' '.$arg.' ="'.$opts{$arg}.'"' if($arg ne "id");
-            $objectrgs .= '<param name="'.$arg.'" value="'.$opts{$arg}.'" />' if($arg ne "name");
+            $objectargs .= '<param name="'.$arg.'" value="'.$opts{$arg}.'" />' if($arg ne "name");
         }
     }
 
@@ -369,12 +527,12 @@ sub process_flash {
     $url .= $opts{"flashvars"} if($opts{"flashvars"});
     
     return '<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"'.
-           ' width="'.$optS{"width"}.'"'.
+           ' width="'.$opts{"width"}.'"'.
            ' height="'.$opts{"height"}.'"'.
            ' codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version='.$flashversion.'">'.
            ' <param name="movie" value="'.$url.'">'.$objectargs. 
            ' <embed src="'.$url.'"'.
-           ' width="'.$optS{"width"}.'"'.
+           ' width="'.$opts{"width"}.'"'.
            ' height="'.$opts{"height"}.'"'.$embedargs. 
            ' pluginspage="http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash"></embed></object>';
 }
@@ -408,7 +566,7 @@ sub process_popup {
 
     $result .= '<span class="twpopup-inner"';
     $result .= " title=\"$spantitle\"" if($spantitle);
-    $result .= ">".encode_base64(encode("UTF-8", "\x{FFFF}\n"), '')."</span></span>";
+    $result .= ">".encode_base64(encode("UTF-8", $content), '')."</span></span>";
 
     return $result;
 }    
@@ -457,35 +615,37 @@ sub process_streamflv {
 }
 
 
-## @fn $ process_entities_html($wikih, $text, $path, $level, $nolocal, $maxlevel)
+## @fn $ process_source($args, $source, $id)
+# Process a <source> tag, converting it into a <pre> block with associated stylesheet to
+# provide highlighting.
+#
+# @param args   The arguments to the source element. Must contain lang and style at least.
+# @param source The body of the source element, containing the source to highlight.
+# @param id     The page-wide unique id for this source.
+# @return A string containing the highlighed source.
+sub process_source {
+    my $args   = shift;
+    my $source = shift;
+    my $id     = shift;
+
+    # Convert the args to hash. if needed
+    my %hashargs = $args =~ /\s*(\w+)\s*=\s*"([^"]+)"/go;
+
+    return highlight_fragment($id, \%hashargs, $source);
+}
+
+
+## @fn $ process_entities_html($wikih, $text)
 # Process the entities in the specified text, allowing through only approved tags, and
 # convert wiki markup to html.
 #
 # @todo improve   implementation and coverage of mediawiki markup
 # @param wikih    The wiki API handle to issue requests through if needed.
 # @param text     The text to process.
-# @param path     A string containing the recursion path.
-# @param level    The current recursion level (defaults to 0).
-# @param nolocal  The level at which local tags cease to be processed (defaults to 1)
-# @param maxlevel The level at which recursion halts (defaults to 5).
 # @return The processed text.
 sub process_entities_html {
     my $wikih    = shift;
     my $text     = shift;
-    my $path     = shift;
-    my $level    = shift;
-    my $nolocal  = shift;
-    my $maxlevel = shift;
-
-    $level    = 0        if(!defined($level));
-    $nolocal  = NOLOCAL  if(!defined($nolocal));
-    $maxlevel = MAXLEVEL if(!defined($maxlevel));
-    $path     = ""       if(!defined($path));
-
-    # Check for recursion level overflow here. In theory, this should not be encountered 
-    # (process_transclude should catch it), but check anyway!
-    die "ERROR: Maximum level of allowed recursion ($maxlevel levels) reached while processing entities.\nRecursion path is: $path\n"
-        if($level >= $maxlevel);
 
     # Undo XML::Simple's meddling
     $text =~ s{<}{&lt;}go;
@@ -537,6 +697,10 @@ sub process_entities_html {
 
     # Streamed video
     $text =~ s{<streamflv\s*(.*?)>(.*?)</streamflv>}{process_streamflv($1, $2)}gmse;
+
+    # <source>
+    my $sid = 0;
+    $text =~ s{<source\s*(.*?)>(.*?)</source}{process_source($1, $2, ++$sid)}gmse;
 
     # External links
     $text =~ s{\[((?:http|https|ftp|mailto):[^\s\]]+)(?:\s*([^\]]+))?\]}{<a href="$1">$2</a>}gs;
@@ -631,7 +795,7 @@ sub wiki_fetch {
     while($content =~ s|(<nowiki>.*?)\{\{([^<]+?)\}\}(.*?</nowiki>)|$1\{\(\{$2\}\)\}$3|is) { };
 
     # recursively process any remaining transclusions
-    $content =~ s/\{\{(.*?)\}\}/wiki_fetch($wikih, $1, 1, "$path -> $1", $level + 1, $nolocal, $maxlevel)/ges; 
+    $content =~ s/\{\{(.*?)\}\}/wiki_fetch($wikih, $1, 1, "$path -> $1", $level + 1, $maxlevel)/ges; 
 
     # revert the breakage we did above
     while($content =~ s|(<nowiki>.*?)\{\(\{([^<]+?)\}\)\}(.*?</nowiki>)|$1\{\{$2\}\}$3|is) { };
@@ -1237,17 +1401,26 @@ GetOptions('outputdir|o=s' => \$basedir,
            'namespace|n=s' => \$namespace,
            'fileurl|f=s'   => \$fileurl,
            'wiki|w=s'      => \$apiurl,
-           'convert|c!'    => \$convert,
+           'convert|c=s'   => \$convert,
            'verbose|v'     => \$verbose,
-           'help|?'        => \$help, 
+           'help|?|h'      => \$help, 
            'man'           => \$man) or pod2usage(2);
-print STDERR "No username specified.\n" if(!$username);
-print STDERR "No output directory specified.\n" if(!$basedir);
+if(!$help && !$man) {
+    print STDERR "No username specified.\n" if(!$username);
+    print STDERR "No output directory specified.\n" if(!$basedir);
+}
+pod2usage(-verbose => 2) if($man);
 pod2usage(-verbose => 0) if($help || !$username);
-pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
 
 # If convert hasn't been explicitly specified, enable it
-$convert = 1 if($convert eq '');
+if($convert eq '') {
+    $convert = 1;
+} else {
+    # handle other converts
+    $convert = 1
+        if($convert =~ /^y(es)?/i || $convert =~ /^on$/i);
+}
 
 # If we don't have a password, prompt for it
 $password = get_password() if(!$password);
@@ -1287,4 +1460,105 @@ if(makedir($basedir)) {
         print "\n";
     }
 }
-    
+ 
+   
+# THE END!
+__END__
+
+=head1 NAME
+
+wiki2course - generate a course data directory from a wiki namespace.
+
+=head1 SYNOPSIS
+
+backuplj [options]
+
+ Options:
+    -c, --convert=MODE       convert mediawiki markup to html (default: on)
+    -f, --fileurl=URL        the location of the wiki.
+    -h, -?, --help           brief help message.
+    --man                    full documentation.
+    -m, --mediadir=DIR       the subdir into which media should be written.
+    -n, --namespace=NAME     the namespace containing the course to export.
+    -o, --outputdir=DIR      the name of the directory to write to.
+    -p, --password=PASSWORD  password to provide when logging in. If this is
+                             not provided, it will be requested at runtime.
+    -u, --username=NAME      the name to log into the wiki as.
+    -v, --verbose            if specified, produce more progress output.
+    -w, --wiki=APIURL        the url of the mediawiki API to use.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-c, convert>
+
+If set to 'yes', 'on', or '1' then medaiwiki markup in the exported data will
+be converted to html. If set to any other value, conversion will not be done.
+Note that the default is to process markup to html.
+
+=item B<-f, fileurl>
+
+This argument is optional. If provided, the script will use the specified URL
+as the base location for wiki files. This option is unlikely to be of use to 
+users of the APE wikis.
+
+=item B<-h, -?, --help>
+
+Print a brief help message and exits.
+
+=item B<--man>
+
+Prints the manual page and exits.
+
+=item B<-m, --mediadir>
+
+This argument is optional. This argument allows you to specify the name of the
+directory in the generated coursedata directory to which media files (images, 
+animations, and so on) will be written. If provided it overrides the default 
+"media" directory. Note that this is relative to the directory specified with
+the --outputdir option.
+
+=item B<-n, --namespace>
+
+I<This argument must be provided.> This argument identifies the namespace 
+containing the course you want to export, and it must correspond to a valid 
+namespace in the wiki. As ever, case is important here, so triple-check that 
+you have provided the namespace name in the correct case.
+
+=item B<-o, --outputdir>
+
+I<This argument must be provided.> This specifies the name of the directory 
+into which the course should be exported. If the specified directory does not 
+exist, the script will attempt to create it for you. Note that if the 
+directory I<does> exist, the script will simply export the course into the 
+directory, overwriting any files that may be present already!
+
+=item B<--password>
+
+This argument is optional. If provided, the script will attempt to use the 
+specified password when logging into the wiki. Use of this argument is 
+B<very strongly discouraged in general use> - it is provided to allow the 
+export script to be called programmatically, and providing your password this 
+way can be a security risk (anyone looking over your shoulder could see the 
+plain text password on the command prompt, and the whole command line will be 
+saved in your shell history, including the password).
+
+=item B<-u, --username>
+
+I<This argument must be provided.> This argument specifies which username 
+should be used to log into the wiki. This must correspond to a valid wiki 
+user, and you will need to either provide the password using the --password 
+option described above, or you will be prompted to enter the password by 
+wiki2course.pl. If your username contains spaces, please ensure that you 
+either enclose the username in quotes, or replace any spaces with 
+underscores. Note that wiki usernames B<are case sensitive>, so check that 
+you use the correct case when specifying your username or the login will fail.
+
+=head1 DESCRIPTION
+
+Please consult the Docs:wiki2course.pl documentation in the wiki for a full
+description of this program.
+
+=cut
+
