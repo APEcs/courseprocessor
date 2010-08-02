@@ -6,10 +6,8 @@
 #
 # For full documentation please see http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Wiki2course.pl
 #
-# @todo Add source formatting support (call on highlight?)
-#
 # @copy 2008, Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 3.7.0 (26 March 2010)
+# @version 1.7.0 (2 August 2010)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +44,7 @@ use XML::Simple;
 
 # Constants used in various places in the code
 # The current version
-use constant VERSION  => "1.7 (30 July 2010) [Course Processor v3.7.0 (30 July 2010)]";
+use constant VERSION  => "1.7 (2 August 2010) [Course Processor v3.7.0]";
 
 # The maximum number of levels of page transclusion that may be processed
 use constant MAXLEVEL => 5;
@@ -154,7 +152,8 @@ sub makedir {
 ## @fn $ get_password()
 # Obtain a password from the user. This will read the user's password 
 # from STDIN after prompting for input, and disabling terminal echo. Once
-# the password has been entered, echo is re-enabled.
+# the password has been entered, echo is re-enabled. If no password is 
+# entered, this will die and not return. 
 #
 # @return A string containing the user's password.
 sub get_password {
@@ -639,6 +638,9 @@ sub process_source {
 # Process the entities in the specified text, allowing through only approved tags, and
 # convert wiki markup to html.
 #
+# @note From v1.7 on this function does no recursively process transclusions, as all 
+#       transclusion processing has been moved into wiki_fetch. 
+#     
 # @todo improve   implementation and coverage of mediawiki markup
 # @param wikih    The wiki API handle to issue requests through if needed.
 # @param text     The text to process.
@@ -1449,7 +1451,7 @@ if(makedir($basedir)) {
     course_metadata_save($cdpage -> {"*"}, $basedir);
 
     # Write out images and animations
-    wiki_export_files($wikih, "$namespace:Media" , path_join($basedir, $mediadir));
+    wiki_export_files($wikih, "$namespace:Media", path_join($basedir, $mediadir));
 
     # Print out any markers
     foreach my $step (sort keys(%$markers)) {
