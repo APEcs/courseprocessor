@@ -278,7 +278,6 @@ if(!$config) {
 # override configuration settingswith command line settings if needed
 merge_commandline($args, $config);
 
-
 # ------------------------------------------------------------------------------
 #  Path checks
 #

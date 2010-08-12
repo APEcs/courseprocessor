@@ -86,8 +86,10 @@ sub new {
 
     my $obj = bless $self, $class;
 
-    # Load the language definitions
-    $obj -> load_language() or return undef;
+    if($self -> {"lang"}) {
+        # Load the language definitions
+        $obj -> load_language() or return undef;
+    }
 
     return $obj;
 }
