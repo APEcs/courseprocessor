@@ -26,9 +26,8 @@
 # use_plugin      - returns true if th eplugin can be used on the tree, false if not
 # process         - actually does the processing.
 
-
 package Utils;
-require Exporter;
+use Exporter;
 use Term::Size;
 use Time::Local qw(timelocal);
 use File::Spec;
@@ -36,8 +35,39 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(check_directory hashmerge text_to_html fix_entities fix_all_entities load_complex_template load_complex_template_escape load_template load_file write_complex_template string_to_seconds build_select limit_length resolve_path summary_add summary_print log_print blargh fatal_setting reset_pointprogress update_pointprogress lead_zero);
+our @EXPORT_OK = qw(path_join check_directory hashmerge text_to_html fix_entities fix_all_entities load_complex_template load_complex_template_escape load_template load_file write_complex_template string_to_seconds build_select limit_length resolve_path reset_pointprogress update_pointprogress lead_zero);
 our $VERSION   = 1.0;
+
+
+## @fn $ path_join(@fragments)
+# Take an array of path fragments and concatenate them together. This will 
+# concatenate the list of path fragments provided using '/' as the path 
+# delimiter (this is not as platform specific as might be imagined: windows
+# will accept / delimited paths). The resuling string is trimmed so that it
+# <b>does not</b> end in /, but nothing is done to ensure that the string
+# returned actually contains a valid path.
+#
+# @param fragments The path fragments to join together.
+# @return A string containing the path fragments joined with forward slashes.
+sub path_join {
+    my @fragments = @_;
+
+    my $result = "";
+
+    # We can't easily use join here, as fragments might end in /, which
+    # would result in some '//' in the string. This may be slower, but
+    # it will ensure there aren't stray slashes around.
+    foreach my $fragment (@fragments) {
+        $result .= $fragment;
+        # append a slash if the result doesn't end with one
+        $result .= "/" if($result !~ /\/$/);
+    }
+
+    # strip the trailing / if there is one
+    return substr($result, 0, length($result) - 1) if($result =~ /\/$/);
+    return $result;
+}
+
 
 # Convert a relative (or partially relative) file into a truly absolute path.
 # for example, /foo/bar/../wibble/ptang becomes /foo/wibble/ptang and
@@ -93,6 +123,21 @@ sub check_directory {
 
     die "FATAL: The specified $type is not a directory"
         unless(!$checkdir || -d $dirname);
+}
+
+
+## @fn void superchomp($line)
+# Remove any white space or newlines from the end of the specified line. This
+# performs a similar task to chomp(), except that it will remove <i>any</i> OS 
+# newline from the line (unix, dos, or mac newlines) regardless of the OS it
+# is running on. It does not remove unicode newlines (U0085, U2028, U2029 etc)
+# because they are made of spiders.
+#
+# @param line A reference to the line to remove any newline from.
+sub superchomp(\$) {
+    my $line = shift;
+
+    $$line =~ s/(?:[\s\x{0d}\x{0a}\x{0c}]+)$//o;
 }
 
 
@@ -438,60 +483,6 @@ sub string_to_seconds {
 }
 
 
-# ============================================================================
-#  Summary report
-#
-
-
-sub summary_add {
-    my $arrayref = shift;
-    my $message  = shift;
-
-    push @$arrayref, $message;
-    print $message;
-}
-
-
-sub summary_print {
-    my $arrayref = shift;
-    my $intro = shift;
-
-    print "$intro\n";
-
-    foreach my $entry (@$arrayref) {
-        print "$entry\n";
-    }
-}
-
-
-# ============================================================================
-#  output support
-#
-
-no strict 'vars';
-our @outlevels = ("NOTICE", "WARNING", "DEBUG");
-our $DEBUG   = 2;
-our $WARNING = 1;
-our $NOTICE  = 0;
-use strict 'vars';
-
-sub log_print {
-    my $level     = shift;
-    my $verbosity = shift;
-    my $message   = shift;
-
-    if($level <= $verbosity) {
-        print $outlevels[$level],": $message\n";
-    }
-}
-
-
-my $blarghs_fatal =  0; # set this to 1 if you want blarghs to kill processing
-
-# either call warn or die depending on a global fatal level flag.
-sub blargh {  my $message = shift; if($blarghs_fatal) { die "FATAL: $message\n"; } else { log_print($WARNING, 2, $message); } }
-
-sub fatal_setting { return $blarghs_fatal; }
 
 
 our $pointcount = 0;

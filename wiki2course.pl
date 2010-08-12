@@ -40,12 +40,10 @@ use Getopt::Long;
 use MediaWiki::API;
 use MIME::Base64;
 use Pod::Usage;
+use ProcessorVersion;
 use XML::Simple;
 
 # Constants used in various places in the code
-# The current version
-use constant VERSION  => "1.7 (2 August 2010) [Course Processor v3.7.0]";
-
 # The maximum number of levels of page transclusion that may be processed
 use constant MAXLEVEL => 5;
 
@@ -209,10 +207,10 @@ sub make_highlight_cmd {
     my $result = $highlight;
 
     # We will always have fragment, lang, style, output, and css output
-    $result .= " -f -O /tmp -o ".quotemeta($outfile).
-                          " -S ".quotemeta($lang).
-                          " -s ".quotemeta($style).
-                          " -c ".quotemeta($cssfile);
+    $result .= " -f -o ".quotemeta($outfile).
+        " -S ".quotemeta($lang).
+        " -s ".quotemeta($style).
+        " -c ".quotemeta($cssfile);
 
     # Handle line numbering if needed
     $result .= " -l " if($linenumber);
@@ -249,29 +247,32 @@ sub process_hilight_files {
     my $source = <OUTF>;
     close(OUTF);
 
-    # And now the stylesheet
-    open(CSSF, $cssfile)
-        or die "ERROR: Unable to read highlight css file: $!\n";
-
-    my $css = <CSSF>;
-    close(CSSF);
-
-    # Best out newlines back now
-    $/ = $oldnl;
-
-    # First, trash everything in the css up to the pre, we don't need or want it,
-    # and remove any trailing whitespace as that's not needed either
-    $css =~ s/^.*?^\.hl/.hl/sm;
-    $css =~ s/\s*$//;
-    
-    # Now shove the id into the class names, this allows for multiple styles on the same page
-    $css =~ s/.hl/.hlid$id/g;
+    my $css = "";
+    if(-f $cssfile) {
+        # And now the stylesheet
+        open(CSSF, $cssfile)
+            or die "ERROR: Unable to read highlight css file: $!\n";
+        
+        my $css = <CSSF>;
+        close(CSSF);
+        
+        # Best out newlines back now
+        $/ = $oldnl;
+        
+        # First, trash everything in the css up to the pre, we don't need or want it,
+        # and remove any trailing whitespace as that's not needed either
+        $css =~ s/^.*?^pre\.hl/pre.hl/sm;
+        $css =~ s/\s*$//;
+        
+        # Now shove the id into the class names, this allows for multiple styles on the same page
+        $css =~ s/.hl/.hlid$id/g;
+    }
 
     # Same for the html
     $source =~ s/class="hl /class="hlid$id /g;
 
     # Compose the result, throwing out the stylesheet and then the pre block
-    return "<style type=\"text/css\">/*<![CDATA[*/\n".$css."\n/*]]>*/</style>\n<pre>$source</pre>";
+    return "<style type=\"text/css\">/*<![CDATA[*/\n".$css."\n/*]]>*/</style>\n<pre class=\"hlid$id\">$source</pre>";
 }    
 
 
@@ -304,7 +305,7 @@ sub highlight_fragment {
 
     # Now we need temp files for the source output and stylesheet
     # This shouldn't be a security risk
-    my $outfile = "w2c_hlout_$uid.frag";
+    my $outfile = path_join("/tmp", "w2c_hlout_$uid.frag");
     my $cssfile = "w2c_hlcss_$uid.css";
 
     # Make the command we need
@@ -322,18 +323,13 @@ sub highlight_fragment {
     close(HLIGHT);
 
     # Okay, do we have output files? If we are missing either, print out an error...
-    if(!-f path_join("/tmp", $outfile)) {
+    if(!-f $outfile) {
         unlink path_join("/tmp", $cssfile) if(-f path_join("/tmp", $cssfile));
         print "ERROR: highlight did not produce any output. Unable to process source.\n";
         return "<p style=\"error\">Uhable to highlight source, highlight did not produce any output.</p><pre>$source</pre>";
-    }        
-    if(!-f path_join("/tmp", $cssfile)) {
-        unlink path_join("/tmp", $outfile) if(-f path_join("/tmp", $outfile));
-        print "ERROR: highlight did not produce any stylesheet output. Unable to process source.\n";
-        return "<p style=\"error\">Uhable to highlight source, highlight did not produce any stylesheet output.</p><pre>$source</pre>";
-    }        
+    }
 
-    return process_hilight_files($id, path_join("/tmp", $outfile), path_join("/tmp", $cssfile));
+    return process_hilight_files($id, $outfile, path_join("/tmp", $cssfile));
 }
 
 
@@ -1393,7 +1389,7 @@ binmode STDOUT, ':utf8';
 # This will store all the markers located...
 my $markers = { };
 
-print "wiki2course.pl version ",VERSION," started.\n";
+print "wiki2course.pl version ",get_version("wiki2course")," started.\n";
 
 # Process the command line
 GetOptions('outputdir|o=s' => \$basedir,
@@ -1557,10 +1553,16 @@ either enclose the username in quotes, or replace any spaces with
 underscores. Note that wiki usernames B<are case sensitive>, so check that 
 you use the correct case when specifying your username or the login will fail.
 
+=back
+
 =head1 DESCRIPTION
+
+=over 8
 
 Please consult the Docs:wiki2course.pl documentation in the wiki for a full
 description of this program.
+
+=back
 
 =cut
 

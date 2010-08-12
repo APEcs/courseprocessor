@@ -4,9 +4,18 @@ Bug fixes:
   - HTMLOutputHandler::conver_interlink. Corrected step number generation for
     steps less than 10 without a leading zero.
 
+  - [bug 33] TWPopup code no longer generates invalid html: all inline content
+    is contained within spans, and popup content appended to document body as
+    divs.
+
 Additions:
   - [bug 1] Page transclusion using {{Template}} syntax supported. Limited support
     does not include full template variable processing.
+    
+  - [bug 2] Media files (images, animations, etc) are now listed on a single Media
+    page.
+
+  - [bug 3] Multiple streamed videos per page are now supported.
 
   - [bug 9] wiki2course: local tags may contain wiki links to transclude pages 
     using the syntax [local][[NS:Page]][/local]
@@ -14,4 +23,17 @@ Additions:
   - [bug 17] wiki2course converts <math>...</math> equations to internally 
     supported [latex]$...$[/latex] tags during export.
 
-  
+  - [bug 21] POD usage information added to both core scripts.
+
+  - [bug 32] wiki2course now generates flash tags in html, [anim] generation has 
+    been removed.
+
+  - [bug 36] wiki2course can now process transclusions at all levels in a course
+    other than the Course: page.
+
+Others:
+  - internal structure of processor.pl has been completely overhauled to be more 
+    future-proof and maintainable.
+
+      
+      
