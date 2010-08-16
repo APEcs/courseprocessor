@@ -26,17 +26,23 @@ package HTMLInputHandler;
 # use_plugin      - returns true if th eplugin can be used on the tree, false if not
 # process         - actually does the processing.
 
-
-require 5.005;
 use Cwd qw(getcwd chdir);
-use Utils qw(load_file load_complex_template log_print blargh reset_pointprogress update_pointprogress);
+use Utils qw(path_join load_file);
 use Digest::MD5 qw(md5_hex);
 use strict;
+
+# The location of the latex processor, must be absolute, as the path may have been nuked.
+use constant DEFAULT_LATEX_COMMAND => "/usr/bin/latex2html";
+
+# The arguments to pass to the processor
+use constant DEFAULT_LATEX_ARGS    => '-nonavigation -noaddress -white -noinfo -antialias_text -html_version "4.1"';
+use contains DEFAULT_LATEX_INTRO   => 'htmlinput-latexintro.txt';
+
 
 my ($VERSION, $type, $errstr, $htype, $extfilter, $desc, $cleanup, $latexheader, @summarydata);
 
 BEGIN {
-    $VERSION       = 1.0;
+    $VERSION       = 2.0;
     $htype         = 'input';                 # handler type - either input or output
     $extfilter     = '[\s\w-]+\d+\.html?';    # files matching this are assumed to be understood for processing.
     $desc          = 'HTML input processor';  # Human-readable name 
@@ -55,14 +61,15 @@ BEGIN {
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
+    my $self     = { @_ };
 
-    my $self     = {
-        "latexcmd"   => "/usr/bin/latex2html",                     # the location of latex2html, make it absolute - do not rely on the path!
+
+    $self -> {"latexcmd"} = "/usr/bin/latex2html" if(!$self -> {"latexcmd"});
+
         "latexargs"  => '-nonavigation -noaddress -white -noinfo -antialias_text -html_version "4.1"', # options to pass to latex2html
         "latexintro" => 'htmlinput-latexintro.txt',                # name of the file containing latex header info
         "verbose"    => 0,                                         # set to 1 to enable additional output
-        @_
-    };
+
 
     return bless $self, $class;
 }
@@ -88,18 +95,17 @@ sub get_extfilter { return $extfilter };
 # files it recognises how to process in the directory structure.
 sub use_plugin {
     my $self   = shift;
-    my $srcdir = shift;
-    my $usemod = 0; # gets set > 1 if there are any files this plugin understands.
+    my $self -> {"filecount"} = 0; # gets set > 1 if there are any files this plugin understands.
 
     # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $srcdir)
+    opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
         or die "FATAL: Unable to open source directory for reading: $!";
 
     # grab the directory list so we can check it for subdirs, strip .* files though
     my @srcentries = grep(!/^\./, readdir(SRCDIR));
     
     foreach my $theme (@srcentries) {
-        $theme = "$srcdir/$theme"; # prepend the source directory
+        $theme = path_join($srcdir, $theme); # prepend the source directory
 
         # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
         if(-d $theme) {
@@ -111,7 +117,7 @@ sub use_plugin {
 
             # Process all the files and dirs in the theme directory.
             foreach my $module (@modentries) {
-                $module = "$theme/$module"; # prepend the module directory...
+                $module = path_join($theme, $module); # prepend the module directory...
 
                 # If this is a module directory, we want to scan it for steps
                 if(-d $module) {
@@ -120,7 +126,7 @@ sub use_plugin {
             
                     # grep returns the number of matches in scalar mode and that's all we
                     # really want to know at this point
-                    $usemod += grep(/^$extfilter$/, readdir(SUBDIR));
+                    $self -> {"filecount"} += grep(/^$extfilter$/, readdir(SUBDIR));
 
                     closedir(SUBDIR);
                 }
@@ -134,28 +140,7 @@ sub use_plugin {
 
     closedir(SRCDIR);
 
-    return $usemod;
-}
-
-
-# Check whether the module specified is valid and usable by this plugin
-# return a string containing an error message if there is a problem, 0 otherwise.
-sub module_check {
-    my $self     = shift;
-    my $themedir = shift;
-    my $name     = shift;
-
-    # does the directory for the specified module exist?
-    return "HTMLInputHandler: Module $name does not have a corresponding module directory." unless(-e "$themedir/$name");
-
-    # ensure it is a directory, not a file
-    return "HTMLInputHandler: $themedir/$name is a normal file or symlink, not a directory." unless(-d "$themedir/$name");
-
-    # is it readable? We just have to hope the files inside are too...
-    return "HTMLInputHandler: $themedir/$name is not readable." unless(-r "$themedir/$name");
-
-    # if we get here, it's okay.
-    return 0;
+    return $self -> {"filecount"};
 }
 
 

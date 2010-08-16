@@ -1,3 +1,31 @@
+## @file
+# This file contains the implementation of a simple logging system for 
+# the processor.
+#
+# @author  Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 2.0
+# @date    16 Aug 2010
+# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+## @class Logger
+# A class to handle logging operations throughout the processor. This collects
+# together the various functions needed for displaying log messages and errors
+# at various levels of verbosity, in an attempt to cut down on duplicate 
+# parameter passing throughout the rest of the system.
+#
 package Logger;
 
 use strict;
