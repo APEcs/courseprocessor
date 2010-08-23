@@ -144,6 +144,26 @@ sub use_plugin {
 }
 
 
+# Check whether the module specified is valid and usable by this plugin
+# return a string containing an error message if there is a problem, 0 otherwise.
+sub module_check {
+    my $self     = shift;
+    my $themedir = shift;
+    my $name     = shift;
+
+    # does the directory for the specified module exist?
+    return "HTMLInputHandler: Module $name does not have a corresponding module directory." unless(-e "$themedir/$name");
+
+    # ensure it is a directory, not a file
+    return "HTMLInputHandler: $themedir/$name is a normal file or symlink, not a directory." unless(-d "$themedir/$name");
+
+    # is it readable? We just have to hope the files inside are too...
+    return "HTMLInputHandler: $themedir/$name is not readable." unless(-r "$themedir/$name");
+
+    # if we get here, it's okay.
+    return 0;
+}
+
 # ============================================================================
 #  File handling code
 #   

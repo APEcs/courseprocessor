@@ -91,6 +91,26 @@ my @approved_html = ("a", "pre", "code", "br", "object", "embed",
 # -----------------------------------------------------------------------------
 #  Utility functions
 
+## @fn $ html_clean($text)
+# Process the specified text, converting ampersands, quotes, and angled brakets
+# into xml-safe character entity codes.
+#
+# @param text The text to process.
+# @return The text with &, ", < and > replaces with &amp;, $quot;, $lt;, and &gt;
+sub html_clean {
+    my $text = shift;
+
+    # replace the four common character entities (FIXME: support more entities)
+    if($text) {
+        $text =~ s/&(?!amp|quot|lt|gt)/&amp;/g; # only replace & if it isn't already prefixing a character entity we know
+        $text =~ s/\"/&quot;/g;
+        $text =~ s/\</&lt;/g;
+        $text =~ s/\>/&gt;/g;
+    }
+
+    return $text;
+}
+
 ## @fn $ path_join(@fragments)
 # Take an array of path fragments and will concatenate them together with '/'s
 # as required. It will ensure that the returned string *DOES NOT* end in /
@@ -1015,6 +1035,9 @@ sub course_metadata_save {
 
     die "ERROR: Unable to locate course metadata in the course data page.\n"
         if(!$metadata);
+
+    # Fix up the message body
+    $metadata =~ s/<message>(.*?)</message>/"<message>".html_clean($1)."</message>"/ges;
 
     # We have metadata, so save it
     metadata_save($metadata, $destdir);
