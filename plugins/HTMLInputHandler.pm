@@ -18,6 +18,10 @@ package HTMLInputHandler;
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# @todo fix up all latexheader stuff (move all to metadata reading)
+# @todo check through remainder of code to ensure it won't barf on new stuff.
+
+
 # All plugins must implement the following functions:
 #
 # get_type        - return "input" or "output"  

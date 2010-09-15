@@ -95,6 +95,16 @@ sub new {
 }
 
 
+## @method void DESTROY()
+# Destructor method to prevent a circular list formed from a reference to the modules
+# hash from derailing normal destruction.
+sub DESTROY {
+    my $self = shift;
+
+    $self -> {"modules"} = undef;
+}
+
+
 ## @method void set_module_obj($modules)
 # Store a reference to the module handler object so that the template loader can
 # do block name replacements.

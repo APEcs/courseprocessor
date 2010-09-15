@@ -85,6 +85,7 @@ my @approved_html = ("a", "pre", "code", "br", "object", "embed",
                      "streamflv", # required for <streamflv> tag processing
                      "popup",     # required for <popup> tag processing
                      "source",    # source formatting
+                     "youtube",   # embedded youtube videos
                     );
 
 
@@ -110,6 +111,7 @@ sub html_clean {
 
     return $text;
 }
+
 
 ## @fn $ path_join(@fragments)
 # Take an array of path fragments and will concatenate them together with '/'s
@@ -630,6 +632,40 @@ sub process_streamflv {
 }
 
 
+## @fn $ process_youtube($args, $url)
+# Generate the HTML required to embed a YouTube video with the specified settings.
+# This will generate the HTML that allows a video hosted on YouTube to be embedded
+# in a page, essentially replicating YouTube's "official" embed tag using the video
+# URL.
+#
+# @param args  The youtube tag arguments.
+# @param url   The url of the youtube video.
+# @return A string containing the streamed video tags.
+sub process_youtube {
+    my $args  = shift;
+    my $url   = shift;
+    my $result;
+
+    # Convert the args to hash. if needed
+    my %hashargs = $args =~ /\s*(\w+)\s*=\s*"([^"]+)"/go;
+
+    my $width  = defined($hashargs{"width"}) ? $hashargs{"width"} : 640;
+    my $height = defined($hashargs{"height"}) ? $hashargs{"height"} : 385;
+   
+    # If the url gives us an ID, we're away...
+    my ($vid) = $url =~ m|^http://(?:www\.)?youtube\.com/watch\?v=([-A-Za-z0-9_]+)|;
+    if($vid) {
+        $result = '<object width="'.$width.'" height="'.$height.'"><param name="movie" value="http://www.youtube.com/v/'.$vid.'?fs=1&amp;hl=en_GB&amp;rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/'.$vid.'?fs=1&amp;hl=en_GB&amp;rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="'.$width.'" height="'.$height.'"></embed></object>';
+            
+    # Otherwise it's a bad url and we won't let it through...
+    } else {
+        $result = "<span style=\"color: red; font-weight: bold\">Illegal youtube link: ".htmlclean($url)."</span>";
+    }
+
+    return $result;
+}
+
+
 ## @fn $ process_source($args, $source, $id)
 # Process a <source> tag, converting it into a <pre> block with associated stylesheet to
 # provide highlighting.
@@ -714,7 +750,10 @@ sub process_entities_html {
     $text =~ s{<flash>(.*?)</flash>}{process_flash($1)}ges;
 
     # Streamed video
-    $text =~ s{<streamflv\s*(.*?)>(.*?)</streamflv>}{process_streamflv($1, $2)}gmse;
+    $text =~ s{<streamflv\s*(.*?)>(.*?)</streamflv>}{process_streamflv($wikih, $1, $2)}gmse;
+
+    # YouTube
+    $text =~ s{<youtube\s*(.*?)>(.*?)</youtube>}{process_youtube($1, $2)}gmse;
 
     # <source>
     my $sid = 0;

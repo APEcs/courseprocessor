@@ -25,10 +25,22 @@ sub new {
     };
 
     die "Missing logger reference in Metadata::new()" if(!$self -> {"logger"});
-    die "Missing plugins reference in Metadata::new()" if(!$self -> {"plugins"});
 
     return bless $self, $class;
 }
+
+## @method void set_plugins($plugins)
+# Set the plugins to the specified hashref, discarding any previous value. This
+# is needed so that metadata objects can be created before plugin creation, and
+# be passed a reference to the plugin hash after plugin creation.
+#
+# @param plugins A reference to the hash of plugins.
+sub set_plugins {
+    my $self = shift;
+    
+    $self -> {"plugins"} = shift;
+}
+
 
 # ============================================================================
 #  Metadata handling
@@ -65,7 +77,7 @@ sub validate_metadata_course {
 }
 
 
-## @method $ validate_metadata_theme($themedir, $xml, $plugins)
+## @method $ validate_metadata_theme($themedir, $xml)
 # Attempts to determine whether the data specified in the metadata is valid
 # against the current theme directory. This will check that the provided
 # metadata includes the required elements and attributes, and that the
@@ -100,36 +112,46 @@ sub validate_metadata_theme {
 
         # check that any prereqs are valid.
         if($xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"}) {
-            my $entries;
-            eval { $entries = $xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"}; };
-            die "FATAL: metadata_validate: Error in metadata: please check that each module has at most one <prerequisites> element" if($@);
+            # If we have prerequisites, we need a reference to a hash (essentially just the target element)
+            # If we have anything else - say an arrayref - then the xml is b0rken and can not be easily handled 
+            # (we could work around it, but the user should be giving us valid xml, damnit)
+            die "FATAL: Error in metadata: please check that each module has at most one <prerequisites> element.\n" if(ref($xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"}) ne "HASH");
+
+            # The target should either be a single name, or a reference to an array of names
+            my $targets = $xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"};
+            die "FATAL: Error in metadata: malformed prerequisite list for module $module.\n" if(!$targets || !ref($targets) || ref($targets) ne "ARRAY");
             
-            $entries = [ $entries ] if(!ref($entries)); # make sure we're looking at an arrayref
-            foreach my $entry (@$entries) {
-                die "FATAL: metadata_validate: $shortname/metadata.xml contains unknown prerequisite '$entry' for '$module'." 
-                    if(!$xml -> {"theme"} -> {"module"} -> {$entry});
+            # turn the targets into an arrayref if it is not one
+            $targets = [ $targets ] if(!ref($targets));
+            foreach my $target (@$targets) {
+                die "FATAL: $shortname/metadata.xml contains unknown prerequisite '$target' for '$module'.\n" 
+                    if(!$xml -> {"theme"} -> {"module"} -> {$target});
             }
         }
         
         # check that any leadstos are valid.
         if($xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"}) {
-            my $entries;
-            eval { $entries = $xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"}; };
-            die "FATAL: metadata_validate: Error in metadata: please check that each module has at most one <leadsto> element" if($@);
+            # As above, if we have leadstos, we need a reference to a hash (essentially just the target element)
+            die "FATAL: Error in metadata: please check that each module has at most one <leadsto> element.\n" if(ref($xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"}) ne "HASH");
+
+            # The target should either be a single name, or a reference to an array of names
+            my $targets = $xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"};
+            die "FATAL: Error in metadata: malformed leadsto list for module $module.\n" if(!$targets || !ref($targets) || ref($targets) ne "ARRAY");
             
-            $entries = [ $entries ] if(!ref($entries)); # make sure we're looking at an arrayref
-            foreach my $entry (@$entries) {
-                die "FATAL: metadata_validate: $shortname/metadata.xml contains unknown leadsto '$entry' for '$module'." 
-                    if(!$xml -> {"theme"} -> {"module"} -> {$entry});
+            # turn the targets into an arrayref if it is not one
+            $targets = [ $targets ] if(!ref($targets));
+            foreach my $target (@$targets) {
+                die "FATAL: $shortname/metadata.xml contains unknown prerequisite '$target' for '$module'.\n" 
+                    if(!$xml -> {"theme"} -> {"module"} -> {$target});
             }
         }
 
         # Do the input handler(s) think the module is valid?
         my $valid = 0;
         my @errors = ();
-        foreach my $plugin (sort(keys(%{$plugins -> {"input"}}))) {
-            if($plugins -> {"input"} -> {$plugin} -> {"use"}) {
-                my $result = $plugins -> {"input"} -> {$plugin} -> {"obj"} -> module_check($themedir, $module);
+        foreach my $plugin (sort(keys(%{$self -> {"plugins"} -> {"input"}}))) {
+            if($self -> {"plugins"} -> {"input"} -> {$plugin} -> {"use"}) {
+                my $result = $self -> {"plugins"} -> {"input"} -> {$plugin} -> {"obj"} -> module_check($themedir, $module);
                 if(!$result) {
                     $valid = 1;
                     last;
@@ -140,15 +162,14 @@ sub validate_metadata_theme {
         }
 
         if(!$valid) {
-            log_print($Utils::NOTICE, $self -> {"verbose"}, "metadata_validate: $module in $shortname/metadata.xml can not be validated. Output from input plugin checks is:");
-            log_print($Utils::NOTICE, $self -> {"verbose"}, join("\n", @errors));
+            $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "$module in $shortname/metadata.xml can not be validated. Output from input plugin checks is: ".join("\n", @errors));
             return 0;
         } else {
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "metadata_validate: $module in $shortname/metadata.xml appears to be valid"); 
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$module in $shortname/metadata.xml appears to be valid");
         }
     }
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "metadata_validate: $shortname/metadata.xml is valid");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$shortname/metadata.xml is valid");
 
     return 1;
 }

@@ -35,6 +35,7 @@ use Pod::Usage;
 use Getopt::Long;
 use ConfigMicro;
 use Logger;
+use Metadata;
 use Utils qw(check_directory resolve_path path_join);
 use ProcessorVersion;
 
@@ -83,18 +84,20 @@ sub merge_commandline {
 }
 
 
-## @fn $ load_plugins($plugindir, $list, $logger)
+## @fn $ load_plugins($plugindir, $list, $logger, $metadata)
 # Load all available plugins from the plugin directory, and either list the plugins
 # or return a hashref of plugin names. 
 #
 # @param plugindir The directory containing the plugins to load.
 # @param config    A reference to the global configuration.
 # @param logger    A reference to the log support object.
+# @param metadata  A reference to the metadata handler object.
 # @return A reference to a hash containing the loaded plugins organised by type.
 sub load_plugins {
     my $plugindir = shift;
     my $config    = shift;
     my $logger    = shift;
+    my $metadata  = shift;
     
     # Store plugins in this hashref...
     my $plugins;
@@ -116,7 +119,7 @@ sub load_plugins {
         $logger -> print($logger -> DEBUG, "loaded, adding '",&{$package."::get_description"},"' as $htype handler\n");
         
         # Create and store an instance of the plugin for use later.
-        $plugins -> {$htype} -> {$package} -> {"obj"} = $package -> new(config => $config, logger => $logger,  path => $path);
+        $plugins -> {$htype} -> {$package} -> {"obj"} = $package -> new(config => $config, logger => $logger,  path => $path, metadata => $metadata);
     }
     use strict;
 
@@ -303,8 +306,11 @@ check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", 
 #  Plugin initalisation
 #
 
+# All plugins are going to need metadata handling abilities
+my $metadata = Metadata -> new("logger" => $log);
+                               
 # Obtain a hashref of available plugin object handles.
-my $plugins = load_plugins("$path/plugins", $config, $log);
+my $plugins = load_plugins("$path/plugins", $config, $log, $metadata);
 
 # Determine whether the input plugins can run.
 check_input_plugins($plugins, $config, $log);
@@ -340,6 +346,9 @@ $plugins -> {"output"} -> {$config -> {"Processor"} -> {"output_handler"}} -> {"
 
 
 $log -> print($log -> DEBUG, "Processing complete");
+
+# This is needed to prevent circular lists blocking normal destruction
+$metadata -> set_plugins(undef);
 
 __END__
 
