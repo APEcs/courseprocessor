@@ -32,6 +32,7 @@ BEGIN {
     }
 }
 
+use utf8;
 use lib ("$path/modules"); # Add the script path for module loading
 use Digest;
 use Encode qw(encode);
@@ -42,6 +43,7 @@ use MIME::Base64;
 use Pod::Usage;
 use ProcessorVersion;
 use XML::Simple;
+use URI::Escape;
 
 # Constants used in various places in the code
 # The maximum number of levels of page transclusion that may be processed
@@ -803,42 +805,54 @@ sub wiki_login {
 
     $wikih -> login({ lgname     => $username, 
                       lgpassword => $password })
-        or die "ERROR: Unable to log into the wiki. Error from the API was:\n".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+        or die "ERROR: Unable to log into the wiki. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
 
     return 1;
 }
 
 
-## @fn $ wiki_fetch($wikih, $pagename, $transclude, $path, $level, $maxlevel)
+## @fn $ wiki_transclude($wikih, $page, $templatestr)
+# Call on the mediawiki api to convert the specified template string, doing any
+# transclusion necessary.
+#
+# @param wikih       A reference to a MediaWiki API object.
+# @param pagename    The title of the page the transclusion appears on
+# @param templatestr The unescaped transclusion string, including the {{ }}
+sub wiki_transclude {
+    my $wikih       = shift;
+    my $pagename    = shift;
+    my $templatestr = shift;
+
+    my $response = $mw->api( { action => 'expandtemplates',
+                               title  => $pagename,
+                               prop   => 'revisions',
+                               text   => uri_escape_utf8($templatestr)} ) # escape in utf-8 to be sure
+        or die "ERROR: Unable to process transclusion in page $pagename. Error from the API was:".$wikih->{"error"}->{"code"}.': '.$wikih->{"error"}->{"details"}."\n";
+
+    # Fall over if the query returned nothing. This probably shouldn't happen - the only situation I can 
+    # think of is when the target of the transclusion is itself empty, and we Don't Want That anyway.
+    die "ERROR: Unable to obtain any content for transclusion in page $pagename" if(!$response -> {"*"});
+    
+    return $response -> {"*"};
+}
+
+
+## @fn $ wiki_fetch($wikih, $pagename, $transclude)
 # Attempt to obtain the contents of the specified wiki page, optionally doing
 # page transclusion on the content.
 #
 # @param wikih      A reference to a MediaWiki API object.
 # @param pagename   The title of the page to fetch.
 # @param transclude Enable transclusion of fetched pages.
-# @param path       A string containing the recursion path.
-# @param level      The current recursion level.
-# @param maxlevel   The level at which recursion halts.
 # @return A string containing the page data.
 sub wiki_fetch {
     my $wikih      = shift;
     my $pagename   = shift;
     my $transclude = shift;
-    my $path       = shift;
-    my $level      = shift;
-    my $maxlevel   = shift;
-
-    $level    = 0        if(!defined($level));
-    $maxlevel = MAXLEVEL if(!defined($maxlevel));
-    $path     = ""       if(!defined($path));
-
-    # Check for recursion level overflow, fall over if we hit the limit
-    die "ERROR: Maximum level of allowed recursion ($maxlevel levels) reached while fetching page content.\nRecursion path is: $path\n"
-        if($level >= $maxlevel);
 
     # First attempt to get the page
     my $page = $wikih -> get_page({ title => $pagename } )
-        or die "ERROR: Unable to fetch page '$pagename'. Error from the API was:\n".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+        or die "ERROR: Unable to fetch page '$pagename'. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
 
     # Do we have any content? If not, return an error...
     die "ERROR: $pagename page is missing!\n" if($page -> {"missing"});
@@ -852,7 +866,7 @@ sub wiki_fetch {
     while($content =~ s|(<nowiki>.*?)\{\{([^<]+?)\}\}(.*?</nowiki>)|$1\{\(\{$2\}\)\}$3|is) { };
 
     # recursively process any remaining transclusions
-    $content =~ s/\{\{(.*?)\}\}/wiki_fetch($wikih, $1, 1, "$path -> $1", $level + 1, $maxlevel)/ges; 
+    $content =~ s/(\{\{.*?\}\})/wiki_transclude($wikih, $pagename, $1)/ges; 
 
     # revert the breakage we did above
     while($content =~ s|(<nowiki>.*?)\{\(\{([^<]+?)\}\)\}(.*?</nowiki>)|$1\{\{$2\}\}$3|is) { };
@@ -878,7 +892,7 @@ sub wiki_course_exists {
 
     # First, get the course page
     my $course = $wikih -> get_page({ title => "$nspace:Course" } )
-        or die "ERROR: Unable to fetch $nspace:Course page. Error from the API was:\n".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+        or die "ERROR: Unable to fetch $nspace:Course page. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
 
     # Is the course page present?
     die "ERROR: $nspace:Course page is missing!\n" if(!$course -> {"*"});
@@ -892,7 +906,7 @@ sub wiki_course_exists {
 
     # Fetch the linked page
     my $coursedata = $wikih -> get_page({ title => $cdlink })
-        or die "ERROR: Unable to fetch coursedata page ($cdlink). Error from the API was:\n".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+        or die "ERROR: Unable to fetch coursedata page ($cdlink). Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
 
     # Do we have any content? If not, return an error...
     die "ERROR: $cdlink page is missing!\n" if($coursedata -> {"missing"});
@@ -1379,7 +1393,7 @@ sub wiki_export_files {
 
     # We need the page to start with
     my $list = wiki_fetch($wikih, $listpage, 1)
-        or die "ERROR: Unable to fetch $listpage page. Error from the API was:\n".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+        or die "ERROR: Unable to fetch $listpage page. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
     
     # Do we have any content? If not, bomb now
     if(!$list) {
@@ -1424,7 +1438,7 @@ sub wiki_export_files {
                         print "done.\n";
                         ++$writecount;
                     } else {
-                        print "\nERROR: Unable to fetch $entry. Error from the API was:\n".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+                        print "\nERROR: Unable to fetch $entry. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
                     }
                 } else {
                     print "ERROR: Unable to determine filename from $entry.\n";
