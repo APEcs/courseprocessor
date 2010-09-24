@@ -3,7 +3,7 @@ package HTMLInputHandler;
 # Convert a course consisting of HTML pages into the intermediate format suitable
 # for conversion by the output handlers.
 
-# @copy 2008, Chris Page &lt;chris@starforge.co.uk&gt;
+# @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,17 +18,8 @@ package HTMLInputHandler;
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# @todo fix up all latexheader stuff (move all to metadata reading)
+
 # @todo check through remainder of code to ensure it won't barf on new stuff.
-
-
-# All plugins must implement the following functions:
-#
-# get_type        - return "input" or "output"  
-# get_description - return a human-readable description of the module 
-# new             - return an instance of the module object
-# use_plugin      - returns true if th eplugin can be used on the tree, false if not
-# process         - actually does the processing.
 
 use Cwd qw(getcwd chdir);
 use Utils qw(path_join load_file);
@@ -38,68 +29,198 @@ use strict;
 # The location of the latex processor, must be absolute, as the path may have been nuked.
 use constant DEFAULT_LATEX_COMMAND => "/usr/bin/latex2html";
 
-# The arguments to pass to the processor
+# The default header to use if none had been provided by the user
+use constant DEFAULT_LATEX_HEADER  => "\\documentclass[12pt]{article}\n\\usepackage{html}\n\\usepackage[dvips]{color}\n\\pagecolor{white}\n\n";
+
+# The arguments to pass to the latex processor
 use constant DEFAULT_LATEX_ARGS    => '-nonavigation -noaddress -white -noinfo -antialias_text -html_version "4.1"';
-use contains DEFAULT_LATEX_INTRO   => 'htmlinput-latexintro.txt';
 
-
-my ($VERSION, $type, $errstr, $htype, $extfilter, $desc, $cleanup, $latexheader, @summarydata);
+my ($VERSION, $type, $errstr, $htype, $extfilter, $desc, @summarydata);
 
 BEGIN {
-    $VERSION       = 2.0;
+    $VERSION       = "3.0";
     $htype         = 'input';                 # handler type - either input or output
     $extfilter     = '[\s\w-]+\d+\.html?';    # files matching this are assumed to be understood for processing.
     $desc          = 'HTML input processor';  # Human-readable name 
     $errstr        = '';                      # global error string
-    $cleanup       = 1;                       # set to 0 to preserve source files.
 
     @summarydata   = ();                      # contains messages to be presented in a summary.
-
-    # fallback header used when $self -> {"latexintro"} can not be found.
-    $latexheader   = "\\documentclass[12pt]{article}\n\\usepackage{html}\n\\usepackage[dvips]{color}\n\\pagecolor{white}\n\n";
 }
 
+
 # ============================================================================
-#  Constructor and identifier functions.  
+#  Constructor and required functions
 #   
+
+## @cmethod $ new(%args)
+# Create a new plugin object. This will initialise the plugin to a base state suitable
+# for use by the processor. The following arguments may be provided to this constructor:
+#
+# config     (required) A reference to the global configuration object.
+# logger     (required) A reference to the global logger object.
+# path       (required) The directory containing the processor
+# metadata   (required) A reference to the metadata handler object.
+# latexcmd   (optional) The latex2html program, should include path as the environment may be empty.
+# latexargs  (optional) Arguments to pass to latex2html.
+# latexintro (optional) A string containing the header to write at the start of temporary latex files.
+#
+# @param args A hash of arguments to initialise the plugin with. 
+# @return A new HTMLInputHandler object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = { @_ };
-
-
-    $self -> {"latexcmd"} = "/usr/bin/latex2html" if(!$self -> {"latexcmd"});
-
-        "latexargs"  => '-nonavigation -noaddress -white -noinfo -antialias_text -html_version "4.1"', # options to pass to latex2html
-        "latexintro" => 'htmlinput-latexintro.txt',                # name of the file containing latex header info
-        "verbose"    => 0,                                         # set to 1 to enable additional output
-
+    my $self     = { "latexcmd"   => DEFAULT_LATEX_COMMAND,
+                     "latexargs"  => DEFAULT_LATEX_ARGS,
+                     "latexintro" => DEFAULT_LATEX_HEADER,
+                     "cleanup"    => 1,
+                     @_,
+    };
 
     return bless $self, $class;
 }
 
-# Top level handler type ID
-sub get_type { return $htype };
 
-# Handler descriptive text
-sub get_description { return $desc };
+## @fn $ get_type()
+# Determine the type of handler behaviour this plugin provides. This will always
+# return "input" for input plugins, "output" for output plugins, and "reference"
+# for reference handler plugins.
+#
+# @return The plugin type.
+sub get_type {
+    return $htype
+};
 
-# Handler version number
-sub get_version { return $VERSION };
 
-# Extension matcher
-sub get_extfilter { return $extfilter };
+## @fn $ get_description()
+# Obtain the human-readable descriptive text for this plugin. This will return
+# a string that describes the processor in a way that is useful to the user.
+#
+# @return The handler description
+sub get_description {
+    return $desc 
+};
+
+
+## @fn $ get_version()
+# Obtain the version string for the plugin. This returns a string containing the
+# version information for the plugin in a human-readable form.
+#
+# @return The handler version string.
+sub get_version {
+    return $VERSION 
+};
+
+
+## @method $ process()
+# Run the plugin over the contents of the course data. This will process all 
+# html in the course directory into the intermediate data format ready for
+# processing by an output handler.
+sub process {
+    my $self = shift;
+
+    # Attempt to load the latex header from the course metadata. Fall back on the predefined
+    # latex header if the header is not specified in the metadata.
+    my $course = $self -> {"metadata"} -> load_metadata(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "metadata.xml"), 1);
+    if(ref($course) && $course -> {"course"} -> {"latexintro"}) {
+        $self -> {"latexintro"} = $course -> {"course"} -> {"latexintro"};
+    } else {
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "latexintro element not specified in course metadata, falling back on default.");
+    }
+
+    # ensure we have output dirs we need
+    $self -> check_media_dirs();
+
+    # This should be the top-level "source data" directory, should contain theme dirs
+    opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
+        or die "FATAL: Unable to open source directory for reading: $!";
+
+    # grab the directory list so we can check it for subdirs, strip .* files though
+    my @srcentries = grep(!/^\./, readdir(SRCDIR));
+
+    # Display progress if needed...
+    $self -> {"progress"} = ProgressBar -> new(maxvalue => $self -> {"filecount"},
+                                               message  => "Processing html files...")
+        if($self -> {"config"} -> {"Processor"} -> {"verbosity"} > 0);
+    my $processed = 0;
+
+    # Go through all the directory entries, processing each one
+    foreach my $theme (@srcentries) {
+        $theme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme); # prepend the source directory
+
+        # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
+        if(-d $theme) {
+            opendir(THEMEDIR, $theme)
+                or die "FATAL: Unable to open theme directory $theme for reading: $!";
+
+            my @modentries = grep(!/^\./, readdir(THEMEDIR));
+
+            foreach my $module (@modentries) {
+                $module = path_join($theme, $module); # prepend the module directory...
+
+                # If this is a module directory, we want to scan it for steps
+                if(-d $module) {
+                    opendir(STEPS, $module)
+                        or die "FATAL: Unable to open module directory $module for reading: $!";
+            
+                    # Know grab a list of files we know how to process
+                    my @subfiles = grep(/^$extfilter$/, readdir(STEPS));
+            
+                    if(scalar(@subfiles)) {
+                        my $cwd = getcwd();
+                        chdir($module);
+
+                        # obtain the sorted files
+                        my ($stepfiles, $numlength) = $self -> sort_step_files(\@subfiles);
+                        
+                        # for each file we know how to process, pass it to the html processor
+                        # to be converted. 
+                        for(my $i = 0; $i < scalar(@$stepfiles); ++$i) { 
+                            $self -> process_html_page($stepfiles -> [$i], $i, $numlength, $self -> {"config"} -> {"Processor"} -> {"outputdir"}, $module);
+
+                            # Update the progress bar if needed
+                            $self -> {"progress"} -> update(++$processed) if($self -> {"progress"});
+                        }
+
+                        # Remove files we don't need from the module directory.
+                        $self -> cleanup() if($self -> {"cleanup"});
+
+                        chdir($cwd);
+                    } # if(scalar(@subfiles)) {
+
+                    closedir(SUBDIR);
+                } # if(-d $module) {
+            } # foreach my $module (@modentries) {
+
+            closedir(MODDIR);
+
+        } # if(-d $theme) {
+    } # foreach my $theme (@srcentries) {
+
+    closedir(SRCDIR);
+
+    return 1;
+}
 
 
 # ============================================================================
 #  Precheck - can this plugin be applied to the source tree?
 #   
 
+## @method $ use_plugin()
 # Determine whether this plugin should be run against the source tree by looking for
-# files it recognises how to process in the directory structure.
+# files it recognises how to process in the directory structure. This will scan 
+# through the directory structure of the source and count how many files it thinks
+# the plugin should be able to process, and returns this count. If this is 0, the
+# plugin can not be used on the source tree.
+#
+# @return The number of files in the source tree that the plugin can process, 0
+#         indicates that the plugin can not run on the source tree.
 sub use_plugin {
     my $self   = shift;
-    my $self -> {"filecount"} = 0; # gets set > 1 if there are any files this plugin understands.
+
+    # This gets set > 1 if there are any files this plugin understands, and it can be used
+    # during processing to show the progress of processing.
+    my $self -> {"filecount"} = 0; 
 
     # This should be the top-level "source data" directory, should contain theme dirs
     opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
@@ -148,44 +269,59 @@ sub use_plugin {
 }
 
 
-# Check whether the module specified is valid and usable by this plugin
-# return a string containing an error message if there is a problem, 0 otherwise.
+# @method $ module_check($themedir, $module)
+# Check whether the module specified is valid and usable by this plugin. This is
+# used by the metadata validation code to determine whether the module specified
+# appears to be valid. This will return a string containing an error message if 
+# there is a problem, 0 otherwise.
+#
+# @param themedir The directory containing the module to check.
+# @param module   The name of the module to check.
+# @return 0 if the module is valid, an error string otherwise.
 sub module_check {
     my $self     = shift;
     my $themedir = shift;
-    my $name     = shift;
+    my $module     = shift;
 
     # does the directory for the specified module exist?
-    return "HTMLInputHandler: Module $name does not have a corresponding module directory." unless(-e "$themedir/$name");
+    return "HTMLInputHandler: Module $module does not have a corresponding module directory." unless(-e path_join($themedir, $module));
 
     # ensure it is a directory, not a file
-    return "HTMLInputHandler: $themedir/$name is a normal file or symlink, not a directory." unless(-d "$themedir/$name");
+    return "HTMLInputHandler: $themedir/$module is a normal file or symlink, not a directory." unless(-d path_join($themedir, $module));
 
     # is it readable? We just have to hope the files inside are too...
-    return "HTMLInputHandler: $themedir/$name is not readable." unless(-r "$themedir/$name");
+    return "HTMLInputHandler: $themedir/$module is not readable." unless(-r path_join($themedir, $module));
 
     # if we get here, it's okay.
     return 0;
 }
 
+
 # ============================================================================
 #  File handling code
 #   
 
-# Ensure that the required directories are present in the filesystem This is
+## @method void check_media_dirs()
+# Ensure that the required media directory is present on the filesystem This is
 # somewhat wasteful if the processing results in no latex image generation
 # events, but it probably isn't worth any complex code to avoid it.
-sub check_image_dirs {
-    my $base = shift;
+sub check_media_dirs {
+    my $self = shift;
 
-    mkdir "$base/images" if(!-e "$base/images");
-    mkdir "$base/images/generated" if(!-e "$base/images/generated");
+    mkdir path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media") if(!-e path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media"));
+    mkdir path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media", "generated") if(!-e path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media", "generated"));
 }
 
 
-# converts &quot symbols to literal quotes. Should be used to convert the 
-# contents of tag attribute lists to the correct form. This will also 
-# ensure that newlines in quotes are removed (Dreamweaver wordwrap workaround)
+## @method $ fix_quotes($tag, $body)
+# Converts &quot symbols on the specified body text to literal quotes. Should 
+# be used to convert the contents of tag attribute lists to the correct form. 
+# This will also ensure that newlines in quotes are removed (Dreamweaver wordwrap 
+# workaround)
+#
+# @param tag  The tag name.
+# @param body The contents of the tag.
+# @return The tag with fixed quotes and removed newlines.
 sub fix_quotes {
     my $self = shift;
     my $tag  = shift;
@@ -217,15 +353,18 @@ sub fix_anchor_links {
 }
 
 
+## @method $ read_html_file($filename)
 # Load the contents of a html file, stripping out the title and body and
 # discarding any non-general content (ie: no templates or CBT specific
 # content is passed through, only the actual text and images of the step.)
-# returns (title, body)
+#
+# @param filename The name of the file to load into memory.
+# @return An array of two items: the page title, and the contents of the body.
 sub read_html_file {
     my $self = shift;
     my $filename = shift;
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "reading contents of $filename.");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Reading contents of $filename.");
     
     # First we need to grab the file text itself...
     my $data = load_file($filename);
@@ -243,27 +382,27 @@ sub read_html_file {
     # New template format: we have a <div id="content">...</div><!-- id="content" -->
     if($body =~ m|<div id="content">\s*(.*?)\s*</div>\s*<!-- id="content" -->|ios) {
         $body = $1;
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Body is in new template content format.");
+        $self ->{"logger"} -> print($self -> {"logger"} -> DEBUG, "Body is in new template content format.");
 
     # Emergency catch case for the new templates, needed in case the body has been 
     # defined incorrectly, but is far riskier when applied to popups.
     } elsif($body =~ m|<div id="content">\s*(.*?)\s*</div>\s*$|ios) {
         $body = $1;
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Body is in new template content format, unterminated content div.");
+        $self ->{"logger"} -> print($self -> {"logger"} -> DEBUG, "Body is in new template content format, unterminated content div.");
 
     # Old template format
     } elsif($body =~ m|<div id="content">\s*<div>&nbsp;</div>\s*(.*)\s*<div style="clear: both">&nbsp;</div>\s*</div>\s*<!-- <div id="content"> -->|ios){
         $body = $1;
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Body is in old template content format.");
+        $self ->{"logger"} -> print($self -> {"logger"} -> DEBUG, "Body is in old template content format.");
 
     # Original body format...
     } elsif($body =~ m|^\s*<center>\s*<table .*?>\s*<tr>\s*<td>\s*(.*?)\s*</td>\s*</tr>\s*</table>\s*</center>\s*$|ios) {
         $body = $1;
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Body is in original content format.");
+        $self ->{"logger"} -> print($self -> {"logger"} -> DEBUG, "Body is in original content format.");
 
     # Unknown, give up
     } else {
-        log_print($Utils::NOTICE, $self -> {"verbose"}, "Body of $filename is in unknown format, passing through. Expect breakage.");
+        $self ->{"logger"} -> print($self -> {"logger"} -> DEBUG, "Body of $filename is in unknown format, passing through. Expect breakage.");
     }
 
     # backconvert tag-enclosed &quot;s
@@ -276,32 +415,44 @@ sub read_html_file {
 }
     
 
+## @method $ read_latex_file($latexdir, $checksum, $offset)
 # Extract the body from a generated latex file, replacing any images with
 # names intended to be unique to specific content.
+#
+# @param latexdir The directory containing the latex2html output files.
+# @param checksum The checksum of the latex used to provide uniqueness for images.
+# @param offset   The relative path offset to the media directory, needed as we 
+#                 can't use an absolute path to the media directory.
+# @return The body of the generated latex file.
 sub read_latex_file {
-    my $basename = shift;
+    my $self     = shift;
+    my $latexdir = shift;
     my $checksum = shift;
     my $offset   = shift;
 
     # Load the generated content, hopefully it'll always end up in node2.
-    my $content = load_file("$basename/node2.html");
-    die "FATAL: Unable to read content from $basename/node2.html: $!\n This Should Not Happen! Check the output from latex2html to determine why this\nfailed. In particular, check for things like nested \$s in maths blocks." if(!$content);
+    my $content = load_file("$latexdir/node2.html");
+    die "FATAL: Unable to read content from $latexdir/node2.html: $!\n This Should Not Happen! Check the output from latex2html to determine why this\nfailed. In particular, check for things like nested \$s in maths blocks." if(!$content);
     
     # extract the body...
     my ($body) = $content =~ /<body.*?>\s*(.*?)\s*(?:<br>)?\s*<hr>\s*<\/body>/si;
-    die "FATAL: Unable to read body from $basename/node2.html. This Should Not Happen" if(!$body);
+    die "FATAL: Unable to read body from $latexdir/node2.html. This Should Not Happen" if(!$body);
 
     # ... and strip the inline title if it exists
     $body =~ s/\s*<h\d><a name=".*?">.*?<\/a>\s*<\/h\d>\s*//si;
 
     # Now we need to convert any images
-    $body =~ s/src="img(\d+)\.(\w+)"/src="${offset}\/images\/generated\/$checksum-img$1.$2"/gi;
+    $body =~ s/src="img(\d+)\.(\w+)"/src="${offset}\/media\/generated\/$checksum-img$1.$2"/gi;
 
     return $body;
 }
 
 
+## @fn $ sort_step_func()
 # Sort filenames based on the first number in the name, discarding all letters.
+#
+# @return The numeric comparison of the first numbers encountered in the
+#         filenames in $a and $b
 sub sort_step_func {
     
     # obtain the *FIRST NUMBER IN THE FILENAME*
@@ -311,6 +462,7 @@ sub sort_step_func {
     # numeric comparison should remove the need for zero-padding that would be needed for alphanumeric
     return $anum <=> $bnum;
 }
+
 
 
 # Give an unsorted list of files, this will generate a sorted array of files
@@ -419,7 +571,7 @@ sub process_latex {
 
         # attempt to open the temporary file and write the content to it.
         if(open(TMPFILE, "> $tempname")) {
-            print TMPFILE $self -> {"latexintro-text"};
+            print TMPFILE $self -> {"latexintro"};
             print TMPFILE "\\begin{document}\n";
             print TMPFILE "\\section{autogenerated}\n\\subsection{autogenerated}\n";
             print TMPFILE $content;
@@ -441,14 +593,14 @@ sub process_latex {
             $tempname = "/tmp/htmlinput-$checksum";
 
             # Grab the autogenerated content
-            $body = read_latex_file($tempname, $checksum, $glossary ? ".." : "../..");
+            $body = $self -> read_latex_file($tempname, $checksum, $glossary ? ".." : "../..");
             
             # Move any images across from the latex2html generated directory to the 
             # course global generated directory
             while(my $name = glob("/tmp/htmlinput-$checksum/img*.png")) {
                 $name =~ /img(\d+)\.(\w+)/;
                 
-                my $dest = "$base/images/generated/$checksum-img$1\.$2";
+                my $dest = "$base/media/generated/$checksum-img$1\.$2";
 
                 log_print($Utils::DEBUG, $self -> {"verbose"}, "Copying and cropping $name as $dest");
                 # old move: `mv -f $name $dest`;
@@ -513,7 +665,7 @@ sub process_html_page {
     my $base     = shift;
     my $reldir   = shift;
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Processing html file \"$filename\"");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing html file \"$filename\"");
 
     my ($title, $body) = $self -> read_html_file($filename);
 
@@ -521,7 +673,7 @@ sub process_html_page {
     # is badly malformed, otherwise there should always be /some/ body returned, even if
     # if includes extraneous material we don't really want.
     if(!$body) {
-        log_print($Utils::NOTICE, $self -> {"verbose"}, "Unable to load $filename: $!");
+        $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Unable to load $filename: $!");
         return;
     }
 
@@ -557,87 +709,6 @@ sub process_html_page {
 }
 
 
-sub process {
-    my $self = shift;
-    my $srcdir = shift;
-
-    # Attempt to load the latex header from the latexintro file. Fall back on the predefined
-    # latex header if the latexintro file can not be loaded.
-    if(-e $srcdir."/".$self -> {"latexintro"}) {
-        $self -> {"latexintro-text"} = load_file($srcdir."/".$self -> {"latexintro"});
-    } else {
-        log_print($Utils::WARNING, $self -> {"verbose"}, $srcdir."/".$self -> {"latexintro"}." does not exist, falling back on default");
-        $self -> {"latexintro-text"} = $latexheader;
-    }
-
-    # ensure we have output dirs we need
-    check_image_dirs($srcdir);
-
-    # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $srcdir)
-        or die "FATAL: Unable to open source directory for reading: $!";
-
-    # grab the directory list so we can check it for subdirs, strip .* files though
-    my @srcentries = grep(!/^\./, readdir(SRCDIR));
-    
-    reset_pointprogress();
-
-    foreach my $theme (@srcentries) {
-        $theme = "$srcdir/$theme"; # prepend the source directory
-
-        # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
-        if(-d $theme) {
-            opendir(THEMEDIR, $theme)
-                or die "FATAL: Unable to open theme directory $theme for reading: $!";
-
-            my @modentries = grep(!/^\./, readdir(THEMEDIR));
-
-            foreach my $module (@modentries) {
-                $module = "$theme/$module"; # prepend the module directory...
-
-                # If this is a module directory, we want to scan it for steps
-                if(-d $module) {
-                    opendir(STEPS, $module)
-                        or die "FATAL: Unable to open module directory $module for reading: $!";
-            
-                    # Know grab a list of files we know how to process
-                    my @subfiles = grep(/^$extfilter$/, readdir(STEPS));
-            
-                    if(scalar(@subfiles)) {
-                        my $cwd = getcwd();
-                        chdir($module);
-
-                        # obtain the sorted files
-                        my ($stepfiles, $numlength) = $self -> sort_step_files(\@subfiles);
-                        
-                        # for each file we know how to process, pass it to the html processor
-                        # to be converted. 
-                        for(my $i = 0; $i < scalar(@$stepfiles); ++$i) { 
-                            my $step = $stepfiles -> [$i];
-                            $self -> process_html_page($step, $i, $numlength, $srcdir, $module);
-
-                            update_pointprogress() if($self -> {"verbose"} == $Utils::NOTICE);
-                        }
-
-                        # Remove files we don't need from the module directory.
-                        $self -> cleanup() if($cleanup);
-
-                        chdir($cwd);
-                    } # if(scalar(@subfiles)) {
-
-                    closedir(SUBDIR);
-                } # if(-d $module) {
-            } # foreach my $module (@modentries) {
-
-            closedir(MODDIR);
-
-        } # if(-d $theme) {
-    } # foreach my $theme (@srcentries) {
-
-    closedir(SRCDIR);
-
-    return 1;
-}
 
 
 # ============================================================================
