@@ -272,6 +272,8 @@ sub process_entities_html {
 
     # Fix up any local media links
     $content =~ s|"$wikih->{siteinfo}->{imagepath}/(?:[\w\.]+/)*([^"]+)"|"../../$mediadir/$1"|gs;
+    $content =~ s|"$wikih->{siteinfo}->{script}/File:(.*?)"|"../../$mediadir/$1"|gs;
+
 
     return $content;
 }
