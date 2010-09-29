@@ -32,12 +32,13 @@ BEGIN {
     }
 }
 
-use Data::Dumper;
-
+#use Data::Dumper;
 use utf8;
 use lib ("$path/modules"); # Add the script path for module loading
+use ConfigMicro;
 use Digest;
 use Encode qw(encode);
+use File::HomeDir;
 use File::Path;
 use Getopt::Long;
 use Logger;
@@ -55,50 +56,70 @@ use constant MAXLEVEL => 5;
 # Location of the API script in the default wiki.
 use constant WIKIURL  => 'http://elearn.cs.man.ac.uk/devwiki/api.php';
 
-
-# Settings for flash export, generally shouldn't need modifying
-my $flashversion = "7,0,0,0"; # Flash version
-my $flashaccess  = "false";   # Allow or disallow script access (false is a Good Idea)
-my $flashconnect = "false";   # do not start up java connector
-# Allowed arguments
-my %flashargs    = ("play"  => 1, "loop"   => 1, "quality" => 1, "devicefont" => 1, "bgcolor" => 1, "scale" => 1,
-                    "align" => 1, "salign" => 1, "base" => 1, "meni" => 1, "vmode" => 1, "SeamlessTabbing" => 1, 
-                    "flashvars" => 1, "name" => 1, "id" => 1 );
-
-
-# Where is Andre Simon's `highlight`?
-my $highlight = "/usr/bin/highligh";
+# default settings
+my %default_config = ( course_page   => "Course",
+                       data_page     => "coursedata",
+                       themes_title  => "Themes",
+                       modules_title => "Modules",
+                       metadata      => "Metadata",
+                       media_page    => "Media"
+    );
 
 # various globals set via the arguments
-my ($basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir) = ('', '', '', '', WIKIURL, '', '', 0, 'media');
+my ($basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile) = ('', '', '', '', WIKIURL, '', '', 0, 'media', '');
 my $man = 0;
 my $help = 0;
 
 # Global logger. Yes, I know, horrible, but it'd be being passed around /everywhere/ anyway
 my $logger = new Logger();
 
-# Approved html tags
-my @approved_html = ("a", "pre", "code", "br", "object", "embed", 
-                     "table", "tr", "td", "th", "tbody", "thead", 
-                     "ul", "ol", "li", 
-                     "dl", "dt", "dd",
-                     "h1", "h2", "h3", "h4", "h5", "h6", "h7",
-                     "hr",
-                     "sub","sup",
-                     "tt", "b", "i", "u", "div", "span", "strong", "blockquote",
-
-                     # Mediawiki and Extension tags...
-                     "math",      # needed to convert <math> to [latex]
-                     "flash",     # required for <flash> tag processing
-                     "streamflv", # required for <streamflv> tag processing
-                     "popup",     # required for <popup> tag processing
-                     "source",    # source formatting
-                     "youtube",   # embedded youtube videos
-                    );
+# Likewise with the configuration object. 
+my $config;
 
 
 # -----------------------------------------------------------------------------
 #  Utility functions
+
+## @fn $ load_config($configfile)
+# Attempt to load the processor configuration file. This will attempt to load the
+# specified configuration file, and if no filename is specified it will attempt
+# to load the .courseprocessor.cfg file from the user's home directory.
+#
+# @param configfile Optional filename of the configuration to load. If this is not
+#                   given, the configuration is loaded from the user's home directory.
+# @return A reference to a configuration object, or undef if the configuration can 
+#         not be loaded.
+sub load_config {
+    my $configfile = shift;
+    my $data;
+
+    # If we have no filename specified, we need to look at the user's
+    # home directory for the file instead
+    if(!$configfile || !-f $configfile) {
+        my $home = File::HomeDir -> my_home;
+        $configfile = path_join($home, ".courseprocessor.cfg");
+    }
+
+    # Get configmicro to load the configuration
+    $data = ConfigMicro -> new($configfile) 
+        if(-f $configfile);
+
+    # we /need/ a data object here...
+    if(!$data) {
+        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr);
+        $data = {};
+    } else {
+        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile");
+    }
+
+    # Set important defaults if needed
+    foreach my $key (keys(%default_config)) {
+        $data -> {"wiki2course"} -> {$key} = $default_config{$key} if(!$data -> {"wiki2course"} -> {$key});
+    }
+
+    return $data;
+}
+
 
 ## @fn $ html_clean_message($text)
 # Process the specified text, converting ampersands, quotes, and angled brakets
@@ -274,7 +295,6 @@ sub process_entities_html {
     $content =~ s|"$wikih->{siteinfo}->{imagepath}/(?:[\w\.]+/)*([^"]+)"|"../../$mediadir/$1"|gs;
     $content =~ s|"$wikih->{siteinfo}->{script}/File:(.*?)"|"../../$mediadir/$1"|gs;
 
-
     return $content;
 }
 
@@ -429,17 +449,17 @@ sub wiki_course_exists {
     my $nspace = shift;
 
     # First, get the course page
-    my $course = $wikih -> get_page({ title => "$nspace:Course" } )
+    my $course = $wikih -> get_page({ title => "$nspace:$config->{wiki2course}->{course_page}" } )
         or die "FATAL: Unable to fetch $nspace:Course page. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
 
     # Is the course page present?
-    die "FATAL: $nspace:Course page is missing!\n" if(!$course -> {"*"});
+    die "FATAL: $nspace:$config->{wiki2course}->{course_page} page is missing!\n" if(!$course -> {"*"});
 
     # Do we have a coursedata link in the page?
-    my ($cdlink) = $course -> {"*"} =~ /\[\[($nspace:coursedata)\|.*?\]\]/i;
+    my ($cdlink) = $course -> {"*"} =~ /\[\[($nspace:$config->{wiki2course}->{data_page})\|.*?\]\]/i;
 
     # Bomb if we have no coursedata link
-    die "FATAL: $nspace:Course page does not contain a CourseData link.\n"
+    die "FATAL: $nspace:$config->{wiki2course}->{course_page} page does not contain a $config->{wiki2course}->{data_page} link.\n"
         if(!$cdlink);
 
     # Fetch the linked page
@@ -497,7 +517,7 @@ sub wiki_download_direct {
 }   
 
 
-## @fn $ get_media_url($wikih, $title)
+## @fn $ wiki_media_url($wikih, $title)
 # Attempt to obtain the URL of the media file with the given title. This will assume
 # the media file can be accessed via the Image: namespace, and any namespace given
 # will be stripped before making the query
@@ -505,7 +525,7 @@ sub wiki_download_direct {
 # @param wikih A reference to a MediaWiki API object.
 # @param title The title of the media file to obtain the URL for
 # @return The URL to the media file, or undef if it can not be located.
-sub get_media_url {
+sub wiki_media_url {
     my $wikih = shift;
     my $title = shift;
 
@@ -538,7 +558,7 @@ sub get_media_url {
 }
 
 
-## @fn @ get_media_size($wikih, $title)
+## @fn @ wiki_media_size($wikih, $title)
 # Attempt to obtain the width and height of the media file with the given title. 
 # This will assume the media file can be accessed via the Image: namespace, and 
 # any namespace given will be stripped before making the query
@@ -546,7 +566,7 @@ sub get_media_url {
 # @param wikih A reference to a MediaWiki API object.
 # @param title The title of the media file to obtain the URL for
 # @return The width and height of the media, or undef if they can not be obtained.
-sub get_media_size {
+sub wiki_media_size {
     my $wikih = shift;
     my $title = shift;
 
@@ -595,11 +615,11 @@ sub metadata_find {
     $logger -> print($logger -> NOTICE, "Extracting metadata xml from $title...");
 
     # We have a page, can we pull the metadata out?
-    my ($metadata) = $page =~ m{==\s*Metadata\s*==\s*<pre>\s*(.*?)\s*</pre>}ios;
+    my ($metadata) = $page =~ m|==\s*$config->{wiki2course}->{metadata}\s*==\s*<pre>\s*(.*?)\s*</pre>|ios;
     
     # Do we have metadata? If not, try again with <source> instead of <pre>
     # Yes, we could do this in one regexp above, but
-    ($metadata) = $page =~ m{==\s*Metadata\s*==\s*<source.*?>\s*(.*?)\s*</source>}ios
+    ($metadata) = $page =~ m|==\s*$config->{wiki2course}->{metadata}\s*==\s*<source.*?>\s*(.*?)\s*</source>|ios
         if(!$metadata);
 
     # return whatever we may have now...
@@ -790,7 +810,7 @@ sub wiki_export_modules {
     $logger -> print($logger -> NOTICE, "Parsing module names from theme page...");
 
     # parse out the list of modules first
-    my ($names) = $themepage =~ m{==\s*Modules\s*==\s*(.*?)\s*==}ios;
+    my ($names) = $themepage =~ m|==\s*$config->{wiki2course}->{modules_title}\s*==\s*(.*?)\s*==|ios;
 
     # Die if we have no modules
     if(!$names) {
@@ -932,7 +952,7 @@ sub wiki_export_themes {
     $logger -> print($logger -> NOTICE, "Parsing theme names from course data page...");
 
     # parse out the list of themes first
-    my ($names) = $cdpage =~ m{==\s*Themes\s*==\s*(.*?)\s*==}ios;
+    my ($names) = $cdpage =~ m|==\s*$config->{wiki2course}->{themes_title}\s*==\s*(.*?)\s*==|ios;
 
     # Die if we have no themes
     if(!$names) {
@@ -1055,7 +1075,8 @@ GetOptions('outputdir|o=s' => \$basedir,
            'fileurl|f=s'   => \$fileurl,
            'wiki|w=s'      => \$apiurl,
            'convert|c=s'   => \$convert,
-           'verbose|v'     => \$verbose,
+           'config|g=s'    => \$configfile,
+           'verbose|v+'    => \$verbose,
            'help|?|h'      => \$help, 
            'man'           => \$man) or pod2usage(2);
 if(!$help && !$man) {
@@ -1065,7 +1086,9 @@ if(!$help && !$man) {
 pod2usage(-verbose => 2) if($man);
 pod2usage(-verbose => 0) if($help || !$username);
 
+# set up the logger and configuration data
 $logger -> set_verbosity($verbose);
+$config = load_config($configfile);
 
 # If convert hasn't been explicitly specified, enable it
 if($convert eq '') {
@@ -1103,7 +1126,7 @@ if(makedir($basedir)) {
     course_metadata_save($cdpage -> {"*"}, $basedir);
 
     # Write out images and animations
-    wiki_export_files($wikih, "$namespace:Media", path_join($basedir, $mediadir));
+    wiki_export_files($wikih, "$namespace:$config->{wiki2course}->{media_page}", path_join($basedir, $mediadir));
 
     # Print out any markers
     foreach my $step (sort keys(%$markers)) {
