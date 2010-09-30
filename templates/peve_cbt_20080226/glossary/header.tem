@@ -22,6 +22,15 @@
 
     ***include***
 
+    <!-- new wiki-based features -->
+    <script type="text/javascript" src="../../TWPopup/mootools-core.js"></script>
+    <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
+    <script type="text/javascript" src="../../TWPopup/popup.js"></script>
+    <script type="text/javascript" src="../../twtools/zebra.js"></script>
+    <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
+    <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
+    <link href="../../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
+
 </head>
 <body id="glossary" onload="initializeFrameworkPage(2);">
 <a tabindex="1" href="#content" class="accesshide"><img src="../framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>

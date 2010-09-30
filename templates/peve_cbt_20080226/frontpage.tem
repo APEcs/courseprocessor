@@ -16,6 +16,15 @@
         <link rel="appendix" href="references.html" title="References" />
         <link rel="help" href="framework-docs/somehelpdoc.html" title="Help" />
 
+     <!-- new wiki-based features -->
+    <script type="text/javascript" src="../../TWPopup/mootools-core.js"></script>
+    <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
+    <script type="text/javascript" src="../../TWPopup/popup.js"></script>
+    <script type="text/javascript" src="../../twtools/zebra.js"></script>
+    <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
+    <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
+    <link href="../../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
+
     </head>
     <body id="frontpage" onload="formatBackToTopLink();">
         <a tabindex="1" href="#content" class="accesshide"><img src="framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>
@@ -25,7 +34,7 @@
                     <div id="main">
 
                         <div class="left">
-                            <img src="framework-images/header/blue/logo-active.gif" alt="PEVE IT logo" name="logo" width="125" height="75" border="0" id="logo" /></div>
+                            <img src="framework-images/header/blue/logo-active.gif" alt="APEcs logo" name="logo" width="125" height="75" border="0" id="logo" /></div>
 
                         <div class="right">
                             <img src="framework-images/header/blue/nav-button-coursemap-active.gif" name="nav_coursemap" width="56" height="60" border="0" id="nav_coursemap" usemap="#m_navbuttoncoursemap" alt="Course map view" />
@@ -91,7 +100,7 @@
                         <noscript>2007</noscript>
                         <a target="_blank" href="http://www.manchester.ac.uk/">University of Manchester</a>, version: ***version***
                     </li>
-                    <li><a href="peve.html">About PEVE</a></li>
+                    <li><a href="ape.html">About APEcs</a></li>
                     <li><a href="privacy.html">Privacy and Cookies Policy</a></li>
                     <li><a href="disclaimer.html">Disclaimer</a></li>
                     <li><a href="feedback.html">Feedback &amp; Support</a></li>

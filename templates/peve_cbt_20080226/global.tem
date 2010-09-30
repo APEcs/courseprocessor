@@ -22,6 +22,15 @@
         <link rel="help" href="framework-docs/somehelpdoc.html" title="Help" />
         <link rel="up" href="frontpage.html" title="Course front page" />
 
+    <!-- new wiki-based features -->
+    <script type="text/javascript" src="../../TWPopup/mootools-core.js"></script>
+    <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
+    <script type="text/javascript" src="../../TWPopup/popup.js"></script>
+    <script type="text/javascript" src="../../twtools/zebra.js"></script>
+    <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
+    <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
+    <link href="../../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
+
     </head>
     <body id="coursemap" onload="initializeFrameworkPage(1);">
         <a tabindex="1" href="#content" class="accesshide"><img src="framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>
@@ -106,7 +115,7 @@
                         <noscript>2007</noscript>
                         <a target="_blank" href="http://www.manchester.ac.uk/">University of Manchester</a>, version: ***version***
                     </li>
-                    <li><a href="peve.html">About PEVE</a></li>
+                    <li><a href="ape.html">About APEcs</a></li>
                     <li><a href="privacy.html">Privacy and Cookies Policy</a></li>
                     <li><a href="disclaimer.html">Disclaimer</a></li>
                     <li><a href="feedback.html">Feedback &amp; Support</a></li>
