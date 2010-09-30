@@ -1,0 +1,290 @@
+#mainpage_topbox {
+background: #f9f9f9; 
+padding: 0px; 
+border: 1px solid #aaaaaa; 
+margin: 0.2em 10px 10px;
+}
+.mainpage_boxtitle, .mainpage_hubtitle, #mainpage_pagetitle {
+font-size: 105%; 
+padding: 0.4em; 
+background-color: #eeeeee; 
+border-bottom: 1px solid #aaaaaa; 
+}
+.mainpage_boxtitle {
+line-height: 120%;
+}
+#mainpage_pagetitle {
+color: #cf7606; 
+font-size: 200% !important;
+}
+#mainpage_sitelinks {
+padding: 0.2em; 
+text-align: center;
+background-color: white;
+}
+.mainpage_hubtitle {
+text-align: center;
+}
+.mainpage_boxcontents, .mainpage_boxcontents_small {
+background: #ffffff;
+padding:0.2em 0.4em;
+}
+.mainpage_boxcontents_small {
+font-size: 95%;
+}
+.mainpage_hubbox, #mainpage_newscell, #mainpage_downloadcell {
+padding: 0;
+border: 1px solid #aaaaaa;
+}
+.mainpage_hubbox {
+margin-bottom: 0;
+}
+
+code, tt {
+    font-face: fixed;
+    color: #a96300;
+}
+
+/* CSS placed here will be applied to all skins */
+.alt1, .alt1Active {
+    background: #f7f7ff;
+    color: #000000;
+    vertical-align: middle;
+}
+
+.alt2, .alt2Active {
+    color: #000000;
+    background-color: #ffffff;
+    vertical-align: middle;
+}
+
+.alth {
+    color: #000000;
+    background-color: #eeeeff;
+    vertical-align: middle;
+}
+
+.hover {
+    color: #000000;
+    background-color: #d5fcdc;
+    vertical-align: middle;
+}
+
+td.zebra {
+    border: 1pt solid #ADB9CC;
+    padding:0.25em 0.5em;
+}
+
+th.zebra {
+    border:1pt solid #ADB9CC;
+    padding:0.25em 0.5em;
+}
+
+table.zebra {
+    border-collapse: collapse;
+}
+
+table.wikitable,
+table.prettytable {
+	margin: 1em 1em 1em 0;
+	background: #f9f9f9;
+	border: 1px #aaaaaa solid;
+	border-collapse: collapse;
+	empty-cells: show;
+}
+table.wikitable th, table.wikitable td,
+table.prettytable th, table.prettytable td {
+	border: 1px #aaaaaa solid;
+	padding: 0.2em 0.4em;
+}
+table.wikitable th, table.wikitable td.hl3, table.wikitable th.hl3,
+table.prettytable th, table.prettytable td.hl3, table.wikitable th.hl3 {
+	background: #8da7d6;
+	text-align: center;
+}
+table.wikitable td.hl1, table.wikitable th.hl1,
+table.prettytable td.hl1, table.wikitable th.hl1 {
+	background: #c5d8fc;
+	text-align: center;
+}
+table.wikitable td.hl2, table.wikitable th.hl2,
+table.prettytable td.hl2, table.wikitable th.hl2 {
+	background: #a7c1f2;
+	text-align: center;
+}
+table.wikitable caption,
+table.prettytable caption {
+	margin-left: inherit;
+	margin-right: inherit;
+	font-weight: bold;
+}
+
+li.author {
+display: inline;
+padding-left: 20px;
+background-image: url('/skins/monobook/user.gif');
+background-repeat: no-repeat;
+background-position: 4px 2px; 
+}
+
+/* Cell sizes for ambox/tmbox/imbox/cmbox/ombox/fmbox/dmbox message boxes */
+th.mbox-text, td.mbox-text {     /* The message body cell(s) */
+    border: none; 
+    padding: 0.25em 0.9em;       /* 0.9em left/right */
+    width: 100%;    /* Make all mboxes the same width regardless of text length */
+}
+td.mbox-image {                  /* The left image cell */
+    border: none; 
+    padding: 2px 0 2px 0.9em;    /* 0.9em left, 0px right */
+    text-align: center; 
+}
+td.mbox-imageright {             /* The right image cell */
+    border: none;
+    padding: 2px 0.9em 2px 0;    /* 0px left, 0.9em right */
+    text-align: center; 
+}
+td.mbox-empty-cell {         /* An empty narrow cell */
+    border: none;
+    padding: 0px;
+    width: 1px;
+}
+
+/* Article message box styles */
+table.ambox {
+    margin: 0px 10%;   /* 10% = Will not overlap with other elements */
+    border: 1px solid #aaa; 
+    border-left: 10px solid #1e90ff;    /* Default "notice" blue */
+    background: #fbfbfb; 
+}
+table.ambox + table.ambox {   /* Single border between stacked boxes. */
+    margin-top: -1px;
+}
+.ambox th.mbox-text, 
+.ambox td.mbox-text {            /* The message body cell(s) */
+    padding: 0.25em 0.5em;       /* 0.5em left/right */
+}
+.ambox td.mbox-image {           /* The left image cell */
+    padding: 2px 0 2px 0.5em;    /* 0.5em left, 0px right */
+}
+.ambox td.mbox-imageright {      /* The right image cell */
+    padding: 2px 0.5em 2px 0;    /* 0px left, 0.5em right */
+}
+ 
+table.ambox-notice {
+    border-left: 10px solid #1e90ff;    /* Blue */
+}
+table.ambox-speedy {
+    border-left: 10px solid #b22222;    /* Red */
+    background: #fee;                   /* Pink */
+}
+table.ambox-delete {
+    border-left: 10px solid #b22222;    /* Red */
+}
+table.ambox-content {
+    border-left: 10px solid #f28500;    /* Orange */
+}
+table.ambox-style {
+    border-left: 10px solid #f4c430;    /* Yellow */
+}
+table.ambox-move {
+    border-left: 10px solid #9932cc;    /* Purple */
+}
+table.ambox-protection {
+    border-left: 10px solid #bba;       /* Gray-gold */
+}
+
+/* Infobox template style */
+.infobox {
+    border: 1px solid #aaa;
+    background-color: #f9f9f9;
+    color: black;
+    margin: 0.5em 0 0.5em 1em;
+    padding: 0.2em;
+    float: right;
+    clear: right;
+}
+.infobox td,
+.infobox th {
+    vertical-align: top;
+}
+.infobox caption {
+    font-size: larger;
+}
+.infobox.bordered {
+    border-collapse: collapse;
+}
+.infobox.bordered td,
+.infobox.bordered th {
+    border: 1px solid #aaa;
+}
+.infobox.bordered .borderless td,
+.infobox.bordered .borderless th {
+    border: 0;
+}
+ 
+.infobox.sisterproject {
+    width: 20em;
+    font-size: 90%;
+}
+ 
+.infobox.standard-talk {
+    border: 1px solid #c0c090;
+    background-color: #f8eaba;
+}
+.infobox.standard-talk.bordered td,
+.infobox.standard-talk.bordered th {
+    border: 1px solid #c0c090;
+}
+ 
+/* styles for bordered infobox with merged rows */
+.infobox.bordered .mergedtoprow td,
+.infobox.bordered .mergedtoprow th {
+    border: 0;
+    border-top: 1px solid #aaa;
+    border-right: 1px solid #aaa;
+}
+ 
+.infobox.bordered .mergedrow td,
+.infobox.bordered .mergedrow th {
+    border: 0;
+    border-right: 1px solid #aaa;
+}
+ 
+/* Styles for geography infoboxes, eg countries,
+   country subdivisions, cities, etc.            */
+.infobox.geography {
+    text-align: left;
+    border-collapse: collapse;
+    line-height: 1.2em; 
+    font-size: 90%;
+}
+ 
+.infobox.geography  td,
+.infobox.geography  th {
+    border-top: solid 1px #aaa;
+    padding: 0.4em 0.6em 0.4em 0.6em;
+}
+.infobox.geography .mergedtoprow td,
+.infobox.geography .mergedtoprow th {
+    border-top: solid 1px #aaa;
+    padding: 0.4em 0.6em 0.2em 0.6em;
+}
+ 
+.infobox.geography .mergedrow td,
+.infobox.geography .mergedrow th {
+    border: 0;
+    padding: 0 0.6em 0.2em 0.6em;
+}
+ 
+.infobox.geography .mergedbottomrow td,
+.infobox.geography .mergedbottomrow th {
+    border-top: 0;
+    border-bottom: solid 1px #aaa;
+    padding: 0 0.6em 0.4em 0.6em;
+}
+ 
+.infobox.geography .maptable td,
+.infobox.geography .maptable th {
+    border: 0;
+    padding: 0;
+}
