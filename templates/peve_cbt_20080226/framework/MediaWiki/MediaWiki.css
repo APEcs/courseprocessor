@@ -1,0 +1,133 @@
+code {
+    background-color: #f9f9f9;
+}
+pre {
+    padding: 1em;
+    border: 1px dashed #2f6fab;
+    color: black;
+    background-color: #f9f9f9;
+    line-height: 1.1em;
+}
+ul {
+    line-height: 1.5em;
+    list-style-type: square;
+    margin: .3em 0 0 1.5em;
+    padding: 0;
+    list-style-image: url(images/bullet-icon.png);
+}
+ol {
+    line-height: 1.5em;
+    margin: .3em 0 0 3.2em;
+    padding: 0;
+    list-style-image: none;
+}
+li {
+    margin-bottom: .1em;
+}
+dt {
+    font-weight: bold;
+    margin-bottom: .1em;
+}
+dl {
+    margin-top: .2em;
+    margin-bottom: .5em;
+}
+dd {
+    line-height: 1.5em;
+    margin-left: 2em;
+    margin-bottom: .1em;
+}
+
+/* Images */
+div.floatright, table.floatright {
+    clear: right;
+    float: right;
+    position: relative;
+    margin: 0 0 .5em .5em;
+    border: 0;
+}
+div.floatright p { font-style: italic; }
+div.floatleft, table.floatleft {
+    float: left;
+    clear: left;
+    position: relative;
+    margin: 0 .5em .5em 0;
+    border: 0;
+}
+div.floatleft p { font-style: italic; }
+/* Thumbnails */
+div.thumb {
+    margin-bottom: .5em;
+    border-style: solid;
+    border-color: white;
+    width: auto;
+    background-color: transparent;
+}
+div.thumbinner {
+    border: 1px solid #ccc;
+    padding: 3px !important;
+    background-color: #f9f9f9;
+    font-size: 94%;
+    text-align: center;
+    overflow: hidden;
+}
+html .thumbimage {
+    border: 1px solid #ccc;
+}
+html .thumbcaption {
+    border: none;
+    text-align: left;
+    line-height: 1.4em;
+    padding: 3px !important;
+    font-size: 94%;
+}
+div.magnify {
+    float: right;
+    border: none !important;
+    background: none !important;
+}
+div.magnify a, div.magnify img {
+    display: block;
+    border: none !important;
+    background: none !important;
+}
+div.tright {
+    clear: right;
+    float: right;
+    border-width: .5em 0 .8em 1.4em;
+}
+div.tleft {
+    float: left;
+    clear: left;
+    margin-right: .5em;
+    border-width: .5em 1.4em .8em 0;
+}
+img.thumbborder {
+    border: 1px solid #dddddd;
+}
+.hiddenStructure {
+    display: none;
+}
+/* Emulate Center */
+.center {
+    width: 100%;
+    text-align: center;
+}
+*.center * {
+    margin-left: auto;
+    margin-right: auto;
+}
+/* Small for tables and similar */
+.small, .small * {
+    font-size: 94%;
+}
+table.small {
+    font-size: 100%;
+}
+/* Edge Cases for Content */
+h1, h2 {
+    margin-bottom: .6em;
+}
+h3, h4, h5 {
+    margin-bottom: .3em;
+}
