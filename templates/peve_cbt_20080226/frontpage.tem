@@ -9,6 +9,12 @@
             <![endif]-->
 
         <script type="text/javascript" src="framework-javascript/core.js"></script>
+        <script language="javascript" type="text/javascript">
+            <!--
+                updateCourseView();
+                setLastViewedPage(1);
+              -->
+        </script>
 
         <link rel="start" href="frontpage.html" title="Course front page" />
         <link rel="index" href="courseindex.html" title="Course index" />
