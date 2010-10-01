@@ -819,7 +819,7 @@ sub wiki_export_modules {
     }
 
     # Split the names up
-    my @modules = $names =~ m{^\s*\[\[(.*?)\]\]}gim;
+    my @modules = $names =~ m{^\s*\[\[(.*?)(?:|.*?)?\]\]}gim;
     
     my $count = 0;
 
@@ -961,7 +961,7 @@ sub wiki_export_themes {
     }
 
     # Split the names up
-    my @themes = $names =~ m{^\s*\[\[(.*?)\]\]}gim;
+    my @themes = $names =~ m{^\s*\[\[(.*?)(?:|.*?)?\]\]}gim;
     
     my $count = 0;
     # Process each theme
