@@ -6,8 +6,8 @@
 #
 # For full documentation please see http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Wiki2course.pl
 #
-# @copy 2008, Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.7.0 (2 August 2010)
+# @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 1.9.0 (1 October 2010)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

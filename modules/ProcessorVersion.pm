@@ -6,8 +6,8 @@ use strict;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(get_version);
 
-my $wiki2course = "1.7 (2 August 2010)";
-my $processor   = "3.7 (4 August 2010)";
+my $wiki2course = "1.9 (1 October 2010)";
+my $processor   = "3.7 (1 October 2010)";
 my $release     = "3.7.0";
 
 sub get_version {
