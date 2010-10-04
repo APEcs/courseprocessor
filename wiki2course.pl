@@ -164,18 +164,21 @@ sub path_join {
 }
 
 
-## @fn $ makedir($name)
+## @fn $ makedir($name, $no_warn_exists)
 # Attempt to create the specified directory if needed. This will determine
 # whether the directory exists, and if not whether it can be created.
 #
-# @param name The name of the directory to create.
+# @param name           The name of the directory to create.
+# @param no_warn_exists If true, no warning is generated if the directory exists.
 # @return true if the directory was created, false otherwise.
 sub makedir {
-    my $name = shift;
+    my $name           = shift;
+    my $no_warn_exists = shift;
 
     # If the directory exists, we're okayish...
     if(-d $name) {
-        $logger -> print($logger -> WARNING, "Dir $name exists, the contents will be overwritten.");
+        $logger -> print($logger -> WARNING, "Dir $name exists, the contents will be overwritten.")
+            unless($no_warn_exists);
         return 1;
 
     # It's not a directory, is it something... else?
@@ -254,7 +257,7 @@ sub process_generated_media {
     $logger -> print($logger -> NOTICE, "Fetching generated file $type/$path to $dir/$filename");
 
     my $url = path_join($wikih -> {"siteinfo"} -> {$type."path"}, $path);
-    if(makedir($dir)) {
+    if(makedir($dir, 1)) {
         my $error = wiki_download_direct($wikih, $url, path_join($dir, $filename));
         
         $logger -> print($logger -> WARNING, $error) if($error);
