@@ -66,7 +66,7 @@ my %default_config = ( course_page   => "Course",
     );
 
 # various globals set via the arguments
-my ($basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile) = ('', '', '', '', WIKIURL, '', '', 0, 'media', '');
+my ($quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile) = ('', '', '', '', '', WIKIURL, '', '', 0, 'media', '');
 my $man = 0;
 my $help = 0;
 
@@ -106,10 +106,10 @@ sub load_config {
 
     # we /need/ a data object here...
     if(!$data) {
-        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr);
+        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr) unless($quiet);
         $data = {};
     } else {
-        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile");
+        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile") unless($quiet);
     }
 
     # Set important defaults if needed
@@ -178,7 +178,7 @@ sub makedir {
     # If the directory exists, we're okayish...
     if(-d $name) {
         $logger -> print($logger -> WARNING, "Dir $name exists, the contents will be overwritten.")
-            unless($no_warn_exists);
+            unless($quiet || $no_warn_exists);
         return 1;
 
     # It's not a directory, is it something... else?
@@ -254,13 +254,13 @@ sub process_generated_media {
     my $dir = path_join($basedir, $mediadir, "generated");
 
     my ($filename) = $path =~ m{/([^/]+)$};
-    $logger -> print($logger -> NOTICE, "Fetching generated file $type/$path to $dir/$filename");
+    $logger -> print($logger -> NOTICE, "Fetching generated file ".$type.$path." to $dir/$filename") unless($quiet);
 
     my $url = path_join($wikih -> {"siteinfo"} -> {$type."path"}, $path);
     if(makedir($dir, 1)) {
         my $error = wiki_download_direct($wikih, $url, path_join($dir, $filename));
         
-        $logger -> print($logger -> WARNING, $error) if($error);
+        $logger -> print($logger -> WARNING, $error) if(!$quiet && $error);
         
         return "src=\"../../$mediadir/generated/$filename\"";
     } else {
@@ -615,7 +615,7 @@ sub metadata_find {
     my $page  = shift;
     my $title = shift;
 
-    $logger -> print($logger -> NOTICE, "Extracting metadata xml from $title...");
+    $logger -> print($logger -> NOTICE, "Extracting metadata xml from $title...") unless($quiet);
 
     # We have a page, can we pull the metadata out?
     my ($metadata) = $page =~ m|==\s*$config->{wiki2course}->{metadata}\s*==\s*<pre>\s*(.*?)\s*</pre>|ios;
@@ -645,7 +645,7 @@ sub metadata_find_module {
         if($metadata -> {"module"} -> {$name} -> {"title"} eq $title) {
             # Check that the name does not contain spaces...
             if($name =~ /\s/) {
-                $logger -> print($logger -> WARNING, "name element for module $title contains spaces. This is not permitted.");
+                $logger -> print($logger -> WARNING, "name element for module $title contains spaces. This is not permitted.") unless($quiet);
                 return undef;
             }
             return $name;
@@ -721,7 +721,7 @@ sub wiki_export_module {
     my $convert   = shift;
     my $markers   = shift;
 
-    $logger -> print($logger -> NOTICE, "Exporting module $module to $moduledir.");
+    $logger -> print($logger -> NOTICE, "Exporting module $module to $moduledir.") unless($quiet);
 
     # Sort out the directory
     if(makedir($moduledir)) {
@@ -747,7 +747,7 @@ sub wiki_export_module {
                             my $stepname = path_join($moduledir, sprintf("step%02d.html", ++$stepnum));
 
                             if($convert) {
-                                $logger -> print($logger -> NOTICE, "Converting mediawiki markup in $stepname to html.");
+                                $logger -> print($logger -> NOTICE, "Converting mediawiki markup in $stepname to html.") unless($quiet);
                                 $body = process_entities_html($wikih, $module, $body);
                             }
 
@@ -783,7 +783,7 @@ sub wiki_export_module {
 
 
         } else { # if($mpage) {
-            $logger -> print($logger -> WARNING, "No content for $module.");
+            $logger -> print($logger -> WARNING, "No content for $module.") unless($quiet);
         }
     } # if(makedir($moduledir)) {
     
@@ -810,7 +810,7 @@ sub wiki_export_modules {
     my $convert   = shift;
     my $markers   = shift;
 
-    $logger -> print($logger -> NOTICE, "Parsing module names from theme page...");
+    $logger -> print($logger -> NOTICE, "Parsing module names from theme page...") unless($quiet);
 
     # parse out the list of modules first
     my ($names) = $themepage =~ m|==\s*$config->{wiki2course}->{modules_title}\s*==\s*(.*?)\s*==|ios;
@@ -874,14 +874,14 @@ sub wiki_export_theme {
     my $convert = shift;
     my $markers = shift;
  
-    $logger -> print($logger -> NOTICE, "Fetching page data for $theme...");
+    $logger -> print($logger -> NOTICE, "Fetching page data for $theme...") unless($quiet);
 
     # Okay, does the theme page exist?
     my $tpage = wiki_fetch($wikih, $theme, 1);
 
     # Do we have any content? If not, bomb now
     if(!$tpage) {
-        $logger -> print($logger -> WARNING, "No content for $theme.");
+        $logger -> print($logger -> WARNING, "No content for $theme.") unless($quiet);
         return 0;
     }
 
@@ -893,7 +893,7 @@ sub wiki_export_theme {
         return 0;
     }
 
-    $logger -> print($logger -> NOTICE, "Parsing metadata information to determine directory structure...");
+    $logger -> print($logger -> NOTICE, "Parsing metadata information to determine directory structure...") unless($quiet);
     
     # Parse the metadata into a useful format
     my $mdxml = XMLin($metadata);
@@ -910,7 +910,7 @@ sub wiki_export_theme {
                 # Okay, we have something we can work with - create the theme directory
                 my $themedir = path_join($basedir, $mdxml -> {"name"});
 
-                $logger -> print($logger -> NOTICE, "Creating theme directory ",$mdxml -> {"name"}," for $theme...");
+                $logger -> print($logger -> NOTICE, "Creating theme directory ",$mdxml -> {"name"}," for $theme...") unless($quiet);
                 if(makedir($themedir)) {
 
                     # We have the theme directory, now we need to start on modules!
@@ -952,7 +952,7 @@ sub wiki_export_themes {
     my $convert = shift;
     my $markers = shift;
 
-    $logger -> print($logger -> NOTICE, "Parsing theme names from course data page...");
+    $logger -> print($logger -> NOTICE, "Parsing theme names from course data page...") unless($quiet);
 
     # parse out the list of themes first
     my ($names) = $cdpage =~ m|==\s*$config->{wiki2course}->{themes_title}\s*==\s*(.*?)\s*==|ios;
@@ -999,7 +999,7 @@ sub wiki_export_files {
     
     # Do we have any content? If not, bomb now
     if(!$list) {
-        $logger -> print($logger -> WARNING, "No content for $listpage.");
+        $logger -> print($logger -> WARNING, "No content for $listpage.") unless($quiet);
         return 0;
     }
 
@@ -1008,7 +1008,7 @@ sub wiki_export_files {
         my @entries = $list =~ m{\[\[((?:Image:|File:)[^|\]]+)}goi;
         
         if(scalar(@entries)) {
-            $logger -> print($logger -> NOTICE, "$listpage shows ",scalar(@entries)," files to download. Processing...");
+            $logger -> print($logger -> NOTICE, "$listpage shows ",scalar(@entries)," files to download. Processing...") unless($quiet);
             
             my $writecount = 0;
             my $file;
@@ -1022,12 +1022,12 @@ sub wiki_export_files {
                 if($name) {
                     my $filename = path_join($destdir, $name);
  
-                    $logger -> print($logger -> NOTICE, "Downloading $entry... ");
+                    $logger -> print($logger -> NOTICE, "Downloading $entry") unless($quiet);
                    
                     # Now we can begin the download
                     if($file = $wikih -> download({ title => $entry})) {
                     
-                        print "writing to $filename... ";
+                        $logger -> print($logger -> DEBUG, "Writing to $filename") unless($quiet);
                         # We now have data, so we need to save it.
                         open(DATFILE, ">", $filename)
                             or die "\nERROR: Unable to save $filename: $!\n";
@@ -1036,11 +1036,9 @@ sub wiki_export_files {
                         print DATFILE $file;
                         
                         close(DATFILE);
-                    
-                        print "done.\n";
                         ++$writecount;
                     } else {
-                        print "\nERROR: Unable to fetch $entry. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+                        $logger -> print($logger -> WARNING, "Unable to fetch $entry. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"})  unless($quiet);
                     }
                 } else {
                     die "FATAL: Unable to determine filename from $entry.\n";
@@ -1049,7 +1047,7 @@ sub wiki_export_files {
 
             return $writecount;
         } else {
-            $logger -> print($logger -> NOTICE, "No files or images listed on $listpage. Nothing to do here.");
+            $logger -> print($logger -> NOTICE, "No files or images listed on $listpage. Nothing to do here.") unless($quiet);
         }
     } else {
         die "FATAL: Unable to create directory $destdir: $@\n";
@@ -1067,8 +1065,6 @@ binmode STDOUT, ':utf8';
 # This will store all the markers located...
 my $markers = { };
 
-print "wiki2course.pl version ",get_version("wiki2course")," started.\n";
-
 # Process the command line
 GetOptions('outputdir|o=s' => \$basedir,
            'username|u=s'  => \$username,
@@ -1080,6 +1076,7 @@ GetOptions('outputdir|o=s' => \$basedir,
            'convert|c=s'   => \$convert,
            'config|g=s'    => \$configfile,
            'verbose|v+'    => \$verbose,
+           'quiet|q=s'     => \$quiet,
            'help|?|h'      => \$help, 
            'man'           => \$man) or pod2usage(2);
 if(!$help && !$man) {
@@ -1088,6 +1085,8 @@ if(!$help && !$man) {
 }
 pod2usage(-verbose => 2) if($man);
 pod2usage(-verbose => 0) if($help || !$username);
+
+print "wiki2course.pl version ",get_version("wiki2course")," started.\n" unless($quiet);
 
 # set up the logger and configuration data
 $logger -> set_verbosity($verbose);
@@ -1132,12 +1131,14 @@ if(makedir($basedir)) {
     wiki_export_files($wikih, "$namespace:$config->{wiki2course}->{media_page}", path_join($basedir, $mediadir));
 
     # Print out any markers
-    foreach my $step (sort keys(%$markers)) {
-        $logger -> print($logger -> NOTICE, "Found the following markers in $step:");
-        foreach my $marker (@{$markers -> {$step}}) {
-            print "    ...$marker...\n";
+    if(!$quiet) {
+        foreach my $step (sort keys(%$markers)) {
+            $logger -> print($logger -> NOTICE, "Found the following markers in $step:");
+            foreach my $marker (@{$markers -> {$step}}) {
+                print "    ...$marker...\n";
+            }
+            print "\n";
         }
-        print "\n";
     }
 }
  
@@ -1163,6 +1164,7 @@ backuplj [options]
     -o, --outputdir=DIR      the name of the directory to write to.
     -p, --password=PASSWORD  password to provide when logging in. If this is
                              not provided, it will be requested at runtime.
+    -q, --quiet              suppress all normal status output.
     -u, --username=NAME      the name to log into the wiki as.
     -v, --verbose            if specified, produce more progress output.
     -w, --wiki=APIURL        the url of the mediawiki API to use.
@@ -1223,6 +1225,12 @@ export script to be called programmatically, and providing your password this
 way can be a security risk (anyone looking over your shoulder could see the 
 plain text password on the command prompt, and the whole command line will be 
 saved in your shell history, including the password).
+
+=item B<-q, --quiet>
+
+Suppresses all non-fatal output. If quiet is set, the script will not print
+any status, warning, or debugging information to stdout regardless of the
+verbosity setting. Fatal errors will still be printed to stderr as normal.
 
 =item B<-u, --username>
 
