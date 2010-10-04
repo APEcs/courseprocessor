@@ -475,7 +475,7 @@ sub wiki_course_exists {
 
     return {"*" => $content} if($content);
 
-    return "ERROR: No content for $cdlink. Unable to process course.\n";
+    die "FATAL: No content for $cdlink. Unable to process course.\n";
 }
 
 
