@@ -22,6 +22,7 @@ package HTMLInputHandler;
 # @todo check through remainder of code to ensure it won't barf on new stuff.
 
 use Cwd qw(getcwd chdir);
+use ProgressBar;
 use Utils qw(path_join load_file);
 use Digest::MD5 qw(md5_hex);
 use strict;
@@ -132,7 +133,7 @@ sub process {
 
     # This should be the top-level "source data" directory, should contain theme dirs
     opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
-        or die "FATAL: Unable to open source directory for reading: $!";
+        or die "FATAL: Unable to open source directory (".$self -> {"config"} -> {"Processor"} -> {"outputdir"}.") for reading: $!";
 
     # grab the directory list so we can check it for subdirs, strip .* files though
     my @srcentries = grep(!/^\./, readdir(SRCDIR));
@@ -140,7 +141,7 @@ sub process {
     # Display progress if needed...
     $self -> {"progress"} = ProgressBar -> new(maxvalue => $self -> {"filecount"},
                                                message  => "Processing html files...")
-        if($self -> {"config"} -> {"Processor"} -> {"verbosity"} > 0);
+        if(!$self -> {"config"} -> {"Processor"} -> {"quiet"} && $self -> {"config"} -> {"Processor"} -> {"verbosity"} == 0);
     my $processed = 0;
 
     # Go through all the directory entries, processing each one
@@ -164,7 +165,7 @@ sub process {
             
                     # Know grab a list of files we know how to process
                     my @subfiles = grep(/^$extfilter$/, readdir(STEPS));
-            
+
                     if(scalar(@subfiles)) {
                         my $cwd = getcwd();
                         chdir($module);
@@ -220,17 +221,17 @@ sub use_plugin {
 
     # This gets set > 1 if there are any files this plugin understands, and it can be used
     # during processing to show the progress of processing.
-    my $self -> {"filecount"} = 0; 
+    $self -> {"filecount"} = 0; 
 
     # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
-        or die "FATAL: Unable to open source directory for reading: $!";
+    opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"datasource"})
+        or die "FATAL: Unable to open source directory (".$self -> {"config"} -> {"Processor"} -> {"datasource"}.") for reading: $!";
 
     # grab the directory list so we can check it for subdirs, strip .* files though
     my @srcentries = grep(!/^\./, readdir(SRCDIR));
     
     foreach my $theme (@srcentries) {
-        $theme = path_join($srcdir, $theme); # prepend the source directory
+        $theme = path_join($self -> {"config"} -> {"Processor"} -> {"datasource"}, $theme); # prepend the source directory
 
         # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
         if(-d $theme) {
@@ -376,7 +377,7 @@ sub read_html_file {
     my ($title, $body) = $data =~ m|<title>(.*?)</title>.*<body.*?>\s*(.*?)\s*</body>|ios;
 
     # Can't parse, drop out with an error
-    die "FATAL: Unable to parse body from $data Giving up." if(!$body);
+    die "FATAL: Unable to parse body from $filename Giving up." if(!$body);
 
     # now try to pull out the body content...
     # New template format: we have a <div id="content">...</div><!-- id="content" -->
@@ -506,14 +507,14 @@ sub read_local_tag {
     my $filename = shift;
     my $extra    = shift;
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Got local tag replacement for $term, content is in $filename");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Got local tag replacement for $term, content is in $filename");
 
     # Load the body of the popup (we don't actually care about the title here)
     my ($title, $body) = $self -> read_html_file($filename);
 
     # give up if the popup file body can't be loaded
     if(!$body) {
-        log_print($Utils::NOTICE, $self -> {"verbose"}, "Unable to read popup file ".$filename.": $!");
+        $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Unable to read popup file ".$filename.": $!");
         return '<span class="error">Unable to read popup file '.$filename.": $!</span>";
     }
 
@@ -546,7 +547,7 @@ sub process_latex {
 
     $glossary = 0 if(!defined($glossary));
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Processing latex content \"$content\" in step $filename");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing latex content \"$content\" in step $filename");
 
     my $body = '<span class="error">Failed to proces latex directive</span>';
 
@@ -561,12 +562,12 @@ sub process_latex {
     # If we have already processed this latex block somewhere else in the course, use
     # the cached version rather than invoking latex2html and doing postprocessing again
     if($self -> {"latexcache"} -> {$checksum}) {
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "latexcache hit for content, md5 $checksum");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "latexcache hit for content, md5 $checksum");
         update_pointprogress() if($self -> {"verbose"} == $Utils::NOTICE);
         return $self -> {"latexcache"} -> {$checksum};
 
     } else {
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "latexcache miss for content, md5 $checksum");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "latexcache miss for content, md5 $checksum");
         update_pointprogress() if($self -> {"verbose"} == $Utils::NOTICE);
 
         # attempt to open the temporary file and write the content to it.
@@ -602,7 +603,7 @@ sub process_latex {
                 
                 my $dest = "$base/media/generated/$checksum-img$1\.$2";
 
-                log_print($Utils::DEBUG, $self -> {"verbose"}, "Copying and cropping $name as $dest");
+                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying and cropping $name as $dest");
                 # old move: `mv -f $name $dest`;
 
                 # the following line theoretically removes spurious bottom black bars
@@ -617,14 +618,14 @@ sub process_latex {
             `rm -f $tempname.tex`;
 
             # store the body in the cache
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "Caching processed body for $content, md5 $checksum");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Caching processed body for $content, md5 $checksum");
             $self -> {"latexcache"} -> {$checksum} = $body;
 
             update_pointprogress() if($self -> {"verbose"} == $Utils::NOTICE);
             return $body;
         } else { # if(open(TMPFILE, "> $tempname")) {
             # temporary file open failed, return an error.
-            summary_add("ERROR: Unable to open temporary latex file ".$tempname.": $!\n");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Unable to open temporary latex file ".$tempname.": $!\n");
             return '<span class="error">Unable to open temporary latex file '.$tempname.": $!</span>";
         }
     } # if($self -> {"latexcache"} -> {$checksum}) { ... } else {
@@ -648,7 +649,7 @@ sub cleanup {
     # by using readdir/grep, but it seems to work well enough for now.
     foreach my $filename (@files) {
         if(($filename =~ /\.html?$/) && ($filename !~ /^.\/node\d+\.html$/)) {
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "Removing source file \"$filename\"");            
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Removing source file \"$filename\"");            
             unlink $filename;
         }
     }
@@ -673,15 +674,15 @@ sub process_html_page {
     # is badly malformed, otherwise there should always be /some/ body returned, even if
     # if includes extraneous material we don't really want.
     if(!$body) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Unable to load $filename: $!");
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unable to load $filename: $!");
         return;
     }
 
-    summary_add("WARNING: No title found in $filename\n") if(!$title);
+    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "No title found in $filename") if(!$title);
 
     # popup reverse engineering.
     $body =~ s|<a href="javascript:OpenPopup('(.*?)', 'ContentPopup', (\d+), (\d+))">(.*?)</a>|$self -> read_local_tag($2, $1, "width=\"$1\" height=\"$2\"")|iesg;
-    $body =~ s|\[local text="(.*?)" src="(.+?)"\s*(.*?)\s*\/?\]|$self -> read_local_tag($1, $2, $3)|iesg;
+    $body =~ s|\[local text="([^\]]?)" src="(.+?)"\s*(.*?)\s*\/?\]|$self -> read_local_tag($1, $2, $3)|iesg;
 
     # link correction
     $body =~ s|<a(.*?)href="((../)+(.*?/)+\D+(\d+(.\d+)?).html?#(.*?))"(.*?)>|$self -> fix_anchor_links($1, $2, $8)|iesg;
@@ -696,16 +697,16 @@ sub process_html_page {
 
     # Attempt to write the intermediate format file.
     if(open(OUTFILE, "> $destname")) {
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing processed contents of \"$filename\" to \"$destname\"");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing processed contents of \"$filename\" to \"$destname\"");
         
         print OUTFILE "<html>\n<head>\n<title>$title</title>\n</head>\n\n";
         print OUTFILE "<body>\n$body\n</body>\n</html>\n";
         close(OUTFILE);
     } else {
-        log_print($Utils::NOTICE, $self -> {"verbose"}, "Unable to open node$1.html for writing: $!");
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unable to open node$1.html for writing: $!");
     }
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "\"$filename\" processing complete");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "\"$filename\" processing complete");
 }
 
 
@@ -725,7 +726,4 @@ sub summary_print {
     Utils::summary_print("The following messages were generated while running HTMLInputhandler:");
 }
 
-
- 
-# modules must always end with this
 1;

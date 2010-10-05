@@ -156,6 +156,7 @@ sub blargh {
 
 
 sub summary_add {
+    my $self    = shift;
     my $arrayref = shift;
     my $message  = shift;
 
@@ -165,6 +166,7 @@ sub summary_add {
 
 
 sub summary_print {
+    my $self    = shift;
     my $arrayref = shift;
     my $intro = shift;
 

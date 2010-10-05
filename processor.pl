@@ -81,6 +81,8 @@ sub merge_commandline {
     foreach my $arg (keys(%$args)) {
         $config -> {"Processor"} -> {$arg} = $args -> {$arg};
     }
+
+    $config -> {"Processor"} -> {"verbosity"} = 0 if(!defined($config -> {"Processor"} -> {"verbosity"}));
 }
 
 
@@ -116,10 +118,13 @@ sub load_plugins {
         # Obtain the handler type (should be input, output, or reference)
         my $htype = &{$package."::get_type"};
         
-        $logger -> print($logger -> DEBUG, "loaded, adding '",&{$package."::get_description"},"' as $htype handler\n");
+        $logger -> print($logger -> DEBUG, "loaded, adding '".&{$package."::get_description"}."' as $htype handler\n");
         
         # Create and store an instance of the plugin for use later.
-        $plugins -> {$htype} -> {$package} -> {"obj"} = $package -> new(config => $config, logger => $logger,  path => $path, metadata => $metadata);
+        $plugins -> {$htype} -> {$package} -> {"obj"} = $package -> new(config   => $config, 
+                                                                        logger   => $logger,  
+                                                                        path     => $path, 
+                                                                        metadata => $metadata);
     }
     use strict;
 
@@ -280,6 +285,8 @@ if(!$config) {
 
 # override configuration settingswith command line settings if needed
 merge_commandline($args, $config);
+
+$log -> set_verbosity($config -> {"Processor"} -> {"verbosity"});
 
 # ------------------------------------------------------------------------------
 #  Path checks
