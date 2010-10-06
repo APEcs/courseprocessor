@@ -36,8 +36,9 @@ use Getopt::Long;
 use ConfigMicro;
 use Logger;
 use Metadata;
-use Utils qw(check_directory resolve_path path_join);
 use ProcessorVersion;
+use Template;
+use Utils qw(check_directory resolve_path path_join);
 
 
 ## @fn $ handle_commandline(void)
@@ -100,7 +101,8 @@ sub load_plugins {
     my $config    = shift;
     my $logger    = shift;
     my $metadata  = shift;
-    
+    my $template  = shift;
+
     # Store plugins in this hashref...
     my $plugins;
 
@@ -124,7 +126,8 @@ sub load_plugins {
         $plugins -> {$htype} -> {$package} -> {"obj"} = $package -> new(config   => $config, 
                                                                         logger   => $logger,  
                                                                         path     => $path, 
-                                                                        metadata => $metadata);
+                                                                        metadata => $metadata,
+                                                                        template => $template);
     }
     use strict;
 
@@ -315,9 +318,15 @@ check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", 
 
 # All plugins are going to need metadata handling abilities
 my $metadata = Metadata -> new("logger" => $log);
+
+# And they may need to use templates. Passing lang as '' disables lang file loading
+# (which we don't need here, really), and this will have no module handle specified,
+# so all the template engine will do is simple translates, {L_..} and {B_[...]} will
+# be passed through unaltered.
+my $template = Template -> new("lang" => ''); 
                                
 # Obtain a hashref of available plugin object handles.
-my $plugins = load_plugins("$path/plugins", $config, $log, $metadata);
+my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template);
 
 # Determine whether the input plugins can run.
 check_input_plugins($plugins, $config, $log);

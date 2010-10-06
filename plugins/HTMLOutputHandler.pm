@@ -33,7 +33,7 @@ use Carp qw(confess);
 use strict;
 
 #uncomment for stacktrace on die
-$SIG{__DIE__} = \&confess;
+#$SIG{__DIE__} = \&confess;
 
 my ($VERSION, $type, $errstr, $htype, $desc, $liststore, $cbtversion, $tidyopts, $tidybin, $debug);
 
