@@ -18,9 +18,6 @@ package HTMLInputHandler;
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# @todo check through remainder of code to ensure it won't barf on new stuff.
-
 use Cwd qw(getcwd chdir);
 use ProgressBar;
 use Utils qw(path_join load_file);
