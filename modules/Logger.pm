@@ -149,34 +149,4 @@ sub blargh {
     } 
 }
 
-
-# ============================================================================
-#  Summary report
-#
-
-
-sub summary_add {
-    my $self    = shift;
-    my $arrayref = shift;
-    my $message  = shift;
-
-    push @$arrayref, $message;
-    print $message;
-}
-
-
-sub summary_print {
-    my $self    = shift;
-    my $arrayref = shift;
-    my $intro = shift;
-
-    print "$intro\n";
-
-    foreach my $entry (@$arrayref) {
-        print "$entry\n";
-    }
-}
-
-
-
 1;

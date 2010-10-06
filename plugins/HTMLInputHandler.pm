@@ -709,21 +709,4 @@ sub process_html_page {
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "\"$filename\" processing complete");
 }
 
-
-
-
-# ============================================================================
-#  summary code
-#   
-
-sub summary_add {
-    my $message = shift;
-
-    Utils::summary_add(\@summarydata, $message);
-}
-
-sub summary_print {
-    Utils::summary_print("The following messages were generated while running HTMLInputhandler:");
-}
-
 1;
