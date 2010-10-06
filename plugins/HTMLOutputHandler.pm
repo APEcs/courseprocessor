@@ -28,51 +28,210 @@ package HTMLOutputHandler;
 require 5.005;
 use Data::Dumper;
 use Cwd qw(getcwd chdir);
-use Utils qw(load_complex_template check_directory fix_entities text_to_html resolve_path load_file log_print blargh lead_zero);
-use Carp qw(confess);
+use Utils qw(check_directory text_to_html resolve_path load_file blargh lead_zero);
 use strict;
 
-#uncomment for stacktrace on die
-#$SIG{__DIE__} = \&confess;
 
-my ($VERSION, $type, $errstr, $htype, $desc, $liststore, $cbtversion, $tidyopts, $tidybin, $debug);
+# The location of htmltidy, this must be absolute as we can not rely on path being set.
+use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
+
+# The commandline arguments to pass to htmltidy when cleaning up output.
+use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no";
+
+my ($VERSION, $errstr, $htype, $desc);
 
 BEGIN {
-	$VERSION       = 1.1;
-    $htype         = 'output';                                       # handler type - either input or output
-    $desc          = 'HTML CBT output processor, new format output'; # Human-readable name
-	$errstr        = '';                                             # global error string
-    $tidyopts      = '-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no'; # parameters passed to htmltidy
-    $tidybin       = '/usr/bin/tidy';                                # Location of htmltidy
-    $cbtversion    = "";                                             # If a version prefix is needed, change this.
-    $Data::Dumper::Purity = 1;
+	$VERSION       = 2.1;
+    $htype         = 'output';                    # handler type - either input or output
+    $desc          = 'HTML CBT output processor'; # Human-readable name
+	$errstr        = '';                          # global error string
 }
 
 # ============================================================================
 #  Constructor and identifier functions.  
 #   
+
+
+## @cmethod $ new(%args)
+# Create a new plugin object. This will intialise the plugin to a base state suitable
+# for use by the processor. The following arguments may be provided to this constructor:
+#
+# config     (required) A reference to the global configuration object.
+# logger     (required) A reference to the global logger object.
+# path       (required) The directory containing the processor
+# metadata   (required) A reference to the metadata handler object.
+# template   (required) A reference to the template engine object.
+# tidy       (optional) True to enable post-processing cleanup, false otherwise. (defaults to false)
+# tidycmd    (optional) The location of 'tidy', should include the full path to the command.
+# tidyopts   (optional) The options to pass to htmltidy.
+#
+# @param args A hash of arguments to initialise the plugin with. 
+# @return A new HTMLInputHandler object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-
-    my $self     = {
-        "verbose" => 0, # set to 1 to enable additional output
-        "tidy"    => 0, # set to 0 to disable htmltidy postprocessing
-        "debug"   => 0, # set to 1 to retain intermediate files.
-        @_
+    my $self     = { "tidy"     => 0, # set to 0 to disable htmltidy postprocessing
+                     "tidycmd"  => DEFAULT_TIDY_COMMAND,
+                     "tidtopts" => DEFAULT_TIDY_ARGS,
+                     @_
     };
 
     return bless $self, $class;
 }
 
-# Top level handler type ID
-sub get_type { return $htype };
+## @fn $ get_type()
+# Determine the type of handler behaviour this plugin provides. This will always
+# return "input" for input plugins, "output" for output plugins, and "reference"
+# for reference handler plugins.
+#
+# @return The plugin type.
+sub get_type {
+    return $htype
+};
 
-# Handler descriptive text
-sub get_description { return $desc };
 
-# Handler version number
-sub get_version { return $VERSION };
+## @fn $ get_description()
+# Obtain the human-readable descriptive text for this plugin. This will return
+# a string that describes the processor in a way that is useful to the user.
+#
+# @return The handler description
+sub get_description {
+    return $desc 
+};
+
+
+## @fn $ get_version()
+# Obtain the version string for the plugin. This returns a string containing the
+# version information for the plugin in a human-readable form.
+#
+# @return The handler version string.
+sub get_version {
+    return $VERSION 
+};
+
+
+sub process {
+    my $self   = shift;
+
+    # kill the reference handler value if the caller has indicated one is not valid.
+    if($self -> {"refhandler"} eq "none") {
+        $self -> {"refhandler"} = undef;
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler disabling references processing");
+    }
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing using HTMLOutputHandler");
+
+    # preprocess to get the anchors and terms recorded
+    $self -> preprocess($srcdir);
+    $self -> preload_version($srcdir);
+    $self -> write_glossary_pages($srcdir);
+
+    if($self -> {"refhandler"}) {
+        $self -> {"refhandler"} -> write_reference_page($srcdir);
+    }
+
+    # load the header include file
+    my $include = $self -> preload_header_include($srcdir) || "";
+    $self -> {"globalheader"} = $include;
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing complete");
+
+    # This should be the top-level "source data" directory, should contain theme dirs
+    opendir(SRCDIR, $srcdir)
+        or die "FATAL: Unable to open source directory for reading: $!";
+
+    # grab the directory list so we can check it for subdirs, strip .* files though
+    my @themes = grep(!/^(\.|CVS)/, readdir(SRCDIR));
+
+    die "FATAL: Unable to locate any themes to parse in $srcdir" if(scalar(@themes) == 0);
+
+    foreach my $theme (@themes) {
+        my $fulltheme = "$srcdir/$theme"; # prepend the source directory
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $theme");
+
+        # if this is a directory, check inside for subdirs ($theme is a theme, subdirs are modules)
+        if(-d $fulltheme) {
+
+            # Load the theme metadata
+            my $metadata  = $self -> load_metadata($fulltheme);
+
+            if($metadata && ($metadata != 1)) {
+                # Get the list of module directories in this theme
+                opendir(MODDIR, $fulltheme)
+                    or die "FATAL: Unable to open module directory $fulltheme for reading: $!";
+                my @modules = grep(!/^(\.|CVS)/, readdir(MODDIR));
+
+                # Process each module.
+                foreach my $module (@modules) { 
+                    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $module ($fulltheme/$module)");
+
+                    my $fullmodule = "$fulltheme/$module"; # prepend the module directory...
+
+                    # If this is a module directory, we want to scan it for steps
+                    if(-d $fullmodule) {
+                        
+                        # Scan for steps
+                        opendir(SUBDIR, $fullmodule)
+                            or die "FATAL: Unable to open subdir for reading: $!";
+
+                        # now grab a list of files we know how to process, then call the internal process
+                        # function for each one, remembering to include the full path.
+                        my @stepfiles = grep(/^node\d+\.html/, readdir(SUBDIR));
+                        
+                        if(scalar(@stepfiles)) {
+                            my $cwd = getcwd();
+                            chdir($fullmodule);
+
+                            my $maxstep = get_maximum_stepid(\@stepfiles);
+                            
+                            $metadata -> {"module"} -> {$module} -> {"steps"} = { };
+                            for(my $i = 0; $i < scalar(@stepfiles); ++$i) {
+                                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing ".$stepfiles[$i]." as ".get_step_name($stepfiles[$i])."... ");
+                                my ($previous, $next, $prevlink, $nextlink) = $self -> build_prev_next(\@stepfiles, $i, $metadata -> {"module"} -> {$module} -> {"level"});
+                                $self -> process_step($stepfiles[$i], 
+                                                      $metadata -> {"module"} -> {$module} -> {"steps"}, 
+                                                      $previous, 
+                                                      $next,
+                                                      get_step_name($stepfiles[0]),
+                                                      $prevlink,
+                                                      $nextlink,
+                                                      get_step_name($stepfiles[scalar(@stepfiles) - 1]),
+                                                      $theme,
+                                                      $module,
+                                                      $include,
+                                                      $maxstep,
+                                                      $metadata);
+                                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished processing $module ($fulltheme/$module)");
+                            }
+                            chdir($cwd);
+
+                            $self -> cleanup_module($fullmodule, $module);
+                        }
+
+                        closedir(SUBDIR);
+                    }
+                }
+                closedir(MODDIR);
+                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing index files");
+                $self -> write_theme_indexmap($fulltheme, $theme, $metadata, $include);
+
+            } else { # if($metadata && ($metadata != 1)) {
+                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Skipping directory $fulltheme: no metadata in directory");
+            }
+        } # if(-d $fulltheme) {
+    } # foreach my $theme (@themes) {
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "HTMLOutputhandler processing complete");
+
+    $self -> cleanup_lists($srcdir);
+
+    closedir(SRCDIR);
+
+    $self -> write_courseindex($srcdir, $self -> {"fullmap"});
+    $self -> framework_merge($srcdir, $frame);
+
+    return 1;
+}
 
 
 # ============================================================================
@@ -122,7 +281,7 @@ sub use_plugin {
     $self -> {"templatebase"} = $self -> {"path"}."/templates/".$self -> {"templatebase"} if($self -> {"templatebase"} !~ /^\//);
     $self -> {"templatebase"} = resolve_path($self -> {"templatebase"});
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Using template directory : ".$self -> {"templatebase"});
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Using template directory : ".$self -> {"templatebase"});
     die "FATAL: No templates found" if(!$self -> {"templatebase"});
 
     check_directory($self -> {"templatebase"}, "template directory");
@@ -136,7 +295,7 @@ sub use_plugin {
     
     foreach my $theme (@themes) {
         my $fulltheme = "$srcdir/$theme"; # prepend the source directory
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Validating $theme metadata");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Validating $theme metadata");
 
         die "FATAL: Metatadata validation failure. Halting" if(!$self -> load_metadata($fulltheme, 1, $plugins));
     }
@@ -156,7 +315,7 @@ sub preload_version {
     my $self = shift;
     my $basedir = shift;
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Loading version");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Loading version");
 
     if(open(VERSFILE, "$basedir/version.txt")) {
         $self -> {"cbtversion"} = <VERSFILE>;
@@ -171,7 +330,7 @@ sub preload_version {
     my $date = sprintf "%d/%d/%d %d:%d:%d", $stamp[3], 1 + $stamp[4], 1900 + $stamp[5], $stamp[2], $stamp[1], $stamp[0]; 
     $self -> {"cbtversion"} .= " ($date)";
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Version is '".$self -> {"cbtversion"}."'");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Version is '".$self -> {"cbtversion"}."'");
 
 }
 
@@ -241,7 +400,7 @@ sub convert_image {
     my $self     = shift;
     my $tagdata = shift;
 
-    log_print($Utils::NOTICE, $self -> {"verbose"}, "Use if deprecated [image] tag with attributes '$tagdata'"); 
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [image] tag with attributes '$tagdata'"); 
 
     my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
 
@@ -338,7 +497,7 @@ sub convert_applet {
     my $self    = shift;
     my $tagdata = shift;
 
-    log_print($Utils::NOTICE, $self -> {"verbose"}, "Use if deprecated [applet] tag with attributes '$tagdata'"); 
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [applet] tag with attributes '$tagdata'"); 
 
     my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
 
@@ -445,7 +604,7 @@ sub convert_interlink {
 
     my $targ = $self -> {"anchors"} -> {$anchor};
     if(!$targ) {
-        log_print($Utils::NOTICE, $self -> {"verbose"}, "Unable to locate anchor $anchor. Link text is '$text' in $module step $stepid");
+        $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Unable to locate anchor $anchor. Link text is '$text' in $module step $stepid");
         return '<span class="error">'.$text.' (Unable to locate anchor '.$anchor.')</span>';
     }
     
@@ -520,7 +679,7 @@ sub convert_step_tags {
 sub set_anchor_point {
     my ($self, $hashref, $name, $theme, $module, $step) = @_;
 
-    log_print($Utils::NOTICE, $self -> {"verbose"}, "Setting anchor $name in $theme/$module/$step");
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting anchor $name in $theme/$module/$step");
 
     # we're actually only interested in the step number, not the name (which is likely to change anyway)
     $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
@@ -562,7 +721,7 @@ sub build_glossary_references {
 sub set_glossary_point {
     my ($self, $hashref, $term, $definition, $theme, $module, $step, $title) = @_;
 
-    log_print($Utils::NOTICE, $self -> {"verbose"}, "Setting glossary entry $term in $theme/$module/$step");
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting glossary entry $term in $theme/$module/$step");
 
     # we're actually only interested in the step number, not the name (which is likely to change anyway)
     $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
@@ -707,7 +866,7 @@ sub write_glossary_pages {
 
     # do nothing if there are no terms...
     if($terms) {
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing glossary pages");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary pages");
 
         # Create the glossary dir if it doesn't currently exist
         mkdir("$srcdir/glossary") unless(-e "$srcdir/glossary");
@@ -738,7 +897,7 @@ sub write_glossary_pages {
         # Process the letters first...
         foreach my $letter ("a".."z") {
             if($charmap -> {$letter} && scalar(@{$charmap -> {$letter}})) {
-                log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing $srcdir/glossary/$letter.html");
+                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/$letter.html");
                 $self -> write_glossary_file("$srcdir/glossary/$letter.html",
                                              "Glossary of terms starting with '".uc($letter)."'",
                                              $letter, $charmap);
@@ -746,19 +905,19 @@ sub write_glossary_pages {
         }
 
         # Now numbers...
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing $srcdir/glossary/digit.html");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/digit.html");
         $self -> write_glossary_file("$srcdir/glossary/digit.html",
                                      "Glossary of terms starting with digits",
                                      "digit", $charmap);
         
         # ... and everything else
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing $srcdir/glossary/symb.html");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/symb.html");
         $self -> write_glossary_file("$srcdir/glossary/symb.html",
                                      "Glossary of terms starting with other characters",
                                      "symb", $charmap);
            
         # Finally, write the index page
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing $srcdir/glossary/index.html");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/index.html");
         open(INDEX, "> $srcdir/glossary/index.html")
             or die "Unable to open glossary index $srcdir/glossary/index.html: $!";
         print INDEX load_complex_template($self -> {"templatebase"}."/glossary/header.tem",
@@ -772,7 +931,7 @@ sub write_glossary_pages {
         print INDEX load_complex_template($self -> {"templatebase"}."/glossary/footer.tem");
         close(INDEX);
 
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Finished writing glossary pages");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished writing glossary pages");
     } else {
         log_print($Utils::WARNING, $self -> {"verbose"}, "No glossary terms to write");
     }
@@ -852,7 +1011,7 @@ sub write_theme_indexmap {
     # For each module, build a list of steps.
     my $body = "";
     foreach my $module (@modnames) {
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Module: $module = ".$metadata -> {"module"} -> {$module} -> {"title"});
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Module: $module = ".$metadata -> {"module"} -> {$module} -> {"title"});
 
         # skip dummy modules
         next if($module eq "dummy" || $metadata -> {"module"} -> {$module} -> {"skip"});
@@ -909,14 +1068,14 @@ sub write_theme_indexmap {
 
     # Build the theme map page...
     my $mapbody;
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Building theme map page for".($metadata -> {"title"} || "Unknown theme"));
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Building theme map page for".($metadata -> {"title"} || "Unknown theme"));
 
     # First load any metadata-specified content, if any...
     if($metadata -> {"includes"} -> {"resource"}) {
         my $includes = $metadata -> {"includes"} -> {"resource"};
         $includes = [ $includes ] if(!ref($includes)); # make sure we're looking at an arrayref
         foreach my $include (sort(@$includes)) {
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "Including $include");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Including $include");
             
             # if the include is not absolute, prepend the theme directory
             $include = "$themedir/$include" if($include !~ /^\//);
@@ -1018,7 +1177,7 @@ sub write_courseindex {
 
         # For each module, build a list of steps and interlinks.
         foreach my $module (@modnames) {
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "Module: $module = ".$metadata -> {$theme} -> {"module"} -> {$module} -> {"title"});
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Module: $module = ".$metadata -> {$theme} -> {"module"} -> {$module} -> {"title"});
 
             # skip dummy modules
             next if($module eq "dummy" || $metadata -> {$theme} -> {"module"} -> {$module} -> {"skip"});
@@ -1418,7 +1577,7 @@ sub framework_merge {
     opendir(FRAME, $framedir)
         or die "FATAL: Unable to open framework directory: $!";
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Merging framework at $framedir to $outdir...");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merging framework at $framedir to $outdir...");
 
     while(my $entry = readdir(FRAME)) {
         next if($entry =~ /^\./);
@@ -1428,9 +1587,9 @@ sub framework_merge {
         # then far more advanced path handling would be required in generating the templated pages.
         # Unless there is a /blindingly/ good reason, I suggest avoiding changing this setup!)
         if(-d "$framedir/$entry") {
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "Copying directory $framedir/$entry and its contents to $outdir...");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying directory $framedir/$entry and its contents to $outdir...");
             my $out = `cp -rv $framedir/$entry $outdir`;
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "cp output is:\n$out");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is:\n$out");
         
         # process html files
         } elsif($entry =~ /\.html?$/) {
@@ -1451,13 +1610,13 @@ sub framework_merge {
             }
         # otherwise just straight-copy the file, as we don't know what to do with it
         } else {
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "Copying $framedir/$entry to $outdir...");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying $framedir/$entry to $outdir...");
             my $out = `cp -rv $framedir/$entry $outdir`;
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "cp output is: $out");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is: $out");
         }   
     }
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Merge complete.");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merge complete.");
 
     closedir(FRAME);
 
@@ -1480,7 +1639,7 @@ sub preprocess {
     my $refs    = { };
     my $layout  = { }; 
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Starting preprocesss");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Starting preprocesss");
 
     # if we already have a terms hash, use it instead.
     $terms = $self -> {"terms"} if($self -> {"terms"});
@@ -1530,7 +1689,7 @@ sub preprocess {
                         chdir($fullmodule);
                         
                         foreach my $step (@steps) {
-                            log_print($Utils::DEBUG, $self -> {"verbose"}, "Preprocessing $fullmodule/$step... ");
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing $fullmodule/$step... ");
 
                             # load the entire file so we can parse it for anchors
                             open(STEP, $step)
@@ -1569,10 +1728,10 @@ sub preprocess {
                             }
 
                             # record the step details for later menu generation
-                            log_print($Utils::DEBUG, $self -> {"verbose"}, "Recording $title step as $theme -> $module -> steps -> $step");                         
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step as $theme -> $module -> steps -> $step");                         
                             $layout -> {$theme} -> {$module} -> {"steps"} -> {$step} = $title;
 
-                            log_print($Utils::DEBUG, $self -> {"verbose"}, "Done preprocessing $fullmodule/$step");
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");
                                 
                         }
                         chdir($cwd);
@@ -1599,7 +1758,7 @@ sub preprocess {
     # Store all the metadatas, we need them to construct the coursewide index
     $self -> {"fullmap"} = $layout;
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Finished preprocesss");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished preprocesss");
 }
 
 
@@ -1638,7 +1797,7 @@ sub process_step {
 
     die "FATAL: Unable to read body from $filename" if(!$body);
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Obtained body for step $filename, title is $title. Processing body.");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Obtained body for step $filename, title is $title. Processing body.");
 
     # Strip inline title
     $body =~ s/<h\d><a name=".*?">.*?<\/a>\s*<\/h\d>//si;
@@ -1663,7 +1822,7 @@ sub process_step {
     my $difficulty = ucfirst($metadata -> {"module"} -> {$module} -> {"level"});
 
     # Save the step back...
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing out processed data to ".get_step_name($filename));
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".get_step_name($filename));
     open(STEP, "> ".get_step_name($filename))
         or die "FATAL: Unable to open $filename: $!";
        
@@ -1694,11 +1853,11 @@ sub process_step {
 
     close(STEP);
 
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing complete");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete");
 
     # Try to do tidying if the tidy mode has been specified and it exists
     if($self -> {"tidy"}) {
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Tidying ".get_step_name($filename));
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidying ".get_step_name($filename));
         if(-e $tidybin) {
             my $name = get_step_name($filename);
 
@@ -1707,142 +1866,17 @@ sub process_step {
 
             # Now invoke tidy
             my $cmd = "$tidybin $tidyopts -m $name";
-            log_print($Utils::DEBUG, $self -> {"verbose"}, "Invoing $cmd");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Invoing $cmd");
             my $out = `$cmd 2>&1`;
             print $out if($self -> {"verbose"} > 1);            
         } else {
             blargh("Unable to run htmltidy: $tidybin does not exist");
         }
     }
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Step processing complete");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Step processing complete");
 }
 
 
-sub process {
-    my $self   = shift;
-    my $srcdir = shift;
-    my $frame  = shift;
-    $self -> {"refhandler"} = shift;
-
-    # kill the reference handler value if the caller has indicated one is not valid.
-    if($self -> {"refhandler"} eq "none") {
-        $self -> {"refhandler"} = undef;
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "HTMLOutputHandler disabling references processing");
-    }
-
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Processing using HTMLOutputHandler");
-
-    # preprocess to get the anchors and terms recorded
-    $self -> preprocess($srcdir);
-    $self -> preload_version($srcdir);
-    $self -> write_glossary_pages($srcdir);
-
-    if($self -> {"refhandler"}) {
-        $self -> {"refhandler"} -> write_reference_page($srcdir);
-    }
-
-    # load the header include file
-    my $include = $self -> preload_header_include($srcdir) || "";
-    $self -> {"globalheader"} = $include;
-
-    log_print($Utils::DEBUG, $self -> {"verbose"}, "Preprocessing complete");
-
-    # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $srcdir)
-        or die "FATAL: Unable to open source directory for reading: $!";
-
-    # grab the directory list so we can check it for subdirs, strip .* files though
-    my @themes = grep(!/^(\.|CVS)/, readdir(SRCDIR));
-
-    die "FATAL: Unable to locate any themes to parse in $srcdir" if(scalar(@themes) == 0);
-
-    foreach my $theme (@themes) {
-        my $fulltheme = "$srcdir/$theme"; # prepend the source directory
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "Processing $theme");
-
-        # if this is a directory, check inside for subdirs ($theme is a theme, subdirs are modules)
-        if(-d $fulltheme) {
-
-            # Load the theme metadata
-            my $metadata  = $self -> load_metadata($fulltheme);
-
-            if($metadata && ($metadata != 1)) {
-                # Get the list of module directories in this theme
-                opendir(MODDIR, $fulltheme)
-                    or die "FATAL: Unable to open module directory $fulltheme for reading: $!";
-                my @modules = grep(!/^(\.|CVS)/, readdir(MODDIR));
-
-                # Process each module.
-                foreach my $module (@modules) { 
-                    log_print($Utils::DEBUG, $self -> {"verbose"}, "Processing $module ($fulltheme/$module)");
-
-                    my $fullmodule = "$fulltheme/$module"; # prepend the module directory...
-
-                    # If this is a module directory, we want to scan it for steps
-                    if(-d $fullmodule) {
-                        
-                        # Scan for steps
-                        opendir(SUBDIR, $fullmodule)
-                            or die "FATAL: Unable to open subdir for reading: $!";
-
-                        # now grab a list of files we know how to process, then call the internal process
-                        # function for each one, remembering to include the full path.
-                        my @stepfiles = grep(/^node\d+\.html/, readdir(SUBDIR));
-                        
-                        if(scalar(@stepfiles)) {
-                            my $cwd = getcwd();
-                            chdir($fullmodule);
-
-                            my $maxstep = get_maximum_stepid(\@stepfiles);
-                            
-                            $metadata -> {"module"} -> {$module} -> {"steps"} = { };
-                            for(my $i = 0; $i < scalar(@stepfiles); ++$i) {
-                                log_print($Utils::DEBUG, $self -> {"verbose"}, "Processing ".$stepfiles[$i]." as ".get_step_name($stepfiles[$i])."... ");
-                                my ($previous, $next, $prevlink, $nextlink) = $self -> build_prev_next(\@stepfiles, $i, $metadata -> {"module"} -> {$module} -> {"level"});
-                                $self -> process_step($stepfiles[$i], 
-                                                      $metadata -> {"module"} -> {$module} -> {"steps"}, 
-                                                      $previous, 
-                                                      $next,
-                                                      get_step_name($stepfiles[0]),
-                                                      $prevlink,
-                                                      $nextlink,
-                                                      get_step_name($stepfiles[scalar(@stepfiles) - 1]),
-                                                      $theme,
-                                                      $module,
-                                                      $include,
-                                                      $maxstep,
-                                                      $metadata);
-                                log_print($Utils::DEBUG, $self -> {"verbose"}, "Finished processing $module ($fulltheme/$module)");
-                            }
-                            chdir($cwd);
-
-                            $self -> cleanup_module($fullmodule, $module);
-                        }
-
-                        closedir(SUBDIR);
-                    }
-                }
-                closedir(MODDIR);
-                log_print($Utils::DEBUG, $self -> {"verbose"}, "Writing index files");
-                $self -> write_theme_indexmap($fulltheme, $theme, $metadata, $include);
-
-            } else { # if($metadata && ($metadata != 1)) {
-                log_print($Utils::NOTICE, $self -> {"verbose"}, "Skipping directory $fulltheme: no metadata in directory");
-            }
-        } # if(-d $fulltheme) {
-    } # foreach my $theme (@themes) {
-
-    log_print($Utils::NOTICE, $self -> {"verbose"}, "HTMLOutputhandler processing complete");
-
-    $self -> cleanup_lists($srcdir);
-
-    closedir(SRCDIR);
-
-    $self -> write_courseindex($srcdir, $self -> {"fullmap"});
-    $self -> framework_merge($srcdir, $frame);
-
-    return 1;
-}
 
 
 

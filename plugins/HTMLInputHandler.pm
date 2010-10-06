@@ -33,7 +33,7 @@ use constant DEFAULT_LATEX_HEADER  => "\\documentclass[12pt]{article}\n\\usepack
 # The arguments to pass to the latex processor
 use constant DEFAULT_LATEX_ARGS    => '-nonavigation -noaddress -white -noinfo -antialias_text -html_version "4.1"';
 
-my ($VERSION, $type, $errstr, $htype, $extfilter, $desc, @summarydata);
+my ($VERSION, $type, $errstr, $htype, $extfilter, $desc);
 
 BEGIN {
     $VERSION       = "3.0";
@@ -41,8 +41,6 @@ BEGIN {
     $extfilter     = '[\s\w-]+\d+\.html?';    # files matching this are assumed to be understood for processing.
     $desc          = 'HTML input processor';  # Human-readable name 
     $errstr        = '';                      # global error string
-
-    @summarydata   = ();                      # contains messages to be presented in a summary.
 }
 
 
