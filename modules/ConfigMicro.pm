@@ -105,6 +105,7 @@ sub read {
         if(!open(CFILE, "< $filename"));
 
     my $counter = 0;
+    my $key;
     while(my $line = <CFILE>) {
         chomp($line);
         ++$counter;
@@ -119,17 +120,22 @@ sub read {
 
         # Attribues with quoted values. value can contain anything other than "
 		} elsif($line =~ /^\s*([\w\-]+)\s*=\s*\"([^\"]+)\"/ ) {
-			$self -> {$section} -> {$1} = $2;
+			$key = $1;
+            $self -> {$section} -> {$key} = $2;
 
         # Handle attributes without quoted values - # or ; at any point will mark comments
 		} elsif($line =~ /^\s*([\w\-]+)\s*=\s*([^\#;]+)/ ) {
-			$self -> {$section} -> {$1} = $2;
+            $key = $1;
+			$self -> {$section} -> {$key} = $2;
 
         # bad input...
 		} else {
             close(CFILE);
             return set_error("Syntax error on line $counter: '$line'");
         }
+
+        # Convert any \n in the line to real newlines
+        $self -> {$section} -> {$key} =~ s/\\n/\n/g; 
 	}
 
     close(CFILE);
