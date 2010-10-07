@@ -309,7 +309,7 @@ $log -> print($log -> DEBUG, "Using output directory: ".$config -> {"Processor"}
  
 # Verify that the source dirs /are/ dirs
 check_directory($config -> {"Processor"} -> {"datasource"}, "course data source directory");
-check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", 0, 1, 0);
+check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", {"exists" => 0, "nolink" => 1, "checkdir" => 0});
 
 
 # ------------------------------------------------------------------------------

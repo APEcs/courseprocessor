@@ -1,10 +1,10 @@
-# Utils - general utility functions
-
-# General utilities package, contains functions common to the
-# various handlers.
-
-# @copy 2008, Chris Page &lt;chris@starforge.co.uk&gt;
+# @file utils.pl
+# General utility functions. This file contains the implementation of 
+# functions used throughout the processor and support tools. 
 #
+# @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 2.1
+
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
@@ -18,14 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# All plugins must implement the following functions:
-#
-# get_type        - return "input" or "output"  
-# get_description - return a human-readable description of the module 
-# new             - return an instance of the module object
-# use_plugin      - returns true if th eplugin can be used on the tree, false if not
-# process         - actually does the processing.
-
 package Utils;
 use Exporter;
 use Term::Size;
@@ -35,9 +27,8 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file resolve_path reset_pointprogress update_pointprogress lead_zero);
-our $VERSION   = 1.0;
-
+our @EXPORT_OK = qw(path_join check_directory load_file resolve_path lead_zero);
+our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
 # Take an array of path fragments and concatenate them together. This will 
@@ -69,9 +60,13 @@ sub path_join {
 }
 
 
+## @fn $ resolve_path($path)
 # Convert a relative (or partially relative) file into a truly absolute path.
 # for example, /foo/bar/../wibble/ptang becomes /foo/wibble/ptang and
 # /foo/bar/./wibble/ptang becomes /foo/bar/wibble/ptang
+#
+# @param path The path to convert to an absolute path
+# @return The processed absolute path.
 sub resolve_path {
     my $path = shift;
 
@@ -104,35 +99,64 @@ sub resolve_path {
     return File::Spec -> catpath($vol, File::Spec -> catdir(@dirs), $file);
 }
 
+
+## @fn void check_directory($dirname, $title, $options)
+# Apply a number of checks to the specified directory. This will check
+# various attribues of the specified directory and if any of the checks
+# fail, this will die with an appropriate message. If all the checks pass,
+# this will return silently. The optional options hash controls which 
+# checks are performed on the directory:
+#  
+# exists    If true, the specified directory must exist. If false, the 
+#           existence of the directory is not enforced. If not specified,
+#           this check defaults to true. 
+# nolink    If true, the directory must be a real, physical directory, it
+#           must not be a shambolic link. If false, it can be either. If not
+#           specified, this defaults to false (don't check).
+# checkdir  If true, verify that the directory is actually a directory and
+#           not a file or other special directory entry. If false, don't
+#           bother checking. If not specified, this defaults to true.
+#
+# @note If 'checkdir' is set to true, the function will die with a fatal 
+#       error if the directory does not exist even if 'exists' is false.
+# @param dirname The directory to check
+# @param title   A human-readable description of the directory.
+# @param options A reference to a hash of options controlling the checks.      
 sub check_directory {
     my $dirname  = shift;
-    my $type     = shift;
-    my $exists   = shift;
-    my $nolink   = shift;
-    my $checkdir = shift;
+    my $title    = shift;
+    my $options  = shift;
 
-    $exists   = 1 if(!defined($exists));
-    $nolink   = 0 if(!defined($nolink));
-    $checkdir = 1 if(!defined($checkdir));
+    $options -> {"exists"}   = 1 if(!defined($options -> {"exists"}));
+    $options -> {"nolink"}   = 0 if(!defined($options -> {"nolink"}));
+    $options -> {"checkdir"} = 1 if(!defined($options -> {"checkdir"}));
     
-    die "FATAL: The specified $type does not exist"
-        unless(!$exists || -e $dirname);
+    die "FATAL: The specified $title does not exist.\n"
+        unless(!$options -> {"exists"} || -e $dirname);
 
-    die "FATAL: The specified $type is a link, please only use real directories"
-        if($nolink && -l $dirname);
+    die "FATAL: The specified $title is a link, please only use real directories.\n"
+        if($options -> {"nolink"} && -l $dirname);
 
-    die "FATAL: The specified $type is not a directory"
-        unless(!$checkdir || -d $dirname);
+    die "FATAL: The specified $title is not a directory.\n"
+        unless(!$options -> {"checkdir"} || -d $dirname);
 }
 
+
+## @fn $ load_file($name)
+# Load the contents of the specified file into memory. This will attempt to
+# open the specified file and read the contents into a string.
+#
+# @param name The name of the file to load into memory.
+# @return The string containing the file contents, or undef on error. If this
+#         returns undef, $! should contain the reason why.
 sub load_file {
     my $name = shift;
 
-    if(open(TEMPLATE, $name)) {
+    if(open(INFILE, $name)) {
         undef $/;
-        my $lines = <TEMPLATE>;
+        my $lines = <INFILE>;
         $/ = "\n";
-        close(TEMPLATE);
+        close(INFILE);
 
         return $lines;
     }
@@ -140,30 +164,18 @@ sub load_file {
 }
 
 
+## @fn $ lead_zero($value)
+# Ensure that the specified value starts with 0 if it is less than 10
+# and does not already start wiht 0 (so '9' will become '09' but '15'
+# will not be altered, nor will '05').
+#
+# @param value The value to check
+# @return The value with a lead 0 if it does not have one already and needs it.
 sub lead_zero {
     my $value = shift;
 
-    return "0$value" if($value < 0 && $value !~ /^0/);
+    return "0$value" if($value < 10 && $value !~ /^0/);
     return $value;
-}
-
-
-our $pointcount = 0;
-
-sub reset_pointprogress {
-    $pointcount = 0;
-}
-
-sub update_pointprogress {
-    print ".";
-    $pointcount++;
-
-    my ($w,$h) = Term::Size::chars;
-
-    if($w && $pointcount >= $w) {
-        print "\n";
-        $pointcount = 0;
-    }
 }
 
 1;

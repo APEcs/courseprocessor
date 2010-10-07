@@ -558,12 +558,10 @@ sub process_latex {
     # the cached version rather than invoking latex2html and doing postprocessing again
     if($self -> {"latexcache"} -> {$checksum}) {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "latexcache hit for content, md5 $checksum");
-        update_pointprogress() if($self -> {"verbose"} == $Utils::NOTICE);
         return $self -> {"latexcache"} -> {$checksum};
 
     } else {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "latexcache miss for content, md5 $checksum");
-        update_pointprogress() if($self -> {"verbose"} == $Utils::NOTICE);
 
         # attempt to open the temporary file and write the content to it.
         if(open(TMPFILE, "> $tempname")) {
@@ -616,7 +614,6 @@ sub process_latex {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Caching processed body for $content, md5 $checksum");
             $self -> {"latexcache"} -> {$checksum} = $body;
 
-            update_pointprogress() if($self -> {"verbose"} == $Utils::NOTICE);
             return $body;
         } else { # if(open(TMPFILE, "> $tempname")) {
             # temporary file open failed, return an error.
