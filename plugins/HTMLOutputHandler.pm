@@ -28,15 +28,18 @@ package HTMLOutputHandler;
 require 5.005;
 use Data::Dumper;
 use Cwd qw(getcwd chdir);
-use Utils qw(check_directory text_to_html resolve_path load_file blargh lead_zero);
+use Utils qw(check_directory text_to_html resolve_path load_file lead_zero);
 use strict;
-
 
 # The location of htmltidy, this must be absolute as we can not rely on path being set.
 use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
 
 # The commandline arguments to pass to htmltidy when cleaning up output.
 use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no";
+
+# Should we even bother trying to do the tidy pass?
+use constant DEFAULT_TIDY         => 1;
+
 
 my ($VERSION, $errstr, $htype, $desc);
 
@@ -61,23 +64,22 @@ BEGIN {
 # path       (required) The directory containing the processor
 # metadata   (required) A reference to the metadata handler object.
 # template   (required) A reference to the template engine object.
-# tidy       (optional) True to enable post-processing cleanup, false otherwise. (defaults to false)
-# tidycmd    (optional) The location of 'tidy', should include the full path to the command.
-# tidyopts   (optional) The options to pass to htmltidy.
 #
 # @param args A hash of arguments to initialise the plugin with. 
 # @return A new HTMLInputHandler object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = { "tidy"     => 0, # set to 0 to disable htmltidy postprocessing
-                     "tidycmd"  => DEFAULT_TIDY_COMMAND,
-                     "tidtopts" => DEFAULT_TIDY_ARGS,
-                     @_
-    };
+    my $self     = { @_, };
+
+    # Set defaults in the configuration if values have not been provided.
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}   = DEFAULT_TIDY_COMMAND if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}));
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}  = DEFAULT_TIDY_ARGS    if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}));
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}      = DEFAULT_TIDY         if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}));
 
     return bless $self, $class;
 }
+
 
 ## @fn $ get_type()
 # Determine the type of handler behaviour this plugin provides. This will always
@@ -322,7 +324,7 @@ sub preload_version {
         chomp($self -> {"cbtversion"});
         close(VERSFILE);
     } else {
-        blargh("Unable to open version file $basedir/version: $!");
+        die "FATAL: Unable to open version file $basedir/version: $!");
         $self -> {"cbtversion"} .= "unknown";
     }
 
@@ -685,7 +687,7 @@ sub set_anchor_point {
     $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
 
     my $args = $hashref -> {$name};
-    blargh("Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]") if($args);
+    die "FATAL: Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]") if($args);
 
     # Record the location
     $hashref -> {$name} = [$theme, $module, $step];
