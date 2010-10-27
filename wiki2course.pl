@@ -667,11 +667,10 @@ sub metadata_save {
     my $metadata = shift;
     my $outdir   = shift;
 
-    open(MDATA, ">", path_join($outdir, "metadata.xml"))
+    open(MDATA, ">:utf8", path_join($outdir, "metadata.xml"))
         or die "FATAL: Unable to write metadata to $outdir: $!\n";
 
-    binmode MDATA, ':utf8';    
-    print MDATA encode_utf8("<?xml version='1.0' standalone='yes'?>\n$metadata\n");
+    print MDATA "<?xml version='1.0' standalone='yes'?>\n",$metadata,"\n";
     
     close(MDATA);
 }
@@ -753,13 +752,11 @@ sub wiki_export_module {
                                 $body = process_entities_html($wikih, $module, $body);
                             }
 
-                            open(STEP, "> $stepname")
+                            open(STEP, ">:utf8", $stepname)
                                 or die "FATAL: Unable to open $stepname ($title) for writing: $!\n";
 
-                            binmode STEP, ':utf8'; 
-
                             # Print the html in minimal 'new style' for the processor
-                            print STEP encode_utf8("<html>\n<head>\n<title>$title</title>\n</head><body><div id=\"content\">\n$body\n</div><!-- id=\"content\" -->\n</body>\n</html>\n");
+                            print STEP "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n<title>",$title,"</title>\n</head><body><div id=\"content\">\n",$body,"\n</div><!-- id=\"content\" -->\n</body>\n</html>\n";
                             close(STEP);
                            
                             # Locate and record any markers
