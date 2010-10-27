@@ -113,6 +113,8 @@ sub read {
         # Skip comments and empty lines
         next if($line =~ /^\s*(\#|;|\z)/);
 
+        undef($key);
+
 		# Handle section headers, allows for comments after the ], but [foo #comment] will
         # treat the section name as 'foo #comment'!
         if($line =~ /^\s*\[([^\]]+)\]/) {
@@ -135,7 +137,8 @@ sub read {
         }
 
         # Convert any \n in the line to real newlines
-        $self -> {$section} -> {$key} =~ s/\\n/\n/g; 
+        $self -> {$section} -> {$key} =~ s/\\n/\n/g if($section && $key);
+
 	}
 
     close(CFILE);
