@@ -152,7 +152,7 @@ sub check_directory {
 sub load_file {
     my $name = shift;
 
-    if(open(INFILE, $name)) {
+    if(open(INFILE, "<:utf8", $name)) {
         undef $/;
         my $lines = <INFILE>;
         $/ = "\n";
