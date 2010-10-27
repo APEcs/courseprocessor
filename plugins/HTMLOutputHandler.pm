@@ -54,7 +54,6 @@ BEGIN {
 #  Constructor and identifier functions.  
 #   
 
-
 ## @cmethod $ new(%args)
 # Create a new plugin object. This will intialise the plugin to a base state suitable
 # for use by the processor. The following arguments may be provided to this constructor:
@@ -236,35 +235,6 @@ sub process {
 }
 
 
-# ============================================================================
-#  Utility Code
-#   
-
-# Given a step name, this returns a string containing the canonical name for
-# the step (eg: "node5.htm" => "step5.html")
-sub get_step_name {
-    my $filename = shift;
-
-    my ($stepid) = $filename =~ /^\D+(\d+(.\d+)?).html?$/;
-    die "FATAL: Unable to obtain stepid from $filename. This Should Not Happen!" if(!$stepid);
-
-    $stepid = "0$stepid" if((0 + $stepid) < 10 && $stepid !~ /^0/);
-    return "step".$stepid.".html";
-}
-
-
-# returns the maximum stepid in the specified array of step names
-sub get_maximum_stepid {
-    my $namesref = shift;
-
-    my $maxid = 0;
-    foreach my $name (@$namesref) {
-        if($name =~ /^\D+(\d+(.\d+)?).html?$/o) {
-            $maxid = $1 if($1 > $maxid);
-        }
-    }
-}
-
 
 # ============================================================================
 #  Precheck - can this plugin be applied to the source tree?
@@ -275,8 +245,6 @@ sub get_maximum_stepid {
 # than return 0.
 sub use_plugin {
     my $self    = shift;
-    my $srcdir  = shift;
-    $self -> {"templatebase"} = shift;
     my $plugins = shift;
 
     # prepend the processor template directory if the template is not absolute
@@ -307,6 +275,34 @@ sub use_plugin {
 }
 
 
+# ============================================================================
+#  Utility Code
+#   
+
+# Given a step name, this returns a string containing the canonical name for
+# the step (eg: "node5.htm" => "step5.html")
+sub get_step_name {
+    my $filename = shift;
+
+    my ($stepid) = $filename =~ /^\D+(\d+(.\d+)?).html?$/;
+    die "FATAL: Unable to obtain stepid from $filename. This Should Not Happen!" if(!$stepid);
+
+    $stepid = "0$stepid" if((0 + $stepid) < 10 && $stepid !~ /^0/);
+    return "step".$stepid.".html";
+}
+
+
+# returns the maximum stepid in the specified array of step names
+sub get_maximum_stepid {
+    my $namesref = shift;
+
+    my $maxid = 0;
+    foreach my $name (@$namesref) {
+        if($name =~ /^\D+(\d+(.\d+)?).html?$/o) {
+            $maxid = $1 if($1 > $maxid);
+        }
+    }
+}
 
 
 # ============================================================================
@@ -589,35 +585,6 @@ sub convert_local {
 }
 
 
-## @method $ convert_interlink($anchor, $text)
-# Convert a link to a target into a html hyperlink. This will attempt to locate 
-# the anchor specified and create a link to it.
-#
-# @param anchor The name of the anchor to be linked to.
-# @param text   The text to use as the link text.
-# @return A HTML link to the specified anchor, or an error message if the anchor 
-#         can not be found.
-sub convert_interlink {
-    my $self   = shift;
-    my $anchor = shift;
-    my $text   = shift;
-    my $stepid = shift;
-    my $module = shift;
-
-    my $targ = $self -> {"anchors"} -> {$anchor};
-    if(!$targ) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Unable to locate anchor $anchor. Link text is '$text' in $module step $stepid");
-        return '<span class="error">'.$text.' (Unable to locate anchor '.$anchor.')</span>';
-    }
-    
-    my $step = @$targ[2];
-    # prepent 0 if the step number is less than 10, and it doesn't already start with a leading 0
-    $step = "0$step" if($step < 10 && $step !~ /^0/);   
-
-    return "<a href=\"../../@$targ[0]/@$targ[1]/step".$step.".html#$anchor\">$text</a>";
-}
-
-
 ## @method $ convert_step_tags($content, $stepid, $level)
 # Convert any processor markup tags in the supplied step text into the equivalent 
 # html. This function scans the provided text for any of the special marker tags
@@ -677,21 +644,67 @@ sub convert_step_tags {
 #  Interlink handling
 #  
 
-# Record the position of named anchor points, used when doing cross-step linking 
+## @method void set_anchor_point($name, $theme, $module, $step)
+# Record the position of named anchor points. This is the first step in allowing
+# user-defined links within the material, in that it records the locations of
+# anchor points (similar to anchors in html, but course-wide) so that later 
+# code can convert links to those anchors into actual html links. If more than
+# one anchor has the same name, the second anchor with the name encountered by
+# this function will cause the program to die with a fatal error.
+#
+# @note This function does not enforce values in theme, module, or step other
+#       than requiring that step eiter be undef or in the standard step naming
+#       format. theme, module and step /can/ be undef, but having all three be
+#       undef makes no sense.
+# @param name   The name of the anchor point.
+# @param theme  The name of the theme the anchor is in (should be the theme dir name).
+# @param module The module the anchor is in (should be the module directory name).
+# @param step   The step the anchor is in (should be the step filename).
 sub set_anchor_point {
-    my ($self, $hashref, $name, $theme, $module, $step) = @_;
+    my ($self, $name, $theme, $module, $step) = @_;
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting anchor $name in $theme/$module/$step");
 
-    # we're actually only interested in the step number, not the name (which is likely to change anyway)
-    $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
+    die "FATAL: Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]"
+        if($self -> {"anchors"} && $self -> {"anchors"} -> {$name});
 
-    my $args = $hashref -> {$name};
-    die "FATAL: Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]") if($args);
+    # we're actually only interested in the step number, not the name (which is likely to change anyway)
+    $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/ if($step);
 
     # Record the location
-    $hashref -> {$name} = [$theme, $module, $step];
+    $self -> {"anchors"} -> {$name} = {"theme"  => $theme, 
+                                       "module" => $module, 
+                                       "stepid" => $step };
 }
+
+
+## @method $ convert_link($anchor, $text)
+# Convert a link to a target into a html hyperlink. This will attempt to locate 
+# the anchor specified and create a link to it.
+#
+# @param anchor The name of the anchor to be linked to.
+# @param text   The text to use as the link text.
+# @param level  The level at which the link resides. Can be 'theme', or 'step'.
+#               If this is not specified, it defaults to 'step'.
+# @return A HTML link to the specified anchor, or an error message if the anchor 
+#         can not be found.
+sub convert_link {
+    my $self   = shift;
+    my $anchor = shift;
+    my $text   = shift;
+    my $level  = shift || "step";
+
+    my $targ = $self -> {"anchors"} -> {$anchor};
+    if(!$targ) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unable to locate anchor $anchor. Link text is '$text' in $module step $stepid");
+        return '<span class="error">'.$text.' (Unable to locate anchor '.$anchor.')</span>';
+    }
+
+    my $backup = $level eq "step" ? "../../" : $level eq "theme" ? "../" : die "FATAL: Illegal level specified in convert_link. This should not happen.\n";
+    
+    return "<a href=\"".$backup.$targ -> {"theme"}."/".$targ -> {"module"}."/step".lead_zero($targ -> {"step"}).".html#$anchor\">$text</a>";
+}
+
 
 
 # ============================================================================
@@ -1633,46 +1646,47 @@ sub framework_merge {
 # in the course content
 sub preprocess {
     my $self    = shift;
-    my $srcdir  = shift;
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Starting preprocesss");
 
     # A bunch of references to hashes built up as preprocessing proceeds.
-    my $anchors = { };
     my $terms   = { };
     my $refs    = { };
     my $layout  = { }; 
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Starting preprocesss");
+    # And a counter to keep track of how many files need processing
+    $self -> {"stepcount"} = 0;
 
     # if we already have a terms hash, use it instead.
     $terms = $self -> {"terms"} if($self -> {"terms"});
 
     # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $srcdir)
+    opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
         or die "FATAL: Unable to open source directory for reading: $!";
 
     # grab the directory list so we can check it for subdirs, strip .* files though
     my @themes = grep(!/^(\.|CVS)/, readdir(SRCDIR));
     
     foreach my $theme (@themes) {
-        my $fulltheme = "$srcdir/$theme"; # prepend the source directory
+        my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme); # prepend the source directory
 
         # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
         if(-d $fulltheme) {
+            # load the metadata if possible
+            my $metadata = $self -> {"metadata"} -> load_metadata($fulltheme, 0);
+
+            # skip directories without metadata, or non-theme metadata
+            next if($metadata == 1 || !$metadata -> {"theme"});
+
+            $layout -> {$theme} = $metadata; # otherwise, store it.
+
             opendir(MODDIR, $fulltheme)
                 or die "FATAL: Unable to open theme directory $fulltheme for reading: $!";
-
-            # load the metadata
-            my $metadata = $self -> load_metadata($fulltheme);
-
-            # skip directories without metadata
-            next if($metadata == 1);
-
-            $layout -> {$theme} = $metadata; #otherwise, store it.
 
             my @modules = grep(!/^(\.|CVS)/, readdir(MODDIR));
 
             foreach my $module (@modules) {
-                my $fullmodule = "$fulltheme/$module"; # prepend the module directory...
+                my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
                 # skip CVS or svn directories
                 next if($module eq "CVS" || $module eq ".svn");
@@ -1693,19 +1707,15 @@ sub preprocess {
                         foreach my $step (@steps) {
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing $fullmodule/$step... ");
 
-                            # load the entire file so we can parse it for anchors
-                            open(STEP, $step)
+                            my $content = load_file($step)
                                 or die "FATAL: Unable to open $fullmodule/$step: $!";
 
-                            undef $/;
-                            my $content = <STEP>;
                             my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}im;
-                            $/= "\n";
-                            close(STEP);
 
-                            pos($content) = 0; # just to be safe
+                            # Record the locations of any anchors in the course
+                            pos($content) = 0;
                             while($content =~ /\[target\s+name\s*=\s*\"([-\w]+)\"\s*\/?\s*\]/isg) {
-                                $self -> set_anchor_point($anchors, $1, $theme, $module, $step);
+                                $self -> set_anchor_point($1, $theme, $module, $step);
                             }
 
                             # reset so we can scan for glossary terms
@@ -1715,15 +1725,15 @@ sub preprocess {
                                 $self -> set_glossary_point($terms, $1, $2, $theme, $module, $step, $title);
                             }
 
-                            pos($content) = 0; 
                             # Now look for references to the terms...
+                            pos($content) = 0; 
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\/\s*\]}isg) {
                                 $self -> set_glossary_point($terms, $1, undef, $theme, $module, $step, $title);
                             }
 
-                            pos($content) = 0; 
                             # Next look for references if the reference handler is valid.
                             if($self -> {"refhandler"}) {
+                                pos($content) = 0; 
                                 while($content =~ m{\[ref\s+(.*?)\s*/?\s*\]}isg) {
                                     $self -> {"refhandler"} -> set_reference_point($refs, $1, $theme, $module, $step, $title);
                                 }
@@ -1733,29 +1743,29 @@ sub preprocess {
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step as $theme -> $module -> steps -> $step");                         
                             $layout -> {$theme} -> {$module} -> {"steps"} -> {$step} = $title;
 
+                            # Increment the step count for later progress display
+                            ++$self -> {"stepcount"};
+
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");
                                 
                         }
                         chdir($cwd);
-                    }
+                    } # if(scalar(@steps))
 
                     closedir(SUBDIR);
-                }
-            }
+                } # if(-d $fullmodule)
+            } # foreach my $module (@modules) 
             closedir(MODDIR);
-        }
-    }
-    print Data::Dumper -> Dump([$layout], ['*layout']) if($self -> {"verbose"} > 1);
+        } # if(-d $fulltheme)
+    } # foreach my $theme (@themes)
 
     closedir(SRCDIR);
     
-    $self -> {"anchors"} = $anchors;
     $self -> {"terms"}   = $terms;
     $self -> {"refs"}    = $refs;
 
     $self -> build_dropdowns($layout);
     my $dropdowns = $self -> {"dropdowns"};
-    print Data::Dumper -> Dump([$dropdowns], ['*dropdowns']) if($self -> {"verbose"} > 1);
  
     # Store all the metadatas, we need them to construct the coursewide index
     $self -> {"fullmap"} = $layout;
