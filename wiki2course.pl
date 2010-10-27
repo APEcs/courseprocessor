@@ -34,10 +34,11 @@ BEGIN {
 
 #use Data::Dumper;
 use utf8;
+
 use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
 use Digest;
-use Encode qw(encode);
+use Encode qw(encode encode_utf8);
 use File::HomeDir;
 use File::Path;
 use Getopt::Long;
@@ -668,8 +669,9 @@ sub metadata_save {
 
     open(MDATA, ">", path_join($outdir, "metadata.xml"))
         or die "FATAL: Unable to write metadata to $outdir: $!\n";
-    
-    print MDATA "<?xml version='1.0' standalone='yes'?>\n$metadata\n";
+
+    binmode MDATA, ':utf8';    
+    print MDATA encode_utf8("<?xml version='1.0' standalone='yes'?>\n$metadata\n");
     
     close(MDATA);
 }
@@ -757,7 +759,7 @@ sub wiki_export_module {
                             binmode STEP, ':utf8'; 
 
                             # Print the html in minimal 'new style' for the processor
-                            print STEP "<html>\n<head>\n<title>$title</title>\n</head><body><div id=\"content\">\n$body\n</div><!-- id=\"content\" -->\n</body>\n</html>\n";
+                            print STEP encode_utf8("<html>\n<head>\n<title>$title</title>\n</head><body><div id=\"content\">\n$body\n</div><!-- id=\"content\" -->\n</body>\n</html>\n");
                             close(STEP);
                            
                             # Locate and record any markers
