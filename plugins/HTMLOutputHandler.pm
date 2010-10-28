@@ -1291,7 +1291,7 @@ sub is_related {
 #  Dropdown handling
 #  
 
-## @method void build_theme_dropdowns()
+## @method $ build_theme_dropdowns()
 # Generate the theme dropdowns shown on theme map and theme index pages, and included
 # in each step nav menu. This generates two partially-processed dropdown menus, and
 # get_theme_dropdown() should be called to complete the processing before inserting 
@@ -1301,6 +1301,7 @@ sub is_related {
 # 
 # @note This will die if any theme is missing its indexorder (although the metadata
 #       validation should have failed if it does not!)
+# @return A reference to an array of theme names, sorted by index order
 sub build_theme_dropdowns {
     my $self = shift;
 
@@ -1311,17 +1312,14 @@ sub build_theme_dropdowns {
     
     # Generate a sorted list of the themes stored in the metadata
     my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
-                                if(!defined($self -> {"mdata"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {$b} -> {"theme"} -> {"indexorder"}));
+                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
                             
-                            return $self -> {"mdata"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {$b} -> {"theme"} -> {"indexorder"};
+                            return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"};
                           }
-                          keys(%$self -> {"mdata"});
+                          keys(%$self -> {"mdata"} -> {"themes"});
 
     # Build the ordered list of themes for both levels.
     foreach $theme (@themenames) {
-        # Skip the course metadata
-        next if($theme eq "_course_");
-
         $themedrop_theme  .= $self -> {"template"} -> load_template("/theme/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
                                                                       "***title***" => $layout -> {$theme} -> {"title"}});
@@ -1339,8 +1337,14 @@ sub build_theme_dropdowns {
     # themes_stepview is the list of themes visible when viewing a step.
     $self -> {"dropdowns"} -> {"themes_stepview"}   = $self -> {"template"} -> load_template("/theme/module/themedrop.tem",
                                                                                              { "***entries***" => $themedrop_module });
+
+    return \@themenames;
 }
 
+
+sub build_module_dropdowns {
+    my $self  = shift;
+    my $theme = shift;
 
 
 # Builds the menus that will replace dropdown markers in the templates during
@@ -1350,7 +1354,7 @@ sub build_dropdowns {
     my $self   = shift;
 
     # Construct the easy dropdowns first.
-    $self -> build_theme_dropdowns();
+    my $themename = $self -> build_theme_dropdowns();
     
 
     
@@ -1663,16 +1667,14 @@ sub preprocess {
     # A bunch of references to hashes built up as preprocessing proceeds.
     $self -> {"terms"} = { } if(!defined($self -> {"terms"}));
     $self -> {"refs"}  = { } if(!defined($self -> {"refs"}));
-    $self -> {"mdata"} = { } if(!defined($self -> {"mdata"}));
 
     # And a counter to keep track of how many files need processing
     $self -> {"stepcount"} = 0;
 
-    # Load the course metadata here. We don't need it, but it'll be useful later. Use the "_course_" name
-    # to ensure that, should a theme be called "course" it doesn't overwrite this!
-    $self -> {"mdata"} -> {"_course_"} = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, 1);
+    # Load the course metadata here. We don't need it, but it'll be useful later.
+    $self -> {"mdata"} = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, 1);
     die "FATAL: Unable to load course metadata.\n"
-        if(!defined($self -> {"mdata"} -> {"_course_"}) || ref($self -> {"mdata"} -> {"_course_"}) ne "HASH");
+        if(!defined($self -> {"mdata"} -> {"course"}) || ref($self -> {"mdata"} -> {"course"}) ne "HASH");
     
     # This should be the top-level "source data" directory, and it should contain theme dirs
     opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
@@ -1691,7 +1693,7 @@ sub preprocess {
             # skip directories without metadata, or non-theme metadata
             next if($metadata == 1 || !$metadata -> {"theme"});
 
-            $self -> {"mdata"} -> {$theme} = $metadata; # otherwise, store it.
+            $self -> {"mdata"} -> {"themes"} -> {$theme} = $metadata; # otherwise, store it.
 
             # Now we need to get a list of modules inside the theme
             opendir(MODDIR, $fulltheme)
