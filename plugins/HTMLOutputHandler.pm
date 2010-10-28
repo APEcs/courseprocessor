@@ -124,7 +124,6 @@ sub process {
 
     # preprocess to get the anchors and terms recorded
     $self -> preprocess($srcdir);
-    $self -> preload_version($srcdir);
     $self -> write_glossary_pages($srcdir);
 
     if($self -> {"refhandler"}) {
@@ -306,32 +305,6 @@ sub get_maximum_stepid {
 
 
 # ============================================================================
-
-# Load a version number from the global version file and append the current time
-# and date
-sub preload_version {
-    my $self = shift;
-    my $basedir = shift;
-
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Loading version");
-
-    if(open(VERSFILE, "$basedir/version.txt")) {
-        $self -> {"cbtversion"} = <VERSFILE>;
-        chomp($self -> {"cbtversion"});
-        close(VERSFILE);
-    } else {
-        die "FATAL: Unable to open version file $basedir/version: $!");
-        $self -> {"cbtversion"} .= "unknown";
-    }
-
-    my @stamp = localtime();
-    my $date = sprintf "%d/%d/%d %d:%d:%d", $stamp[3], 1 + $stamp[4], 1900 + $stamp[5], $stamp[2], $stamp[1], $stamp[0]; 
-    $self -> {"cbtversion"} .= " ($date)";
-
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Version is '".$self -> {"cbtversion"}."'");
-
-}
-
 
 # load a file containing tags to insert into the output html headers.
 sub preload_header_include {
@@ -1642,44 +1615,53 @@ sub framework_merge {
 #  Core processing code.
 #  
 
+## @method void preprocess()
 # Scan the document tree recording the location of anchors and glossary terms 
-# in the course content
+# in the course content. This will go through the course data loading and validating
+# the metadata as needed, recording where anchors, terms (and, if needed, references)
+# appear in the material. Once this completes the HTMLOutputhandler object will have
+# three hashes containing glossary term locations, reference locations, and the 
+# validated metadata for the course and all themes. The preprocess also counts how
+# many steps there are in the whole course for progress updates later.
 sub preprocess {
-    my $self    = shift;
+    my $self = shift;
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Starting preprocesss");
 
     # A bunch of references to hashes built up as preprocessing proceeds.
-    my $terms   = { };
-    my $refs    = { };
-    my $layout  = { }; 
+    $self -> {"terms"} = { } if(!defined($self -> {"terms"}));
+    $self -> {"refs"}  = { } if(!defined($self -> {"refs"}));
+    $self -> {"mdata"} = { } if(!defined($self -> {"mdata"}));
 
     # And a counter to keep track of how many files need processing
     $self -> {"stepcount"} = 0;
 
-    # if we already have a terms hash, use it instead.
-    $terms = $self -> {"terms"} if($self -> {"terms"});
-
-    # This should be the top-level "source data" directory, should contain theme dirs
+    # Load the course metadata here. We don't need it, but it'll be useful later. Use the "_course_" name
+    # to ensure that, should a theme be called "course" it doesn't overwrite this!
+    $self -> {"mdata"} -> {"_course_"} = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, 1);
+    die "FATAL: Unable to load course metadata.\n"
+        if(!defined($self -> {"mdata"} -> {"_course_"}) || ref($self -> {"mdata"} -> {"_course_"}) ne "HASH");
+    
+    # This should be the top-level "source data" directory, and it should contain theme dirs
     opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
         or die "FATAL: Unable to open source directory for reading: $!";
 
     # grab the directory list so we can check it for subdirs, strip .* files though
     my @themes = grep(!/^(\.|CVS)/, readdir(SRCDIR));
-    
     foreach my $theme (@themes) {
         my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme); # prepend the source directory
 
         # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
         if(-d $fulltheme) {
             # load the metadata if possible
-            my $metadata = $self -> {"metadata"} -> load_metadata($fulltheme, 0);
+            my $metadata = $self -> {"metadata"} -> load_metadata($fulltheme, 1);
 
             # skip directories without metadata, or non-theme metadata
             next if($metadata == 1 || !$metadata -> {"theme"});
 
-            $layout -> {$theme} = $metadata; # otherwise, store it.
+            $self -> {"mdata"} -> {$theme} = $metadata; # otherwise, store it.
 
+            # Now we need to get a list of modules inside the theme
             opendir(MODDIR, $fulltheme)
                 or die "FATAL: Unable to open theme directory $fulltheme for reading: $!";
 
@@ -1722,20 +1704,20 @@ sub preprocess {
                             pos($content) = 0; 
                             # first look for definitions...
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\](.*?)\[\/glossary\]}isg) {
-                                $self -> set_glossary_point($terms, $1, $2, $theme, $module, $step, $title);
+                                $self -> set_glossary_point($self -> {"terms"}, $1, $2, $theme, $module, $step, $title);
                             }
 
                             # Now look for references to the terms...
                             pos($content) = 0; 
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\/\s*\]}isg) {
-                                $self -> set_glossary_point($terms, $1, undef, $theme, $module, $step, $title);
+                                $self -> set_glossary_point($self -> {"terms"}, $1, undef, $theme, $module, $step, $title);
                             }
 
                             # Next look for references if the reference handler is valid.
                             if($self -> {"refhandler"}) {
                                 pos($content) = 0; 
                                 while($content =~ m{\[ref\s+(.*?)\s*/?\s*\]}isg) {
-                                    $self -> {"refhandler"} -> set_reference_point($refs, $1, $theme, $module, $step, $title);
+                                    $self -> {"refhandler"} -> set_reference_point($self -> {"refs"}, $1, $theme, $module, $step, $title);
                                 }
                             }
 
@@ -1746,8 +1728,7 @@ sub preprocess {
                             # Increment the step count for later progress display
                             ++$self -> {"stepcount"};
 
-                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");
-                                
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");                               
                         }
                         chdir($cwd);
                     } # if(scalar(@steps))
@@ -1761,14 +1742,7 @@ sub preprocess {
 
     closedir(SRCDIR);
     
-    $self -> {"terms"}   = $terms;
-    $self -> {"refs"}    = $refs;
-
-    $self -> build_dropdowns($layout);
-    my $dropdowns = $self -> {"dropdowns"};
- 
-    # Store all the metadatas, we need them to construct the coursewide index
-    $self -> {"fullmap"} = $layout;
+    $self -> build_dropdowns();
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished preprocesss");
 }
