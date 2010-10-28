@@ -1286,41 +1286,73 @@ sub is_related {
 }
 
 
+
+# ============================================================================
+#  Dropdown handling
+#  
+
+## @method void build_theme_dropdowns()
+# Generate the theme dropdowns shown on theme map and theme index pages, and included
+# in each step nav menu. This generates two partially-processed dropdown menus, and
+# get_theme_dropdown() should be called to complete the processing before inserting 
+# into the target template. $self -> {"dropdowns"} -> {"theme_themeview"} stores the
+# theme level dropdown, while $self -> {"dropdowns"} -> {"theme_stepview"} stores 
+# the equivalent step dropdown.
+# 
+# @note This will die if any theme is missing its indexorder (although the metadata
+#       validation should have failed if it does not!)
+sub build_theme_dropdowns {
+    my $self = shift;
+
+    # These accumulate the bodies of the dropdowns, and will be shoved into templated
+    # containers before storing.
+    my $themedrop_theme  = ""; # dropdown menu shown in theme index/maps
+    my $themedrop_module = ""; # theme dropdown in modules 
+    
+    # Generate a sorted list of the themes stored in the metadata
+    my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
+                                if(!defined($self -> {"mdata"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {$b} -> {"theme"} -> {"indexorder"}));
+                            
+                            return $self -> {"mdata"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {$b} -> {"theme"} -> {"indexorder"};
+                          }
+                          keys(%$self -> {"mdata"});
+
+    # Build the ordered list of themes for both levels.
+    foreach $theme (@themenames) {
+        # Skip the course metadata
+        next if($theme eq "_course_");
+
+        $themedrop_theme  .= $self -> {"template"} -> load_template("/theme/themedrop-entry.tem",
+                                                                    { "***name***"  => $theme,
+                                                                      "***title***" => $layout -> {$theme} -> {"title"}});
+
+        $themedrop_module .= $self -> {"template"} -> load_template("/theme/module/themedrop-entry.tem",
+                                                                    { "***name***"  => $theme,
+                                                                      "***title***" => $layout -> {$theme} -> {"title"}});
+    }
+
+    # Put the accumulated dropdowns into containers and store for later.
+    # themes_themeview is the list of themes visible when viewing a theme map, or theme index.
+    $self -> {"dropdowns"} -> {"themes_themeview"}  = $self -> {"template"} -> load_template("/theme/themedrop.tem",
+                                                                                             { "***entries***" => $themedrop_theme });
+
+    # themes_stepview is the list of themes visible when viewing a step.
+    $self -> {"dropdowns"} -> {"themes_stepview"}   = $self -> {"template"} -> load_template("/theme/module/themedrop.tem",
+                                                                                             { "***entries***" => $themedrop_module });
+}
+
+
+
 # Builds the menus that will replace dropdown markers in the templates during
 # processing. this should be called as part of the preprocessing work as the
 # menus must have been built before any pages can be generated.
 sub build_dropdowns {
     my $self   = shift;
-    my $layout = shift;
-    my $theme;
 
-    my $themedrop_theme  = ""; # dropdown menu shown in theme index/maps
-    my $themedrop_module = ""; # theme dropdown in modules 
+    # Construct the easy dropdowns first.
+    $self -> build_theme_dropdowns();
     
-    my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
-                                if(!defined($layout -> {$a} -> {"indexorder"}) or !defined($layout -> {$b} -> {"indexorder"}));
-                            defined($layout -> {$a} -> {"indexorder"}) ?
-                                $layout -> {$a} -> {"indexorder"} <=> $layout -> {$b} -> {"indexorder"} :
-                                $a cmp $b; 
-                          }
-                          keys(%$layout);
 
-    # build the ordered list of themes for both levels.
-    foreach $theme (@themenames) {
-        $themedrop_theme   .= load_complex_template($self -> {"templatebase"}."/theme/themedrop-entry.tem",
-                                                   { "***name***"  => $theme,
-                                                     "***title***" => $layout -> {$theme} -> {"title"}});
-
-        $themedrop_module .=  load_complex_template($self -> {"templatebase"}."/theme/module/themedrop-entry.tem",
-                                                    { "***name***"  => $theme,
-                                                      "***title***" => $layout -> {$theme} -> {"title"}});
-    }
-
-    # insert into the handler object for access later
-    $self -> {"dropdowns"} -> {"themes_theme"}  = load_complex_template($self -> {"templatebase"}."/theme/themedrop.tem",
-                                                                        { "***entries***" => $themedrop_theme });
-    $self -> {"dropdowns"} -> {"themes_module"} = load_complex_template($self -> {"templatebase"}."/theme/module/themedrop.tem",
-                                                                        { "***entries***" => $themedrop_module });
     
     # now build up the step level module and step menus
     foreach $theme (@themenames) {
