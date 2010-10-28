@@ -1301,7 +1301,7 @@ sub is_related {
 # 
 # @note This will die if any theme is missing its indexorder (although the metadata
 #       validation should have failed if it does not!)
-# @return A reference to an array of theme names, sorted by index order
+# @return A reference to an array of theme names, sorted by index order.
 sub build_theme_dropdowns {
     my $self = shift;
 
@@ -1342,73 +1342,97 @@ sub build_theme_dropdowns {
 }
 
 
+## @method void build_step_dropdowns($theme, $module)
+# Generate the step dropdown for the specified module. This generates the partially
+# processed step dropdown for the specified module in the provided theme, and 
+# get_step_dropdown() should be called to complete the processing prior to inserting
+# into the target template.
+#
+# @note This will die if called on a module that contains no steps.
+sub build_step_dropdowns {
+    my $self   = shift;
+    my $theme  = shift;
+    my $module = shift;
+
+    my $stepdrop = "";
+    # Process the list of steps for this module, sorted by numeric order
+    foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"}})) {
+        $stepdrop .= $self -> {"template"} -> load_template("/theme/module/stepdrop-entry.tem",
+                                                            { "***name***"  => get_step_name($step),
+                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"} -> {$step}});
+    }
+     
+    die "FATAL: No steps stored for \{$theme\} -> \{$module\} -> \{steps\}\n" if(!$stepdrop);
+
+    # and store the partially-processed dropdown
+    $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"steps"} = $self -> {"template"} -> load_template("/theme/module/stepdrop.tem",
+                                                                                                          {"***entries***" => $stepdrop });
+}
+
+
+## @method void build_module_dropdowns($theme)
+# Generate the completed module dropdowns for each module in the specified theme, and
+# the partially processed dropdowns for the steps in each module. 
+#
+# @note This will die if any module is missing its indexorder (although this should
+#       not happen if the metadata was validated during loading)
 sub build_module_dropdowns {
     my $self  = shift;
     my $theme = shift;
 
+    my @modulenames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b" 
+                                  if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+                                  
+                              return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"} :
+                            }
+                            keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
 
-# Builds the menus that will replace dropdown markers in the templates during
-# processing. this should be called as part of the preprocessing work as the
-# menus must have been built before any pages can be generated.
+    foreach my $module (@modulenames) {
+        my $moduledrop = "";
+            
+        # first create the module dropdown for this module (ie: show all modules in this theme and how they relate)
+        foreach my $buildmod (@modulenames) {
+            my $relationship = "";
+                
+            # first determine whether buildmod is a prerequisite, leadsto or the current module
+            if($buildmod eq $module) {
+                $relationship = "-current";
+            } elsif(is_related($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"}, $buildmod)) {
+                $relationship = "-prereq";
+            } elsif(is_related($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"}, $buildmod)) {
+                $relationship = "-leadsto";
+            } 
+
+            $moduledrop .= $self -> {"template"} -> load_template("/theme/module/moduledrop-entry".$relationship.".tem",
+                                                                  { "***level***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$buildmod} -> {"level"},
+                                                                    "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$buildmod} -> {"title"},
+                                                                    "***name***"  => $buildmod });
+        }
+
+        # store the generated menu for this module
+        $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"modules"} = $self -> {"template"} -> load_template("/theme/module/moduledrop.tem",
+                                                                                                                {"***entries***" => $moduledrop });
+
+        # Now build the step dropdowns
+        $self -> build_step_dropdowns($theme, $module);
+    } # foreach my $module (@modulenames)
+}
+
+
+## @method void build_dropdowns()
+# Builds the menus that will replace dropdown markers in the templates during processing. 
+# This should be called as part of the preprocessing work as the menus must have been built 
+# before any pages can be generated.
 sub build_dropdowns {
-    my $self   = shift;
+    my $self = shift;
 
     # Construct the easy dropdowns first.
-    my $themename = $self -> build_theme_dropdowns();
+    my $themenames = $self -> build_theme_dropdowns();
     
-
-    
-    # now build up the step level module and step menus
-    foreach $theme (@themenames) {
-        my @modulenames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b" 
-                                      if(!$layout -> {$theme} -> {"module"} -> {$a} -> {"indexorder"} or !$layout -> {$theme} -> {"module"} -> {$b} -> {"indexorder"});
-                                  defined($layout -> {$theme} -> {"module"} -> {$a} -> {"indexorder"}) ?
-                                      $layout -> {$theme} -> {"module"} -> {$a} -> {"indexorder"} <=> $layout -> {$theme} -> {"module"} -> {$b} -> {"indexorder"} :
-                                      $a cmp $b; }
-                                keys(%{$layout -> {$theme} -> {"module"}});
-
-        foreach my $module (@modulenames) {
-            my $moduledrop = "";
-            
-            # first create the module dropdown for this module (ie: show all modules in this theme and how they relate)
-            foreach my $buildmod (@modulenames) {
-                my $relationship = "";
-                
-                # first determine whether buildmod is a prerequisite, leadsto or the current module
-                if($buildmod eq $module) {
-                    $relationship = "-current";
-                } elsif(is_related($layout -> {$theme} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"}, $buildmod)) {
-                    $relationship = "-prereq";
-                } elsif(is_related($layout -> {$theme} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"}, $buildmod)) {
-                    $relationship = "-leadsto";
-                } 
-
-                $moduledrop .= load_complex_template($self -> {"templatebase"}."/theme/module/moduledrop-entry".$relationship.".tem",
-                                                     { "***level***" => $layout -> {$theme} -> {"module"} -> {$buildmod} -> {"level"},
-                                                       "***title***" => $layout -> {$theme} -> {"module"} -> {$buildmod} -> {"title"},
-                                                       "***name***"  => $buildmod });
-            }
-
-            # store the generated menu for this module
-            $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"modules"} = load_complex_template($self -> {"templatebase"}."/theme/module/moduledrop.tem",
-                                                                                                   {"***entries***" => $moduledrop });
-
-            # Now build the list of steps for this module
-            my $stepdrop = "";
-            foreach my $step (sort numeric_order keys(%{$layout -> {$theme} -> {$module} -> {"steps"}})) {
-                $stepdrop .= load_complex_template($self -> {"templatebase"}."/theme/module/stepdrop-entry.tem",
-                                                   { "***name***" => get_step_name($step),
-                                                     "***title***" => $layout -> {$theme} -> {$module} -> {"steps"} -> {$step}});
-            }
-            die "FATAL: No step stored for \{$theme\} -> \{$module\} -> \{steps\} in:\n".Data::Dumper -> Dump([$layout], ['*layout']) if(!$stepdrop);
-
-            # and store
-            $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"steps"} = load_complex_template($self -> {"templatebase"}."/theme/module/stepdrop.tem",
-                                                                                                 {"***entries***" => $stepdrop });
-
-        } # foreach my $module (@modulenames) {
-
-    } # foreach my $theme (@themenames) {
+    # Now build up the step level module and step menus
+    foreach $theme (@$themenames) {
+        $self -> build_module_dropdowns($theme);
+    }
 }
 
 
@@ -1757,7 +1781,7 @@ sub preprocess {
 
                             # record the step details for later menu generation
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step as $theme -> $module -> steps -> $step");                         
-                            $layout -> {$theme} -> {$module} -> {"steps"} -> {$step} = $title;
+                            $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"} -> {$step} = $title;
 
                             # Increment the step count for later progress display
                             ++$self -> {"stepcount"};
