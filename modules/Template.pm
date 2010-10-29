@@ -34,8 +34,8 @@ use strict;
 our ($VERSION, $errstr, $utfentities, $entities);
 
 BEGIN {
-	$VERSION = 1.0;
-	$errstr = '';
+    $VERSION = 1.0;
+    $errstr = '';
     
     $utfentities = { '\xC2\xA3'     => '&pound;',
                      '\xE2\x80\x98' => '&lsquo;',
@@ -105,17 +105,8 @@ sub DESTROY {
 }
 
 
-## @method void set_module_obj($modules)
-# Store a reference to the module handler object so that the template loader can
-# do block name replacements.
-#
-# @param modules A reference to the system module handler object.
-sub set_module_obj {
-    my $self = shift;
-    
-    $self -> {"modules"} = shift;
-}
-
+# ============================================================================
+#  Language loading and replacement functions
 
 ## @method $ load_language(void)
 # Load all of the language files in the appropriate language directory into a hash.
@@ -177,9 +168,6 @@ sub load_language {
 }
 
 
-# ============================================================================
-#  Templating functions
-
 ## @method $ replace_langvar($varname, $default, $varhash)
 # Replace the specified language variable with the appropriate text string. This
 # takes a language variable name and returns the value stored for that variable,
@@ -234,6 +222,22 @@ sub replace_langvar {
 }
 
 
+# ============================================================================
+#  Module marker replacement functions
+
+
+## @method void set_module_obj($modules)
+# Store a reference to the module handler object so that the template loader can
+# do block name replacements.
+#
+# @param modules A reference to the system module handler object.
+sub set_module_obj {
+    my $self = shift;
+    
+    $self -> {"modules"} = shift;
+}
+
+
 ## @method $ replace_blockname($blkname, $default)
 # Replace a block name with the internal ID for the block. This will replace
 # a block name with the equivalent block ID and it can cope with the name 
@@ -247,12 +251,35 @@ sub replace_blockname {
     my $blkname = shift;
     my $default = shift || "0";
 
+    # Can't do anything if we have no modules object
+    return $default if(!$self -> {"modules"});
+
     # Strip the B_[ ] if present
     $blkname =~ s/^B_\[(.*)\]$/$1/;
 
     my $modid = $self -> {"modules"} -> get_block_id($blkname);
 
     return defined($modid) ? $modid : $default;
+}
+
+
+# ============================================================================
+#  Templating functions
+
+## @method void set_template_dir($directory)
+# Set the directory that contains the templates to use. This sets the base directory
+# for the template system, any relative path passed to load_template() will have
+# the directory set through this prepended to it. This will check the directory exists,
+# and will die with a fatal error if it does not.
+#
+# @param directory The new template base directory.
+sub set_template_dir {
+    my $self      = shift;
+    my $directory = shift;
+
+    die "FATAL: template directory '$directory' does not exist!\n" if(!-d $directory);
+
+    $self -> {"basedir"} = $directory;
 }
 
 
@@ -272,7 +299,16 @@ sub load_template {
     my $name   = shift;
     my $varmap = shift;
 
-    my $filename = path_join($self -> {"basedir"}, $self -> {"theme"}, $name);
+    my $filename;
+
+    # If the specified name appears to be absolute, use it as-is...
+    if($name =~ m|^/\w+|) {
+        $filename = $name;
+   
+    # Otherwise, prepend the base path and possibly theme.
+    } else {
+        $filename = path_join($self -> {"basedir"}, $self -> {"theme"}, $name);
+    }
 
     if(open(TEMPLATE, "<:utf8", $filename)) {
         undef $/;
@@ -420,7 +456,6 @@ sub wizard_box {
 
 # ============================================================================
 #  Emailing functions
-
 
 ## @method $ email_template($template, $args)
 # Load a template and send it as an email to the recipient(s) listed in the arguments.
