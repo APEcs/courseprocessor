@@ -49,11 +49,11 @@ sub path_join {
     # would result in some '//' in the string. This may be slower, but
     # it will ensure there aren't stray slashes around.
     foreach my $fragment (@fragments) {
-        if($fragment) {
-            $result .= $fragment;
-            # append a slash if the result doesn't end with one
-            $result .= "/" if($result !~ /\/$/);
-        }
+        next if(!defined($fragment) || $fragment eq ''); # Skip empty fragments
+
+        $result .= $fragment;
+        # append a slash if the result doesn't end with one
+        $result .= "/" if($result !~ /\/$/);
     }
 
     # strip the trailing / if there is one
