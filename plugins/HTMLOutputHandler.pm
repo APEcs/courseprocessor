@@ -25,6 +25,11 @@ package HTMLOutputHandler;
 # use_plugin      - returns true if th eplugin can be used on the tree, false if not
 # process         - actually does the processing.
 
+# @todo Filtering
+# @todo Fix all `### FIXME for v3.7` functions
+# @todo Template links in convert_link()
+
+
 require 5.005;
 use Data::Dumper;
 use Cwd qw(getcwd chdir);
@@ -111,6 +116,7 @@ sub get_version {
 };
 
 
+### FIXME for v3.7
 sub process {
     my $self   = shift;
 
@@ -272,7 +278,8 @@ sub use_plugin {
 #   
 
 # Given a step name, this returns a string containing the canonical name for
-# the step (eg: "node5.htm" => "step5.html")
+# the step (eg: "node5.htm" => "step05.html")
+### FIXME for v3.7
 sub get_step_name {
     my $filename = shift;
 
@@ -285,6 +292,7 @@ sub get_step_name {
 
 
 # returns the maximum stepid in the specified array of step names
+### FIXME for v3.7
 sub get_maximum_stepid {
     my $namesref = shift;
 
@@ -298,21 +306,6 @@ sub get_maximum_stepid {
 
 
 # ============================================================================
-
-# load a file containing tags to insert into the output html headers.
-sub preload_header_include {
-    my $self    = shift;
-    my $basedir = shift;
-
-    if(-e "$basedir/headerinclude.txt") {
-        return load_file("$basedir/headerinclude.txt") || "";
-    }
-
-    return "";
-}
-
-
-# ============================================================================
 #  Tag conversion code.
 #  
  
@@ -322,6 +315,7 @@ sub preload_header_include {
 #
 # @param termname The name of the term to link to.
 # @return A string containing a html link to the appropriate glossary page and entry.
+### FIXME for v3.7
 sub convert_term {
     my $self = shift;
     my $termname = shift;
@@ -360,6 +354,7 @@ sub convert_term {
 # @param tagdata  The image tag attribute list
 # @return The string to replace the image tag with - either a html image element,
 #         or an error message.
+### FIXME for v3.7
 sub convert_image {
     my $self     = shift;
     my $tagdata = shift;
@@ -410,6 +405,7 @@ sub convert_image {
 # @param tagdata  The anim tag attribute list
 # @return The string to replace the animtag with - either a chunk of html,
 #         or an error message.
+### FIXME for v3.7
 sub convert_anim {
     my $self    = shift;
     my $tagdata = shift;
@@ -457,6 +453,7 @@ sub convert_anim {
 # @param tagdata  The applet tag attribute list
 # @return The string to replace the applet tag with - either a chunk of html,
 #         or an error message.
+### FIXME for v3.7
 sub convert_applet {
     my $self    = shift;
     my $tagdata = shift;
@@ -517,6 +514,7 @@ sub convert_applet {
 # @param width  Optional window width. Defaults to 640.
 # @param height Optional window height. Defaults to 480.
 # @return The string to replace the local tag with, or an error message.
+### FIXME for v3.7
 sub convert_local {
     my ($self, $text, $data, $stepid, $lcount, $level, $width, $height) = @_;
   
@@ -562,6 +560,7 @@ sub convert_local {
 # @param level   The difficulty level of the step, should be green, yellow, 
 #                orange, or red.
 # @return The processed step text.
+### FIXME for v3.7
 sub convert_step_tags {
     my $self    = shift;
     my $content = shift;
@@ -631,7 +630,7 @@ sub set_anchor_point {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting anchor $name in $theme/$module/$step");
 
-    die "FATAL: Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]"
+    die "FATAL: Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]\n"
         if($self -> {"anchors"} && $self -> {"anchors"} -> {$name});
 
     # we're actually only interested in the step number, not the name (which is likely to change anyway)
@@ -672,7 +671,6 @@ sub convert_link {
 }
 
 
-
 # ============================================================================
 #  Glossary handling
 #  
@@ -680,6 +678,7 @@ sub convert_link {
 # Generate a glossary and references block at a given level in the document. This will
 # generate a block with the glossary and references links enabled or disabled depending
 # on whether the global glossary and references hashes contain data.
+### FIXME for v3.7
 sub build_glossary_references {
     my $self       = shift;
     my $level      = shift;
@@ -699,6 +698,7 @@ sub build_glossary_references {
 
 
 # Record the location of glossary definitions or references
+### FIXME for v3.7
 sub set_glossary_point {
     my ($self, $hashref, $term, $definition, $theme, $module, $step, $title) = @_;
 
@@ -731,6 +731,7 @@ sub set_glossary_point {
 
 # Construct a single entry in the glossary index. Returns an entry
 # based on the the acive and defined status of the specified letter.
+### FIXME for v3.7
 sub build_glossary_indexentry {
     my $self   = shift;
     my $letter = shift;
@@ -755,6 +756,7 @@ sub build_glossary_indexentry {
 
 # Builds the line of letters, number and symbol shown at the top of 
 # glossary bodies to allow the user to jump between pages.
+### FIXME for v3.7
 sub build_glossary_links {
     my $self    = shift;
     my $letter  = shift;
@@ -783,6 +785,7 @@ sub build_glossary_links {
 
 # Write all the entries for a specified character class to the named
 # file.
+### FIXME for v3.7
 sub write_glossary_file {
     my $self     = shift;
     my $filename = shift;
@@ -840,6 +843,7 @@ sub write_glossary_file {
 
 
 # Write out the glossary pages.
+### FIXME for v3.7
 sub write_glossary_pages {
     my $self   = shift;
     my $srcdir = shift;
@@ -926,6 +930,7 @@ sub write_glossary_pages {
 
 # Sort steps by numeric order rather than alphabetically (avoids the list
 # ending up as 'step1', 'step10', 'step11', etc...) 
+### FIXME for v3.7
 sub numeric_order {
     my ($an) = $a =~ /^[a-zA-Z]+0*(\d+)\.html?$/;
     my ($bn) = $b =~ /^[a-zA-Z]+0*(\d+)\.html?$/;
@@ -943,6 +948,7 @@ sub numeric_order {
 # @param entries  A reference to an array of module names forming a dependency.
 # @param metadata A reference to the theme metadata hash.
 # @return A string containing the dependency list.
+### FIXME for v3.7
 sub build_dependencies {
     my $self     = shift;
     my $entries  = shift;
@@ -973,6 +979,7 @@ sub build_dependencies {
 # @param theme         The theme name as specified in the metadata name element.
 # @param metadata      The theme metadata.
 # @param headerinclude Any additional data to include in the header, optional.
+### FIXME for v3.7
 sub write_theme_indexmap {
     my $self     = shift;
     my $themedir = shift;
@@ -1096,6 +1103,7 @@ sub write_theme_indexmap {
 # @param metadata A reference to the course-wide composite metadata hash.
 # @param theme    The current theme name.
 # @return A string containing the dependency list.
+### FIXME for v3.7
 sub build_courseindex_deps {
     my $self     = shift;
     my $entries  = shift;
@@ -1125,6 +1133,7 @@ sub build_courseindex_deps {
 # @param coursedir The directory into which the index should be written.
 # @param metadata  A reference to the course-wide composite metadata hash.
 # @param headerinclude Any additional data to include in the header, optional.
+### FIXME for v3.7
 sub write_courseindex {
     my $self          = shift;
     my $coursedir     = shift;
@@ -1223,6 +1232,7 @@ sub write_courseindex {
 
 # Construct the next and previous fragments based on the current
 # position within the module.
+### FIXME for v3.7
 sub build_prev_next {
     my $self    = shift;
     my $steps   = shift;
@@ -1262,6 +1272,7 @@ sub build_prev_next {
 # false otherwise. If the first argument is not an arrayref, it is coerced 
 # into one. Used to determine whether the named module is a prerequisite or
 # leadsto of another module.
+### FIXME for v3.7
 sub is_related {
     my $entries = shift;
     my $check   = shift;
@@ -1313,22 +1324,22 @@ sub build_theme_dropdowns {
 
     # Build the ordered list of themes for both levels.
     foreach $theme (@themenames) {
-        $themedrop_theme  .= $self -> {"template"} -> load_template("/theme/themedrop-entry.tem",
+        $themedrop_theme  .= $self -> {"template"} -> load_template("theme/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
                                                                       "***title***" => $layout -> {$theme} -> {"title"}});
 
-        $themedrop_module .= $self -> {"template"} -> load_template("/theme/module/themedrop-entry.tem",
+        $themedrop_module .= $self -> {"template"} -> load_template("theme/module/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
                                                                       "***title***" => $layout -> {$theme} -> {"title"}});
     }
 
     # Put the accumulated dropdowns into containers and store for later.
     # themes_themeview is the list of themes visible when viewing a theme map, or theme index.
-    $self -> {"dropdowns"} -> {"themes_themeview"}  = $self -> {"template"} -> load_template("/theme/themedrop.tem",
+    $self -> {"dropdowns"} -> {"themes_themeview"}  = $self -> {"template"} -> load_template("theme/themedrop.tem",
                                                                                              { "***entries***" => $themedrop_theme });
 
     # themes_stepview is the list of themes visible when viewing a step.
-    $self -> {"dropdowns"} -> {"themes_stepview"}   = $self -> {"template"} -> load_template("/theme/module/themedrop.tem",
+    $self -> {"dropdowns"} -> {"themes_stepview"}   = $self -> {"template"} -> load_template("theme/module/themedrop.tem",
                                                                                              { "***entries***" => $themedrop_module });
 
     return \@themenames;
@@ -1350,7 +1361,7 @@ sub build_step_dropdowns {
     my $stepdrop = "";
     # Process the list of steps for this module, sorted by numeric order
     foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"}})) {
-        $stepdrop .= $self -> {"template"} -> load_template("/theme/module/stepdrop-entry.tem",
+        $stepdrop .= $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
                                                             { "***name***"  => get_step_name($step),
                                                               "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"} -> {$step}});
     }
@@ -1358,7 +1369,7 @@ sub build_step_dropdowns {
     die "FATAL: No steps stored for \{$theme\} -> \{$module\} -> \{steps\}\n" if(!$stepdrop);
 
     # and store the partially-processed dropdown
-    $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"steps"} = $self -> {"template"} -> load_template("/theme/module/stepdrop.tem",
+    $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"steps"} = $self -> {"template"} -> load_template("theme/module/stepdrop.tem",
                                                                                                           {"***entries***" => $stepdrop });
 }
 
@@ -1396,14 +1407,14 @@ sub build_module_dropdowns {
                 $relationship = "-leadsto";
             } 
 
-            $moduledrop .= $self -> {"template"} -> load_template("/theme/module/moduledrop-entry".$relationship.".tem",
+            $moduledrop .= $self -> {"template"} -> load_template("theme/module/moduledrop-entry".$relationship.".tem",
                                                                   { "***level***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$buildmod} -> {"level"},
                                                                     "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$buildmod} -> {"title"},
                                                                     "***name***"  => $buildmod });
         }
 
         # store the generated menu for this module
-        $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"modules"} = $self -> {"template"} -> load_template("/theme/module/moduledrop.tem",
+        $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"modules"} = $self -> {"template"} -> load_template("theme/module/moduledrop.tem",
                                                                                                                 {"***entries***" => $moduledrop });
 
         # Now build the step dropdowns
@@ -1431,18 +1442,19 @@ sub build_dropdowns {
 
 # returns a string containing the theme dropdown menu with the current theme 
 # marked. The menu produced is suitable for use in steps.
+### FIXME for v3.7
 sub get_step_theme_dropdown {
     my $self     = shift;
     my $theme    = shift;
     my $metadata = shift;
 
     # Load the chunk that needs to be located in the dropdown
-    my $anchor = load_complex_template($self -> {"templatebase"}."/theme/module/themedrop-entry.tem",
+    my $anchor = load_complex_template($self -> {"templatebase"}."theme/module/themedrop-entry.tem",
                                        { "***name***" => $theme,
                                          "***title***" => $metadata -> {"title"}});
                                        
     # And the chunk that should replace the bit above
-    my $replace = load_complex_template($self -> {"templatebase"}."/theme/module/themedrop-entry-current.tem",
+    my $replace = load_complex_template($self -> {"templatebase"}."theme/module/themedrop-entry-current.tem",
                                        { "***current***" => ' class="current"',
                                          "***name***"    => $theme,
                                          "***title***"   => $metadata -> {"title"}});
@@ -1465,6 +1477,7 @@ sub get_step_theme_dropdown {
 
 # returns a string containing the theme dropdown menu with the current theme 
 # marked. The menu produced is suitable for use in theme maps.
+### FIXME for v3.7
 sub get_map_theme_dropdown {
     my $self     = shift;
     my $theme    = shift;
@@ -1499,6 +1512,7 @@ sub get_map_theme_dropdown {
 
 # Obtain a string for the step dropdown, marking the current step so it can be 
 # inserted into the step body.
+### FIXME for v3.7
 sub get_step_dropdown {
     my $self   = shift;
     my $theme  = shift;
@@ -1537,6 +1551,7 @@ sub get_step_dropdown {
 #  Cleanup code.
 #  
 
+### FIXME for v3.7
 sub cleanup_module {
     my $self = shift;
     my $moddir = shift;
@@ -1546,6 +1561,7 @@ sub cleanup_module {
 }
 
 
+### FIXME for v3.7
 sub cleanup_lists {
     my $self   = shift;
     my $srcdir = shift;
@@ -1571,6 +1587,7 @@ sub cleanup_lists {
 # @param source   The file to be processed.
 # @param dest     The name of the file to write the processed data to.
 # @param template The template to use when generating the output file, if possible.
+### FIXME for v3.7
 sub framework_template {
     my ($self, $source, $dest, $template) = @_;
 
@@ -1612,6 +1629,7 @@ sub framework_template {
 #
 # @param outdir   The directory to write the templated framework files to.
 # @param franedir The framework directory to read data from.
+### FIXME for v3.7
 sub framework_merge {
     my ($self, $outdir, $framedir) = @_;
 
@@ -1799,6 +1817,7 @@ sub preprocess {
 }
 
 
+### FIXME for v3.7
 sub process_step {
     my $self      = shift;
     my $filename  = shift;
