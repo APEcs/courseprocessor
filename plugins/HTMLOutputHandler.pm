@@ -120,19 +120,19 @@ sub process {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler disabling references processing");
     }
 
+    # Update the template engine to use the handler's templates. This is needed to allow different
+    # handlers to use different templates (as input handlers may need to use templates too!)
+    $self -> {"template"} -> set_template_dir($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
+
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing using HTMLOutputHandler");
 
     # preprocess to get the anchors and terms recorded
     $self -> preprocess($srcdir);
+
+    # Write out the glossary, and possibly reference, pages at this point.
     $self -> write_glossary_pages($srcdir);
-
-    if($self -> {"refhandler"}) {
-        $self -> {"refhandler"} -> write_reference_page($srcdir);
-    }
-
-    # load the header include file
-    my $include = $self -> preload_header_include($srcdir) || "";
-    $self -> {"globalheader"} = $include;
+    $self -> {"refhandler"} -> write_reference_page($srcdir)
+        if($self -> {"refhandler"});
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing complete");
 
@@ -239,35 +239,28 @@ sub process {
 #  Precheck - can this plugin be applied to the source tree?
 #   
 
+## @method $ use_plugin()
 # This plugin can always be run against a tree, so we use the use check to ensure that
 # the templates are available. This should die if the templates are not avilable, rather
 # than return 0.
+#
+# @return True if the plugin can run against the tree.
 sub use_plugin {
     my $self    = shift;
-    my $plugins = shift;
+
+    die "FATAL: HTMLOutputHandler has no template selected.\n" if(!$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     # prepend the processor template directory if the template is not absolute
-    $self -> {"templatebase"} = $self -> {"path"}."/templates/".$self -> {"templatebase"} if($self -> {"templatebase"} !~ /^\//);
-    $self -> {"templatebase"} = resolve_path($self -> {"templatebase"});
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = $self -> {"config"} -> {"path"}."/templates/".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} 
+        if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Using template directory : ".$self -> {"templatebase"});
-    die "FATAL: No templates found" if(!$self -> {"templatebase"});
+    # Force the path to be absolute in all situations
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = resolve_path($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
-    check_directory($self -> {"templatebase"}, "template directory");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler using template directory : ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
-    # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $srcdir)
-        or die "FATAL: Unable to open source directory for reading: $!";
-
-    # grab the directory list so we can check it for subdirs, strip .* files though
-    my @themes = grep(!/^\./, readdir(SRCDIR));
-    
-    foreach my $theme (@themes) {
-        my $fulltheme = "$srcdir/$theme"; # prepend the source directory
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Validating $theme metadata");
-
-        die "FATAL: Metatadata validation failure. Halting" if(!$self -> load_metadata($fulltheme, 1, $plugins));
-    }
+    # Make sure the directory actually exists
+    check_directory($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}, "HTMLOutputHandler template directory");
 
     # if we get here, we can guarantee to be able to use the plugin.
     return 1;
