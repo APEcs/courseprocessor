@@ -146,7 +146,9 @@ sub check_directory {
 
 ## @fn $ load_file($name)
 # Load the contents of the specified file into memory. This will attempt to
-# open the specified file and read the contents into a string.
+# open the specified file and read the contents into a string. This should be
+# used for all file reads whenever possible to ensure there are no internal
+# problems with UTF-8 encoding screwups.
 #
 # @param name The name of the file to load into memory.
 # @return The string containing the file contents, or undef on error. If this
