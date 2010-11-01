@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file resolve_path lead_zero);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path lead_zero);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -160,12 +160,43 @@ sub load_file {
         undef $/;
         my $lines = <INFILE>;
         $/ = "\n";
-        close(INFILE);
+        close(INFILE) 
+            or return undef;
 
         return $lines;
     }
     return undef;
 }
+
+
+## @fn $ save_file($name, $dataref)
+# Save the specified string into a file. This will attempt to open the specified
+# file and write the string referred to by the second argument into it, and the file
+# will be truncated before writing.  This should be used for all file saves whenever 
+# possible to ensure there are no internal problems with UTF-8 encoding screwups.
+#
+# @param name    The name of the file to load into memory.
+# @param dataref A reference to the string to save into the file.
+# @return undef on success, otherwise an error message.
+# @note This function assumes that the data passed in the second argument is a string,
+#       and it does not do any binmode shenanigans on the file. Expect it to break if
+#       you pass it any kind of binary data, or use this on Windows.
+sub save_file($\$) {
+    my $name    = shift;
+    my $dataref = shift;
+
+    if(open(OUTFILE, ">:utf8", $name)) {
+        print OUTFILE $$dataref;
+        
+        close(OUTFILE)
+            or return "Unable to close $name after write: $!";
+
+        return undef;
+    } 
+
+    return "Unable to open $name for writing: $!";
+}
+        
 
 
 ## @fn $ lead_zero($value)
