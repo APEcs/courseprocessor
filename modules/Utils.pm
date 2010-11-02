@@ -176,7 +176,7 @@ sub load_file {
 # possible to ensure there are no internal problems with UTF-8 encoding screwups.
 #
 # @param name The name of the file to load into memory.
-# @param data The string to save into the file.
+# @param data The string, or string reference, to save into the file.
 # @return undef on success, otherwise an error message.
 # @note This function assumes that the data passed in the second argument is a string,
 #       and it does not do any binmode shenanigans on the file. Expect it to break if
@@ -186,7 +186,7 @@ sub save_file {
     my $data = shift;
 
     if(open(OUTFILE, ">:utf8", $name)) {
-        print OUTFILE $data;
+        print OUTFILE ref($data) ? ${$data} : $data;
         
         close(OUTFILE)
             or return "Unable to close $name after write: $!";
