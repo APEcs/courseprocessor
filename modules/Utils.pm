@@ -169,24 +169,24 @@ sub load_file {
 }
 
 
-## @fn $ save_file($name, $dataref)
+## @fn $ save_file($name, $data)
 # Save the specified string into a file. This will attempt to open the specified
-# file and write the string referred to by the second argument into it, and the file
-# will be truncated before writing.  This should be used for all file saves whenever 
+# file and write the string in the second argument into it, and the file will be 
+# truncated before writing.  This should be used for all file saves whenever 
 # possible to ensure there are no internal problems with UTF-8 encoding screwups.
 #
-# @param name    The name of the file to load into memory.
-# @param dataref A reference to the string to save into the file.
+# @param name The name of the file to load into memory.
+# @param data The string to save into the file.
 # @return undef on success, otherwise an error message.
 # @note This function assumes that the data passed in the second argument is a string,
 #       and it does not do any binmode shenanigans on the file. Expect it to break if
 #       you pass it any kind of binary data, or use this on Windows.
-sub save_file($\$) {
-    my $name    = shift;
-    my $dataref = shift;
+sub save_file {
+    my $name = shift;
+    my $data = shift;
 
     if(open(OUTFILE, ">:utf8", $name)) {
-        print OUTFILE $$dataref;
+        print OUTFILE $data;
         
         close(OUTFILE)
             or return "Unable to close $name after write: $!";
