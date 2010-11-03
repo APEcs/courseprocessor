@@ -291,20 +291,20 @@ sub check_media_file {
     my $filename  = shift;
     my $mediahash = shift;
 
-    $logger -> print($logger -> DEBUG, "Checking media file $filename against the media file list.");
+    $logger -> print($logger -> DEBUG, "Checking media file $filename against the media file list.") unless($quiet);
 
     # do we have a remote match at all?
     if($mediahash -> {lc($filename)}) {
         # we have a match, do the cases match?
         if($mediahash -> {lc($filename)} ne $filename) {
             # No, fix that...
-            $logger -> print($logger -> NOTICE, "Correcting case for media file $filename (should be '".$mediahash -> {lc($filename)}."'.");
+            $logger -> print($logger -> NOTICE, "Correcting case for media file $filename (should be '".$mediahash -> {lc($filename)}."'.") unless($quiet);
             $filename = $mediahash -> {lc($filename)};
         } else {
-            $logger -> print($logger -> DEBUG, "Media file $filename is present in the media file list.");
+            $logger -> print($logger -> DEBUG, "Media file $filename is present in the media file list.") unless($quiet);
         }
     } else {
-        $logger -> print($logger -> WARNING, "Unable to locate $filename in the media directory.");
+        $logger -> print($logger -> WARNING, "Unable to locate $filename in the media directory.") unless($quiet);
     }
 
     return "\"../../$mediadir/$filename\"";
@@ -323,7 +323,7 @@ sub broken_media_link {
     my $filename = shift;
     my $page     = shift;
 
-    $logger -> print($logger -> WARNING, "Request for unknown file $filename in $page.");
+    $logger -> print($logger -> WARNING, "Request for unknown file $filename in $page.") unless($quiet);
 
     return "<span class=\"error\">No file avilable for $filename. Please check the source data for this step.</span>";
 }
@@ -363,7 +363,7 @@ sub process_entities_html {
     $content =~ s{"../../$mediadir/([^"]+?)"}{check_media_file($1, $mediahash)}ges;
 
     # Finally, we want to check for and fix completely broken file links
-    $content =~ s{<a href=".*?\?title=Special:Upload&amp;wpDestFile=.*?" class="new" title="(File:[^"]+)">File:.*?</a>}{broken_media_link($1)}ges;
+    $content =~ s{<a href=".*?\?title=Special:Upload&amp;wpDestFile=.*?" class="new" title="(File:[^"]+)">File:.*?</a>}{broken_media_link($1, $page)}ges;
 
     return $content;
 }
@@ -1089,7 +1089,7 @@ sub wiki_export_files {
                 if($name) {
                     my $filename = path_join($destdir, $name);
  
-                    $logger -> print($logger -> NOTICE, "Downloading $entry") unless($quiet);
+                    $logger -> print($logger -> NOTICE, "Downloading '$entry'") unless($quiet);
                    
                     # Now we can begin the download
                     if($file = $wikih -> download({ title => $entry})) {
@@ -1105,7 +1105,7 @@ sub wiki_export_files {
                         close(DATFILE);
 
                         if(-z $filename) {
-                            $logger -> print($logger -> WARNING, "Zero length file written for $filename! This file will be ignored.");
+                            $logger -> print($logger -> WARNING, "Zero length file written for $filename! This file will be ignored.") unless($quiet);
                         } else {
                             ++$writecount;
                             $filenames -> {lc($name)} = $name;
