@@ -1082,9 +1082,13 @@ sub wiki_export_files {
                         print DATFILE $file;
                         
                         close(DATFILE);
-                        ++$writecount;
 
-                        $filenames -> {lc($name)} = $name;
+                        if(-z $filename) {
+                            $logger -> print($logger -> WARNING, "Zero length file written for $filename! This file will be ignored.");
+                        } else {
+                            ++$writecount;
+                            $filenames -> {lc($name)} = $name;
+                        }
                     } else {
                         $logger -> print($logger -> WARNING, "Unable to fetch $entry. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"})  unless($quiet);
                     }
