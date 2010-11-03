@@ -712,7 +712,7 @@ sub metadata_find_module {
         if($metadata -> {"module"} -> {$name} -> {"title"} eq $title) {
             # Check that the name does not contain spaces...
             if($name =~ /\s/) {
-                $logger -> print($logger -> WARNING, "name element for module $title contains spaces. This is not permitted.") unless($quiet);
+                $logger -> print($logger -> WARNING, "name attribute for module $title contains spaces. This is not permitted.") unless($quiet);
                 return undef;
             }
             return $name;
