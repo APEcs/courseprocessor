@@ -1090,7 +1090,7 @@ sub wiki_export_files {
                             $filenames -> {lc($name)} = $name;
                         }
                     } else {
-                        $logger -> print($logger -> WARNING, "Unable to fetch $entry. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"})  unless($quiet);
+                        $logger -> print($logger -> WARNING, "Unable to fetch $entry: the file ".(defined($file) ? "does not exist in the wiki." : "can not be downloaded at this time."))  unless($quiet);
                     }
                 } else {
                     die "FATAL: Unable to determine filename from $entry.\n";
