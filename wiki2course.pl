@@ -311,6 +311,24 @@ sub check_media_file {
 }
 
 
+## @fn $ broken_media_link($filename, $page)
+# Generate a warning message to the log, and an error message to place into the output 
+# page, to indicate that a link to a non-existent file has been encountered in the 
+# text.
+#
+# @param filename The name of the file that does not exist.
+# @param page     The page the link is on.
+# @return An error message to place in the page instead of the file upload link.
+sub broken_media_link {
+    my $filename = shift;
+    my $page     = shift;
+
+    $logger -> print($logger -> WARNING, "Request for unknown file $filename in $page.");
+
+    return "<span class=\"error\">No file avilable for $filename. Please check the source data for this step.</span>";
+}
+
+
 ## @fn $ process_entities_html($wikih, $page, $text)
 # Process the entities in the specified text, allowing through only approved tags, and
 # convert wiki markup to html.
@@ -343,6 +361,9 @@ sub process_entities_html {
 
     # Now check that the media link is actually valid.
     $content =~ s{"../../$mediadir/([^"]+?)"}{check_media_file($1, $mediahash)}ges;
+
+    # Finally, we want to check for and fix completely broken file links
+    $content =~ s{<a href=".*?\?title=Special:Upload&amp;wpDestFile=.*?" class="new" title="(File:[^"]+)">File:.*?</a>}{broken_media_link($1)}ges;
 
     return $content;
 }
