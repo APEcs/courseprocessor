@@ -323,7 +323,7 @@ sub broken_media_link {
     my $filename = shift;
     my $page     = shift;
 
-    $logger -> print($logger -> WARNING, "Request for unknown file $filename in $page.") unless($quiet);
+    $logger -> print($logger -> WARNING, "Request for non-existent file $filename in $page.") unless($quiet);
 
     return "<span class=\"error\">No file avilable for $filename. Please check the source data for this step.</span>";
 }
