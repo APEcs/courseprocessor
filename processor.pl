@@ -42,6 +42,7 @@ use Getopt::Long;
 # Local modules
 use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
+use Filter;
 use Logger;
 use Metadata;
 use ProcessorVersion;
@@ -94,29 +95,10 @@ sub merge_commandline {
 
     # Explicitly set the verbosity if it has not been set yet
     $config -> {"Processor"} -> {"verbosity"} = 0 if(!defined($config -> {"Processor"} -> {"verbosity"}));
-
-    # convert the filters to a hash for fast lookup, if any have been provided
-    if($config -> {"Processor"} -> {"filters"}) {
-        # If the filters element is an arrayref, convert it to a string, otherwise just use it as a string...
-        my $filtertemp = ref($config -> {"Processor"} -> {"filters"}) ? join(',', $config -> {"Processor"} -> {"filters"})
-                                                                      : $config -> {"Processor"} -> {"filters"};
-
-        # Split and enhashinate
-        my @filters = split(/,/, $filtertemp);
-        my $filterhash;
-        foreach my $filter (@filters) {
-            # Store the filter forced to lowercase so that we don't need to 
-            # worry about case issues when filtering...
-            $filterhash -> {lc($filter)} = 1;
-        }
-
-        # And shove the hash back in over the top of the old data
-        $config -> {"Processor"} -> {"filters"} = $filterhash;
-    }                                                                        
 }
 
 
-## @fn $ load_plugins($plugindir, $list, $logger, $metadata)
+## @fn $ load_plugins($plugindir, $list, $logger, $metadata, $template, $filter)
 # Load all available plugins from the plugin directory, and either list the plugins
 # or return a hashref of plugin names. 
 #
@@ -124,6 +106,8 @@ sub merge_commandline {
 # @param config    A reference to the global configuration.
 # @param logger    A reference to the log support object.
 # @param metadata  A reference to the metadata handler object.
+# @param template  A reference to a template engine object.
+# @param filter    A reference to a filter logic object.
 # @return A reference to a hash containing the loaded plugins organised by type.
 sub load_plugins {
     my $plugindir = shift;
@@ -131,6 +115,7 @@ sub load_plugins {
     my $logger    = shift;
     my $metadata  = shift;
     my $template  = shift;
+    my $filter    = shift;
 
     # Store plugins in this hashref...
     my $plugins;
@@ -156,7 +141,8 @@ sub load_plugins {
                                                                         logger   => $logger,  
                                                                         path     => $path, 
                                                                         metadata => $metadata,
-                                                                        template => $template);
+                                                                        template => $template,
+                                                                        filter   => $filter);
     }
     use strict;
 
@@ -346,16 +332,22 @@ check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", 
 #
 
 # All plugins are going to need metadata handling abilities
-my $metadata = Metadata -> new("logger" => $log);
+my $metadata = Metadata -> new("logger" => $log)
+    or die "FATAL: Unable to initialise metadata engine.\n";
 
 # And they may need to use templates. Passing lang as '' disables lang file loading
 # (which we don't need here, really), and this will have no module handle specified,
 # so all the template engine will do is simple translates, {L_..} and {B_[...]} will
 # be passed through unaltered.
-my $template = Template -> new("lang" => '', "theme" => ''); 
+my $template = Template -> new("lang" => '', "theme" => '')
+    or die "FATAL: Unable to initialise template engine.\n"; 
+
+# Create a filter engine for use within the plugins
+my $filter = Filter -> new($config -> {"Processor"} -> {"filters"})
+    or die "FATAL: Unable to initialise filtering engine.\n"; 
                                
 # Obtain a hashref of available plugin object handles.
-my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template);
+my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template, $filters);
 
 # Determine whether the input plugins can run.
 check_input_plugins($plugins, $config, $log);
