@@ -24,6 +24,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use strict;
+use utf8;
+
 use FindBin;             # Work out where we are
 my $path;
 BEGIN {
@@ -33,24 +35,24 @@ BEGIN {
     }
 }
 
+# System modules
 #use Data::Dumper;
-use utf8;
-
-use lib ("$path/modules"); # Add the script path for module loading
-use ConfigMicro;
 use Digest;
 use Encode qw(encode encode_utf8);
 use File::HomeDir;
 use File::Path;
 use Getopt::Long;
-use Logger;
 use MediaWiki::API;
 use MIME::Base64;
 use Pod::Usage;
+
+# Local modules
+use lib ("$path/modules"); # Add the script path for module loading
+use ConfigMicro;
+use Logger;
 use ProcessorVersion;
-use XML::Simple;
-use URI::Escape;
 use Utils qw(save_file path_join);
+
 
 # Constants used in various places in the code
 # The maximum number of levels of page transclusion that may be processed

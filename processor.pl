@@ -23,6 +23,8 @@
 #
 
 use strict;
+use utf8;
+
 use FindBin;             # Work out where we are
 my $path;
 BEGIN {
@@ -32,10 +34,13 @@ BEGIN {
     }
 }
 
-use lib ("$path/modules"); # Add the script path for module loading
+# System modules
 use File::HomeDir;
 use Pod::Usage;
 use Getopt::Long;
+
+# Local modules
+use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
 use Logger;
 use Metadata;
