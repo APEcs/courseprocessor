@@ -1,6 +1,12 @@
 #!/usr/bin/perl -w
 
-# @copy 2008, Chris Page &lt;chris@starforge.co.uk&gt;
+# APEcs course processor, front-end and dispatcher. This script is the core of
+# the APEcs course processor, it handles command line and configuration loading,
+# loading of the various input and output handler plugins, and invocation of 
+# the appropriate plugins over the course material to do the actual work.
+# 
+# @version 3.7.12 (4 November 2010)
+# @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +21,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# PEVE course processor, front-end and dispatcher
-# 
-# @version 3.7.0 (11 August 2010)
 
 use strict;
 use FindBin;             # Work out where we are
@@ -59,6 +62,7 @@ sub handle_commandline {
                'config|f:s'     => \$args -> {"configfile"},
                'outhandler|o:s' => \$args -> {"output_handler"},
                'listhandlers|l' => \$args -> {"listhandlers"},
+               'filter:s@'      => \$args -> {"filters"},    # filter can be specified once with a comma list, or many times
                'help|?|h'       => \$help,
                'man'            => \$man) or pod2usage(2);
 
@@ -83,7 +87,27 @@ sub merge_commandline {
         $config -> {"Processor"} -> {$arg} = $args -> {$arg};
     }
 
+    # Explicitly set the verbosity if it has not been set yet
     $config -> {"Processor"} -> {"verbosity"} = 0 if(!defined($config -> {"Processor"} -> {"verbosity"}));
+
+    # convert the filters to a hash for fast lookup, if any have been provided
+    if($config -> {"Processor"} -> {"filters"}) {
+        # If the filters element is an arrayref, convert it to a string, otherwise just use it as a string...
+        my $filtertemp = ref($config -> {"Processor"} -> {"filters"}) ? join(',', $config -> {"Processor"} -> {"filters"})
+                                                                      : $config -> {"Processor"} -> {"filters"};
+
+        # Split and enhashinate
+        my @filters = split(/,/, $filtertemp);
+        my $filterhash;
+        foreach my $filter (@filters) {
+            # Store the filter forced to lowercase so that we don't need to 
+            # worry about case issues when filtering...
+            $filterhash -> {lc($filter)} = 1;
+        }
+
+        # And shove the hash back in over the top of the old data
+        $config -> {"Processor"} -> {"filters"} = $filterhash;
+    }                                                                        
 }
 
 
@@ -286,7 +310,7 @@ if(!$config) {
     $config = { };
 }
 
-# override configuration settingswith command line settings if needed
+# override configuration settings with command line settings if needed
 merge_commandline($args, $config);
 
 $log -> set_verbosity($config -> {"Processor"} -> {"verbosity"});
@@ -381,6 +405,7 @@ processor [options]
     -c, --coursedata=PATH   the path of the source coursedata directory.
     -d, --dest=PATH         the path to write the processed course into.
     -f, --config=FILE       an alternative configuration file to load.
+    --filter=FILTER         specify filters to apply during processing.
     -h, -?, --help          brief help message.
     -l, -listhandlers       list all available input, output, and reference handlers.
     --man                   full documentation.
@@ -437,6 +462,12 @@ handlers for valid values.
 
 Increase the output verbosity. This may be repeated several times to increase
 the verbosity level. -v -v -v would enable all levels of output, including debug.
+
+=item B<--filter>
+
+Specify one or more filters to apply during course processing. This option may be
+specified multiple times if you need to apply more than one filter, or you may
+provide it once with a comma separated list of filters.
 
 =back
 
