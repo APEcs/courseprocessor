@@ -1,13 +1,14 @@
 #!/usr/bin/perl -W
 
 ## @file
-# Script to export the contents of a course namespace in the PEVE development wiki
-# to html files in a standard PEVE course data structure.
+# Script to export the contents of a course namespace in the APEcs 
+# development wiki to html files in a standard APEcs course data 
+# structure suitable for passing to processor.pl.
 #
 # For full documentation please see http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Wiki2course.pl
 #
 # @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.9.0 (1 October 2010)
+# @version 1.13.0 (4 November 2010)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,7 +50,7 @@ use Pod::Usage;
 use ProcessorVersion;
 use XML::Simple;
 use URI::Escape;
-use Utils qw(save_file);
+use Utils qw(save_file path_join);
 
 # Constants used in various places in the code
 # The maximum number of levels of page transclusion that may be processed
@@ -141,28 +142,6 @@ sub html_clean_message {
     }
 
     return "<message>$text</message>";
-}
-
-
-## @fn $ path_join(@fragments)
-# Take an array of path fragments and will concatenate them together with '/'s
-# as required. It will ensure that the returned string *DOES NOT* end in /
-#
-# @param fragments The path fragments to join together.
-# @return A string containing the path fragments joined with forward slashes.
-sub path_join {
-    my @fragments = @_;
-
-    my $result = "";
-    foreach my $fragment (@fragments) {
-        $result .= $fragment;
-        # append a slash if the result doesn't end with one
-        $result .= "/" if($result !~ /\/$/);
-    }
-
-    # strip the trailing / if there is one
-    return substr($result, 0, length($result) - 1) if($result =~ /\/$/);
-    return $result;
 }
 
 
