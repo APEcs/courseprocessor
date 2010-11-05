@@ -105,7 +105,7 @@ sub validate_metadata_theme {
     foreach my $module (keys(%{$xml -> {"theme"} -> {"module"}})) {
         next if($module eq "dummy"); # don't bother validating the dummy module
 
-        log_print($Utils::DEBUG, $self -> {"verbose"}, "metadata_validate: checking $module");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "metadata_validate: checking $module");
         die "FATAL: metadata_validate: $shortname/metadata.xml missing module title for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"title"});
         die "FATAL: metadata_validate: $shortname/metadata.xml missing module level for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"level"});
         die "FATAL: metadata_validate: $shortname/metadata.xml missing module index order for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"indexorder"});
@@ -225,7 +225,7 @@ sub load_metadata {
 
     # If the xml file exists, attempt to load it
     if(-e "$srcdir/metadata.xml") {
-        $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1);
+        $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude' ]);
 
         # If we need to validate the metadata, go ahead and do so.
         if($validate) {
