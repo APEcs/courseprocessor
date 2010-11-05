@@ -91,7 +91,6 @@ sub new {
 # ============================================================================
 #  Filter logic
 
-
 ## @method $ filter($resource)
 # Determine whether the resource identified by the provided metadata fragment should
 # be included in the generated content. This will check the specified resource 
@@ -130,6 +129,36 @@ sub filter {
 
     # Get here and we have one or more includes, but none matched.
     return 0;
+}
+
+
+## @method $ include_resource($resource)
+# Convenience and readability function to wrap the filter() method. This will return
+# true if the resource should be included in the generated course, and false if it
+# should not be included.
+#
+# @param resource A reference to the resource's metadata fragment.
+# @return true if the resource should be included, false if it should be excluded.
+sub include_resource {
+    my $self     = shift;
+    my $resource = shift;
+
+    return $self -> filter($resource);
+}
+
+
+## @method $ exclude_resource($resource)
+# Convenience and readability function to wrap the filter() method. This will return
+# true if the resource *SHOULD NOT* be included in the course, and false if it should
+# be included. This is the logical inverse of the include_resource() method.
+#
+# @param resource A reference to the resource's metadata fragment.
+# @return true if the resource should be included, false if it should be excluded.
+sub exclude_resource {
+    my $self     = shift;
+    my $resource = shift;
+
+    return !$self -> filter($resource);
 }
 
 1;
