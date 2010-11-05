@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path lead_zero);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -197,6 +197,20 @@ sub save_file {
     return "Unable to open $name for writing: $!";
 }
         
+
+## @fn void superchomp($line)
+# Remove any white space or newlines from the end of the specified line. This
+# performs a similar task to chomp(), except that it will remove <i>any</i> OS 
+# newline from the line (unix, dos, or mac newlines) regardless of the OS it
+# is running on. It does not remove unicode newlines (U0085, U2028, U2029 etc)
+# because they are made of spiders.
+#
+# @param line A reference to the line to remove any newline from.
+sub superchomp(\$) {
+    my $line = shift;
+
+    $$line =~ s/(?:[\s\x{0d}\x{0a}\x{0c}]+)$//o;
+}
 
 
 ## @fn $ lead_zero($value)
