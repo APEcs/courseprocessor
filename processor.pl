@@ -347,7 +347,7 @@ my $filter = Filter -> new($config -> {"Processor"} -> {"filters"})
     or die "FATAL: Unable to initialise filtering engine.\n"; 
                                
 # Obtain a hashref of available plugin object handles.
-my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template, $filters);
+my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template, $filter);
 
 # Determine whether the input plugins can run.
 check_input_plugins($plugins, $config, $log);
