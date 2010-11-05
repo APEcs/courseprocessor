@@ -45,6 +45,7 @@ use Getopt::Long;
 use MediaWiki::API;
 use MIME::Base64;
 use Pod::Usage;
+use XML::Simple;
 
 # Local modules
 use lib ("$path/modules"); # Add the script path for module loading
