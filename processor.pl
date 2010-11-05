@@ -134,7 +134,7 @@ sub load_plugins {
         # Obtain the handler type (should be input, output, or reference)
         my $htype = &{$package."::get_type"};
         
-        $logger -> print($logger -> DEBUG, "loaded, adding '".&{$package."::get_description"}."' as $htype handler\n");
+        $logger -> print($logger -> DEBUG, "loaded, adding '".&{$package."::get_description"}."' as $htype handler.");
         
         # Create and store an instance of the plugin for use later.
         $plugins -> {$htype} -> {$package} -> {"obj"} = $package -> new(config   => $config, 
