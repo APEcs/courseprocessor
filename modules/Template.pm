@@ -26,7 +26,6 @@
 # replacing markers in files.
 package Template;
 
-use Logging;
 use POSIX qw(strftime);
 use Utils qw(path_join superchomp);
 use strict;
