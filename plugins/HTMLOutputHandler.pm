@@ -33,7 +33,7 @@ package HTMLOutputHandler;
 require 5.005;
 use Data::Dumper;
 use Cwd qw(getcwd chdir);
-use Utils qw(check_directory text_to_html resolve_path load_file lead_zero);
+use Utils qw(check_directory resolve_path load_file lead_zero);
 use strict;
 
 # The location of htmltidy, this must be absolute as we can not rely on path being set.
@@ -697,12 +697,28 @@ sub build_glossary_references {
 }  
 
 
-# Record the location of glossary definitions or references
-### FIXME for v3.7
+## @method void set_glossary_point($hashref, $term, $definition, $theme, $module, $step, $title, $storeref)
+# Record the glossary definitions or references to glossary definitions in steps. This will 
+# store the definition of a glossary term if it has not already been set - if a term has 
+# been defined once, attempting to redefine it is a fatal error. If the storeref argument is
+# true (or not supplied) the location of the term is stored for later linking from the
+# glossary page, if storeref is false, no location information is stored for the glossary 
+# page, even for the definition.
+#
+# @param hashref    A reference to the hash of glossary terms.
+# @param term       The term name.
+# @param definition The definition of the term. If this is undef or empty, all that is stored
+#                   is a reference to the term on the specified page.
+# @param theme      The theme name the reference/definition occurs in.
+# @param module     The name of the module the reference or definition occurs in.
+# @param step       The step file the ref/def occurs in (this should be 'nodeXX.html' or similar)
+# @param title      The title of the step, used for presentation purposes.
+# @param storeref   If true (the default if not supplied), record the position of the reference
+#                   for display in the glossary page. If false, this function does nothing if
+#                   the point is a reference. If the point is a definition, and storeref is false,
+#                   the definition will be stored but not added to the reference list.
 sub set_glossary_point {
-    my ($self, $hashref, $term, $definition, $theme, $module, $step, $title) = @_;
-
-    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting glossary entry $term in $theme/$module/$step");
+    my ($self, $hashref, $term, $definition, $theme, $module, $step, $title, $storeref) = @_;
 
     # we're actually only interested in the step number, not the name (which is likely to change anyway)
     $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
@@ -715,17 +731,17 @@ sub set_glossary_point {
     # only need to do the redef check if definition is specified
     if($definition) {
         my $args = $hashref -> {$key} -> {"defsource"};
-        blargh("Redefinition of term $term in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]") if($args);       
+
+        die "FATAL: Redefinition of term $term in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]"
+            if($args);
 
         $hashref -> {$key} -> {"term"}       = $term;
         $hashref -> {$key} -> {"definition"} = $definition;
         $hashref -> {$key} -> {"defsource"}  = [$theme, $module, $step, $title];
-        push(@{$hashref -> {$key} -> {"refs"}}, [$theme, $module, $step, $title]);
-    
-    # If it's not a (re)definition, mark the position anyway as we will want backrefs from the glossary
-    } else {
-        push(@{$hashref -> {$key} -> {"refs"}}, [$theme, $module, $step, $title]);
     }
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting glossary entry $term in $theme/$module/$step");
+    push(@{$hashref -> {$key} -> {"refs"}}, [$theme, $module, $step, $title]) if($storeref);
 }
 
 
@@ -1360,10 +1376,13 @@ sub build_step_dropdowns {
 
     my $stepdrop = "";
     # Process the list of steps for this module, sorted by numeric order
-    foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"}})) {
+    foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"}})) {
+        # Skip steps with no output id
+        next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$step} -> {"output_id"});
+
         $stepdrop .= $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
-                                                            { "***name***"  => get_step_name($step),
-                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"} -> {$step}});
+                                                            { "***name***"  => get_step_name($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$step} -> {"output_id"}),
+                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"} -> {$step} -> {"title"}});
     }
      
     die "FATAL: No steps stored for \{$theme\} -> \{$module\} -> \{steps\}\n" if(!$stepdrop);
@@ -1694,6 +1713,14 @@ sub framework_merge {
 # three hashes containing glossary term locations, reference locations, and the 
 # validated metadata for the course and all themes. The preprocess also counts how
 # many steps there are in the whole course for progress updates later.
+#
+# @note The preprocess almost completely ignores filtering, and it will store metadata,
+#       glossary definitions (but not references) and reference definitions (but not 
+#       references to them) even if a theme, module, or step they occur in is filtered
+#       out of the final course. This is necessary because the definition of a term may
+#       only be present in a resource that will be filtered out, but references to it
+#       may exist elsewhere in the course. It should be noted that link anchors *will not*
+#       be stored if the resource will be excluded
 sub preprocess {
     my $self = shift;
 
@@ -1730,17 +1757,17 @@ sub preprocess {
 
             $self -> {"mdata"} -> {"themes"} -> {$theme} = $metadata; # otherwise, store it.
 
-            # Now we need to get a list of modules inside the theme
-            opendir(MODDIR, $fulltheme)
-                or die "FATAL: Unable to open theme directory $fulltheme for reading: $!";
+            # Determine whether this theme will actually end up in the generated course
+            my $exclude_theme = $self -> {"filter"} -> exclude_resource($metadata -> {"theme"});
 
-            my @modules = grep(!/^(\.|CVS)/, readdir(MODDIR));
-
-            foreach my $module (@modules) {
+            # Now we need to get a list of modules inside the theme. This looks at the list of modules 
+            # stored in the metadata so that we don't need to worry about non-module directoried...
+            foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"}})) {
                 my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
-                # skip CVS or svn directories
-                next if($module eq "CVS" || $module eq ".svn");
+                # Determine whether the module will be included in the course (it will always be
+                # excluded if the theme is excluded)
+                my $exclude_module = $exclude_theme || $self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module});
 
                 # If this is a module directory, we want to scan it for steps
                 if(-d $fullmodule) {
@@ -1754,8 +1781,19 @@ sub preprocess {
                     if(scalar(@steps)) {
                         my $cwd = getcwd();
                         chdir($fullmodule);
-                        
+
+                        my $outstep = 0;
                         foreach my $step (@steps) {
+                            my ($stepid) = $step =~ /$node0?(\d+).html/;
+
+                            # If we have a step entry in the metadata, check whether this step will be excluded
+                            # (it will be excluded if the module is, or the step is listed in the metadata and
+                            # is excluded)
+                            my $exclude_step = $exclude_module ||
+                                ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} &&
+                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} &&
+                                 $self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid}));
+
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing $fullmodule/$step... ");
 
                             my $content = load_file($step)
@@ -1764,38 +1802,43 @@ sub preprocess {
                             my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}im;
 
                             # Record the locations of any anchors in the course
-                            pos($content) = 0;
-                            while($content =~ /\[target\s+name\s*=\s*\"([-\w]+)\"\s*\/?\s*\]/isg) {
-                                $self -> set_anchor_point($1, $theme, $module, $step);
+                            if(!$exclude_step) {
+                                pos($content) = 0;
+                                while($content =~ /\[target\s+name\s*=\s*\"([-\w]+)\"\s*\/?\s*\]/isg) {
+                                    $self -> set_anchor_point($1, $theme, $module, $step);
+                                }
                             }
 
                             # reset so we can scan for glossary terms
                             pos($content) = 0; 
                             # first look for definitions...
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\](.*?)\[\/glossary\]}isg) {
-                                $self -> set_glossary_point($self -> {"terms"}, $1, $2, $theme, $module, $step, $title);
+                                $self -> set_glossary_point($self -> {"terms"}, $1, $2, $theme, $module, $step, $title, !$exclude_step);
                             }
 
                             # Now look for references to the terms...
                             pos($content) = 0; 
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\/\s*\]}isg) {
-                                $self -> set_glossary_point($self -> {"terms"}, $1, undef, $theme, $module, $step, $title);
+                                $self -> set_glossary_point($self -> {"terms"}, $1, undef, $theme, $module, $step, $title, !$exclude_step);
                             }
 
                             # Next look for references if the reference handler is valid.
                             if($self -> {"refhandler"}) {
                                 pos($content) = 0; 
                                 while($content =~ m{\[ref\s+(.*?)\s*/?\s*\]}isg) {
-                                    $self -> {"refhandler"} -> set_reference_point($self -> {"refs"}, $1, $theme, $module, $step, $title);
+                                    $self -> {"refhandler"} -> set_reference_point($self -> {"refs"}, $1, $theme, $module, $step, $title, !$exclude_step);
                                 }
                             }
 
-                            # record the step details for later menu generation
-                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step as $theme -> $module -> steps -> $step");                         
-                            $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"} -> {$step} = $title;
+                            # record the step details for later generation steps, if necessary
+                            if(!$exclude_step) {
+                                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step as $theme -> $module -> steps -> $step");
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}     = $title;
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"} = lead_zero(++$outstep);
 
-                            # Increment the step count for later progress display
-                            ++$self -> {"stepcount"};
+                                # Increment the step count for later progress display
+                                ++$self -> {"stepcount"};
+                            }
 
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");                               
                         }
