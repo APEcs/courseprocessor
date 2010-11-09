@@ -240,7 +240,6 @@ sub process {
 }
 
 
-
 # ============================================================================
 #  Precheck - can this plugin be applied to the source tree?
 #   
@@ -277,31 +276,49 @@ sub use_plugin {
 #  Utility Code
 #   
 
-# Given a step name, this returns a string containing the canonical name for
-# the step (eg: "node5.htm" => "step05.html")
-### FIXME for v3.7
-sub get_step_name {
-    my $filename = shift;
-
-    my ($stepid) = $filename =~ /^\D+(\d+(.\d+)?).html?$/;
-    die "FATAL: Unable to obtain stepid from $filename. This Should Not Happen!" if(!$stepid);
-
-    $stepid = "0$stepid" if((0 + $stepid) < 10 && $stepid !~ /^0/);
-    return "step".$stepid.".html";
+## @fn $ numeric_order()
+# Very simple sort function to ensure that steps are ordered correctly. This will
+# support step ids with leading zeros.
+#
+# @return < 0 if $a is less than $b, 0 if they are the same, >0 if $a is greater than $b. 
+sub numeric_order {
+    return (0 + $a) <=> (0 + $b);
 }
 
 
-# returns the maximum stepid in the specified array of step names
-### FIXME for v3.7
-sub get_maximum_stepid {
-    my $namesref = shift;
+## @fn $ get_step_name($stepid)
+# Given a step id, this returns a string containing the canonical filename for the 
+# step. Note that this will ensure that the step number is given a leading zero
+# if the supplied id is less than 10 and it does not already have a leading zero.
+#
+# @param stepid The id of the step to generate a filename form.
+# @return The step filename in the form 'stepXX.html'
+sub get_step_name {
+    my $stepid = shift;
 
+    return "step".lead_zero($stepid).".html";
+}
+
+
+## @fn $ get_maximum_stepid($module)
+# Obtain the maximum step id in the supplied module. This examines the metadata for
+# the specified module to determine the maximum output_id for steps in the module.
+# 
+# @param module A reference to the module's metadata hash.
+# @return The maximum step id in the module, or undef if the module has no steps.
+sub get_maximum_stepid {
+    my $module = shift;
+
+    # We could try some kind of fancy sort trick here, but frankly anything
+    # is going to be slower than a simple scan (potentially O(NlogN) as opposed
+    # to O(N)
     my $maxid = 0;
-    foreach my $name (@$namesref) {
-        if($name =~ /^\D+(\d+(.\d+)?).html?$/o) {
-            $maxid = $1 if($1 > $maxid);
-        }
+    foreach my $stepid (keys(%{$module -> {"step"}})) {
+        $maxid = $module -> {"step"} -> {$stepid} -> {"output_id"} if(defined($module -> {"step"} -> {$stepid} -> {"output_id"}) &&
+                                                                      $module -> {"step"} -> {$stepid} -> {"output_id"} > $maxid);
     }
+    
+    return $maxid || undef;
 }
 
 
@@ -675,10 +692,14 @@ sub convert_link {
 #  Glossary handling
 #  
 
+## @method $ build_glossary_references($level)
 # Generate a glossary and references block at a given level in the document. This will
 # generate a block with the glossary and references links enabled or disabled depending
 # on whether the global glossary and references hashes contain data.
-### FIXME for v3.7
+#
+# @param level The level to pull the templates from. Should be "", "theme", "theme/module", 
+#              "glossary", or "references". DO NOT include a leading slash!
+# @return A string containing the glossary and reference navigation block.
 sub build_glossary_references {
     my $self       = shift;
     my $level      = shift;
@@ -688,12 +709,9 @@ sub build_glossary_references {
     my $references = ($self -> {"refs"}  && scalar(keys(%{$self -> {"refs"}}))) ? "references_en" : "references_dis";
     my $name = $glossary."_".$references.".tem";
 
-    # Load the subtemplate
-    my $contents = load_complex_template($self -> {"templatebase"}."$level/$name");
-
     # And construct the block
-    return  load_complex_template($self -> {"templatebase"}."$level/glossary_references_block.tem",
-                                  { "***entries***" => $contents });
+    return $self -> {"template"} -> load_template("$level/glossary_references_block.tem",
+                                                  { "***entries***" => $self -> {"template"} -> load_template("$level/$name") });
 }  
 
 
@@ -817,7 +835,7 @@ sub write_glossary_file {
     print OUTFILE load_complex_template($self -> {"templatebase"}."/glossary/header.tem", 
                                         {"***title***"         => $title,
                                          "***include***"       => $self -> {"globalheader"},
-                                         "***glosrefblock***"  => $self -> build_glossary_references("/glossary"),
+                                         "***glosrefblock***"  => $self -> build_glossary_references("glossary"),
                                          "***index***"         => $self -> build_glossary_links($letter, $charmap),
                                          "***breadcrumb***"    => load_complex_template($self -> {"templatebase"}."/glossary/breadcrumb-content.tem",
                                                                                         {"***letter***" => $letter })
@@ -923,7 +941,7 @@ sub write_glossary_pages {
             or die "Unable to open glossary index $srcdir/glossary/index.html: $!";
         print INDEX load_complex_template($self -> {"templatebase"}."/glossary/header.tem",
                                           {"***title***"        => "Glossary Index",
-                                           "***glosrefblock***" => $self -> build_glossary_references("/glossary"),
+                                           "***glosrefblock***" => $self -> build_glossary_references("glossary"),
                                            "***include***"      => $self -> {"globalheader"},
                                            "***index***"        => $self -> build_glossary_links("mu", $charmap),
                                            "***breadcrumb***"   => load_complex_template($self -> {"templatebase"}."/glossary/breadcrumb-indexonly.tem")
@@ -943,19 +961,6 @@ sub write_glossary_pages {
 # ============================================================================
 #  Page interlink and index generation code.
 #  
-
-# Sort steps by numeric order rather than alphabetically (avoids the list
-# ending up as 'step1', 'step10', 'step11', etc...) 
-### FIXME for v3.7
-sub numeric_order {
-    my ($an) = $a =~ /^[a-zA-Z]+0*(\d+)\.html?$/;
-    my ($bn) = $b =~ /^[a-zA-Z]+0*(\d+)\.html?$/;
-
-    die "FATAL: Unable to obtain number from \$a = $a" if(!defined($an));
-    die "FATAL: Unable to obtain number from \$b = $b" if(!defined($bn));
-    return (0 + $an) <=> (0 + $bn);
-}
-
 
 ## @method $ build_dependencies($entries, $metadata)
 # Construct a string containing the module dependencies seperated by
@@ -1065,7 +1070,7 @@ sub write_theme_indexmap {
                                        "***include***"      => $headerinclude,
                                        "***version***"      => $self -> {"cbtversion"},
                                        "***themedrop***"    => $self -> get_map_theme_dropdown($theme, $metadata),
-                                       "***glosrefblock***" => $self -> build_glossary_references("/theme"),
+                                       "***glosrefblock***" => $self -> build_glossary_references("theme"),
                                    });
     close(INDEX);
 
@@ -1104,7 +1109,7 @@ sub write_theme_indexmap {
                                        "***include***"      => $headerinclude,
                                        "***version***"      => $self -> {"cbtversion"},
                                        "***themedrop***"    => $self -> get_map_theme_dropdown($theme, $metadata),
-                                       "***glosrefblock***" => $self -> build_glossary_references("/theme"),
+                                       "***glosrefblock***" => $self -> build_glossary_references("theme"),
                                       });
     close(INDEX);
 }
@@ -1240,7 +1245,7 @@ sub write_courseindex {
                                        "***title***"        => "Course index",
                                        "***include***"      => $headerinclude,
                                        "***version***"      => $self -> {"cbtversion"},
-                                       "***glosrefblock***" => $self -> build_glossary_references("/"),
+                                       "***glosrefblock***" => $self -> build_glossary_references(""),
                                    });
     close(INDEX);
 }
@@ -1375,7 +1380,9 @@ sub build_step_dropdowns {
     my $module = shift;
 
     my $stepdrop = "";
-    # Process the list of steps for this module, sorted by numeric order
+
+    # Process the list of steps for this module, sorted by numeric order. Steps are stored using a numeric
+    # step id (not 'nodeXX.html' as they were in < 3.7)
     foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"}})) {
         # Skip steps with no output id
         next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$step} -> {"output_id"});
@@ -1630,7 +1637,7 @@ sub framework_template {
                                          {"***title***"         => $title,
                                           "***body***"          => $content,
                                           "***version***"       => $self -> {"cbtversion"},
-                                          "***glosrefblock***"  => $self -> build_glossary_references("/"),
+                                          "***glosrefblock***"  => $self -> build_glossary_references(""),
                                       });
 
         close(DEST);
@@ -1720,7 +1727,7 @@ sub framework_merge {
 #       out of the final course. This is necessary because the definition of a term may
 #       only be present in a resource that will be filtered out, but references to it
 #       may exist elsewhere in the course. It should be noted that link anchors *will not*
-#       be stored if the resource will be excluded
+#       be stored if the resource will be excluded.
 sub preprocess {
     my $self = shift;
 
@@ -1943,7 +1950,7 @@ sub process_step {
                                       "***include***"       => $include,
                                       "***stepnumber***"    => $stepid,
                                       "***stepmax***"       => $maxstep,
-                                      "***glosrefblock***"  => $self -> build_glossary_references("/theme/module"),
+                                      "***glosrefblock***"  => $self -> build_glossary_references("theme/module"),
                                       "***themedrop***"     => $self -> get_step_theme_dropdown($theme, $metadata),
                                       "***moduledrop***"    => $self -> {"dropdowns"} -> {$theme} ->  {$module} -> {"modules"} || "<!-- No module dropdown! -->",
                                       "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $filename, $metadata) || "<!-- No step dropdown! -->" ,
