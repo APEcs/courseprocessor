@@ -128,17 +128,20 @@ sub process {
     # handlers to use different templates (as input handlers may need to use templates too!)
     $self -> {"template"} -> set_template_dir($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
+
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing using HTMLOutputHandler");
 
     # preprocess to get the anchors and terms recorded
     $self -> preprocess($srcdir);
 
     # Write out the glossary, and possibly reference, pages at this point.
-    $self -> write_glossary_pages($srcdir);
-    $self -> {"refhandler"} -> write_reference_page($srcdir)
+    $self -> write_glossary_pages();
+    $self -> {"refhandler"} -> write_reference_page()
         if($self -> {"refhandler"});
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing complete");
+
+#####
 
     # This should be the top-level "source data" directory, should contain theme dirs
     opendir(SRCDIR, $srcdir)
@@ -713,7 +716,7 @@ sub build_glossary_references {
 }  
 
 
-## @method void set_glossary_point($hashref, $term, $definition, $theme, $module, $step, $title, $storeref)
+## @method void set_glossary_point($term, $definition, $theme, $module, $step, $title, $storeref)
 # Record the glossary definitions or references to glossary definitions in steps. This will 
 # store the definition of a glossary term if it has not already been set - if a term has 
 # been defined once, attempting to redefine it is a fatal error. If the storeref argument is
@@ -721,7 +724,6 @@ sub build_glossary_references {
 # glossary page, if storeref is false, no location information is stored for the glossary 
 # page, even for the definition.
 #
-# @param hashref    A reference to the hash of glossary terms.
 # @param term       The term name.
 # @param definition The definition of the term. If this is undef or empty, all that is stored
 #                   is a reference to the term on the specified page.
@@ -734,7 +736,7 @@ sub build_glossary_references {
 #                   the point is a reference. If the point is a definition, and storeref is false,
 #                   the definition will be stored but not added to the reference list.
 sub set_glossary_point {
-    my ($self, $hashref, $term, $definition, $theme, $module, $step, $title, $storeref) = @_;
+    my ($self, $term, $definition, $theme, $module, $step, $title, $storeref) = @_;
 
     # we're actually only interested in the step number, not the name (which is likely to change anyway)
     $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
@@ -746,18 +748,18 @@ sub set_glossary_point {
 
     # only need to do the redef check if definition is specified
     if($definition) {
-        my $args = $hashref -> {$key} -> {"defsource"};
+        my $args = $self -> {"terms"} -> {$key} -> {"defsource"};
 
         die "FATAL: Redefinition of term $term in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]"
             if($args);
 
-        $hashref -> {$key} -> {"term"}       = $term;
-        $hashref -> {$key} -> {"definition"} = $definition;
-        $hashref -> {$key} -> {"defsource"}  = [$theme, $module, $step, $title];
+        $self -> {"terms"} -> {$key} -> {"term"}       = $term;
+        $self -> {"terms"} -> {$key} -> {"definition"} = $definition;
+        $self -> {"terms"} -> {$key} -> {"defsource"}  = [$theme, $module, $step, $title];
     }
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting glossary entry $term in $theme/$module/$step");
-    push(@{$hashref -> {$key} -> {"refs"}}, [$theme, $module, $step, $title]) if($storeref);
+    push(@{$self -> {"terms"} -> {$key} -> {"refs"}}, [$theme, $module, $step, $title]) if($storeref);
 }
 
 
@@ -874,22 +876,25 @@ sub write_glossary_file {
 }
 
 
-# Write out the glossary pages.
-### FIXME for v3.7
+## @method void write_glossary_pages()
+# 
 sub write_glossary_pages {
     my $self   = shift;
-    my $srcdir = shift;
-    my $terms  = $self -> {"terms"};
 
-    # do nothing if there are no terms...
+    # Only do anything if we have any terms defined.
     if($terms) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary pages");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary pages.");
+
+        my $outdir = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "glossary");
 
         # Create the glossary dir if it doesn't currently exist
-        mkdir("$srcdir/glossary") unless(-e "$srcdir/glossary");
+        if(!-d $outdir) {
+            mkdir $outdir
+                or die "FATAL: Unable to create glossary directory: $!\n";
+        }   
         
         # get a list of all the terms
-        my @termlist = sort(keys(%$terms));
+        my @termlist = sort(keys(%$self -> {"terms"}));
 
         # calculate which characters are missing and which are available
         my $charmap = {};
@@ -1818,13 +1823,13 @@ sub preprocess {
                             pos($content) = 0; 
                             # first look for definitions...
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\](.*?)\[\/glossary\]}isg) {
-                                $self -> set_glossary_point($self -> {"terms"}, $1, $2, $theme, $module, $step, $title, !$exclude_step);
+                                $self -> set_glossary_point($1, $2, $theme, $module, $step, $title, !$exclude_step);
                             }
 
                             # Now look for references to the terms...
                             pos($content) = 0; 
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\/\s*\]}isg) {
-                                $self -> set_glossary_point($self -> {"terms"}, $1, undef, $theme, $module, $step, $title, !$exclude_step);
+                                $self -> set_glossary_point($1, undef, $theme, $module, $step, $title, !$exclude_step);
                             }
 
                             # Next look for references if the reference handler is valid.
