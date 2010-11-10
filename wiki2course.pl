@@ -858,7 +858,7 @@ sub wiki_export_modules {
 
     # Die if we have no modules
     if(!$names) {
-        die "FATAL: Unable to parse $config->{wiki2course}->{modules_title} names from $themepage. Check that you have a == $config->{wiki2course}->{modules_title} == title on the page.\n";
+        die "FATAL: Unable to parse $config->{wiki2course}->{modules_title} names from theme page. Check that you have a == $config->{wiki2course}->{modules_title} == title on the page.\n";
         return -1;
     }
 
