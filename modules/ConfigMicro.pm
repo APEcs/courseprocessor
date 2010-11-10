@@ -3,9 +3,9 @@
 # loading and saving class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 2.0
-# @date    22 Feb 2009
-# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 2.1
+# @date    20 Nov 2010
+# @copy    2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

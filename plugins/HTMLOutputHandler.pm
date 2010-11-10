@@ -1,8 +1,11 @@
-package HTMLOutputHandler;
-
-# Generate HTML course trees from intermediate format files.
-
-# @copy 2008, Chris Page &lt;chris@starforge.co.uk&gt;
+## @file
+# This file contains the implementation of the HTML Output Handler plugin
+# for the course processor.
+#
+# @author  Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 3.0
+# @date    20 Nov 2010
+# @copy    2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,22 +19,17 @@ package HTMLOutputHandler;
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-# All plugins must implement the following functions:
 #
-# get_type        - return "input" or "output"  
-# get_description - return a human-readable description of the module 
-# new             - return an instance of the module object
-# use_plugin      - returns true if th eplugin can be used on the tree, false if not
-# process         - actually does the processing.
-
 # @todo Filtering
 # @todo Fix all `### FIXME for v3.7` functions
 # @todo Template links in convert_link()
 
+## @class HTMLOutputHandler
+# This plugin takes a hierarchy of files stored in the processor intermediate
+# format and generates a templated (X)HTML course.
+#
+package HTMLOutputHandler;
 
-require 5.005;
-use Data::Dumper;
 use Cwd qw(getcwd chdir);
 use Utils qw(check_directory resolve_path load_file lead_zero);
 use strict;
@@ -49,7 +47,7 @@ use constant DEFAULT_TIDY         => 1;
 my ($VERSION, $errstr, $htype, $desc);
 
 BEGIN {
-	$VERSION       = 2.1;
+	$VERSION       = 3.0;
     $htype         = 'output';                    # handler type - either input or output
     $desc          = 'HTML CBT output processor'; # Human-readable name
 	$errstr        = '';                          # global error string

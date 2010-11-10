@@ -1,9 +1,11 @@
-package HTMLInputHandler;
-
-# Convert a course consisting of HTML pages into the intermediate format suitable
-# for conversion by the output handlers.
-
-# @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
+## @file
+# This file contains the implementation of the HTML Input Handler plugin
+# for the course processor.
+#
+# @author  Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 3.0
+# @date    20 Nov 2010
+# @copy    2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +19,28 @@ package HTMLInputHandler;
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+## @class HTMLInputHandler
+# This plugin class allows a hierarchy of HTML files to be converted into
+# the processor's intermediate format. It expects the HTML files to be
+# structured in the standard APEcs course directory hierarchy:
+#
+# coursedata/
+#    theme1/
+#        module1/
+#            name01.html
+#            name02.html
+#            name03.html
+#        module2/
+#            name01.html
+#            name02.html
+#            name03.html
+# ...etc...
+#
+# This plugin will take the html files in the tree and perform any tag
+# substitutions and content checks necessary, and write out the partially
+# processed html to the intermediate format.
+package HTMLInputHandler;
 
 use Cwd qw(getcwd chdir);
 use ProgressBar;
