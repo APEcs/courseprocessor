@@ -89,7 +89,7 @@ sub use_plugin {
     die "FATAL: HTMLOutputHandler has no template selected.\n" if(!$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     # prepend the processor template directory if the template is not absolute
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = $self -> {"config"} -> {"path"}."/templates/".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} 
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = path_join($self -> {"config"} -> {"path"},"templates",$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}) 
         if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
 
     # Force the path to be absolute in all situations
@@ -722,35 +722,44 @@ sub set_glossary_point {
 }
 
 
+## @method $ build_glossary_indexentry($letter, $link, $entries, $active)
 # Construct a single entry in the glossary index. Returns an entry
 # based on the the acive and defined status of the specified letter.
-### FIXME for v3.7
+#
+# @param letter  The letter to generate the index entry for.
+# @param link    The link to the page for the letter.
+# @param entries A reference to an array of terms starting with the letter, or undef
+#                if no entries start with that letter.
+# @param active  True if the entry for this letter is currently active, false otherwise.
+# @return A string containing the index entry for the letter.
 sub build_glossary_indexentry {
-    my $self   = shift;
-    my $letter = shift;
-    my $link   = shift;
-    my $def    = shift;
-    my $active = shift;
+    my $self    = shift;
+    my $letter  = shift;
+    my $link    = shift;
+    my $entries = shift;
+    my $active  = shift;
 
     if($active) {
-        return load_complex_template($self -> {"templatebase"}."/glossary/index-active.tem",
-                                     { "***letter***" => uc($letter) });
-    } elsif($def && (scalar(@$def) > 0)) {
-        return load_complex_template($self -> {"templatebase"}."/glossary/index-indexed.tem",
-                                     { "***letter***" => uc($letter),
-                                       "***link***" => $link});        
+        return $self -> load_template("glossary/index-active.tem"    , { "***letter***" => uc($letter) });
+    } elsif($entries && (scalar(@$entries) > 0)) {
+        return $self -> load_template("glossary/index-indexed.tem"   , { "***letter***" => uc($letter),
+                                                                         "***link***"   => $link});        
     } else {
-        return load_complex_template($self -> {"templatebase"}."/glossary/index-notindexed.tem",
-                                     { "***letter***" => uc($letter) });            
+        return $self -> load_template("glossary/index-notindexed.tem", { "***letter***" => uc($letter) });            
     }
 
 }
 
 
-# Builds the line of letters, number and symbol shown at the top of 
-# glossary bodies to allow the user to jump between pages.
-### FIXME for v3.7
-sub build_glossary_links {
+## @method $ build_glossary_indexbar($letter, $charmap)
+# Builds the line of letters, number and symbol shown at the top of glossary pages
+# to allow the user to jump between pages.
+#
+# @param letter  The letter of the page the indexbar will appear on. Should be "" for
+#                the overall index, 'a' to 'z', 'digit', or 'symb'
+# @param charmap A reference to a hash of character to term lists.
+# @return A string containing the glossary index bar.
+sub build_glossary_indexbar {
     my $self    = shift;
     my $letter  = shift;
     my $charmap = shift;
@@ -764,15 +773,14 @@ sub build_glossary_links {
     $index .= $self -> build_glossary_indexentry("@", "symb.html", $charmap -> {"symb"}, $letter eq "symb"); 
 
     # ... then numbers...
-    $index .= $self -> build_glossary_indexentry("0-9", "digit.html", $charmap -> {"digit"}, $letter eq "0"); 
+    $index .= $self -> build_glossary_indexentry("0-9", "digit.html", $charmap -> {"digit"}, $letter eq "digit"); 
 
     # ... then letters
     foreach my $char ("a".."z") { 
         $index .= $self -> build_glossary_indexentry($char, "$char.html", $charmap -> {$char}, $letter eq $char); 
     }
 
-    return load_complex_template($self -> {"templatebase"}."/glossary/indexline.tem",
-                                 { "***entries***" => $index });
+    return $self -> {"template"} -> load_template("glossary/indexline.tem", { "***entries***" => $index });
 }
 
 
@@ -780,6 +788,12 @@ sub build_glossary_links {
 # Write all the entries for a specified character class to the named file. This will
 # generate a glossary page for all terms starting with the specified letter, and
 # write it to the file.
+#
+# @param filename The name of the file to write the page to.
+# @param title    The title of the page.
+# @param letter   The letter that all terms on the page should start with (either a 
+#                 lowercase alphabetic character, 'digit', or 'symb'.
+# @param charmap  A reference to a hash of character to term lists.
 sub write_glossary_file {
     my $self     = shift;
     my $filename = shift;
@@ -828,7 +842,7 @@ sub write_glossary_file {
                                                                                     {"***title***"        => $title,
                                                                                      "***glosrefblock***" => $self -> build_glossary_references("glossary"),
                                                                                      "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
-                                                                                     "***index***"        => $self -> build_glossary_links($letter, $charmap),
+                                                                                     "***index***"        => $self -> build_glossary_indexbar($letter, $charmap),
                                                                                      "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-content.tem",
                                                                                                                                                  {"***letter***" => $letter }),
                                                                                      "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
@@ -902,7 +916,7 @@ sub write_glossary_pages {
     save_file(path_join($outdir, "index.html"), $self -> {"template"} -> load_template("glossary/indexpage.tem",
                                                                                        {"***glosrefblock***" => $self -> build_glossary_references("glossary"),
                                                                                         "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
-                                                                                        "***index***"        => $self -> build_glossary_links("", $charmap),
+                                                                                        "***index***"        => $self -> build_glossary_indexbar("", $charmap),
                                                                                         "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-indexonly.tem"),
                                                                                         "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                                                        }));
