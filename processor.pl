@@ -99,8 +99,8 @@ sub merge_commandline {
 
 
 ## @fn $ load_plugins($plugindir, $list, $logger, $metadata, $template, $filter)
-# Load all available plugins from the plugin directory, and either list the plugins
-# or return a hashref of plugin names. 
+# Load all available plugins from the plugin directory, and return a hashref of 
+# plugins organised by type and name. 
 #
 # @param plugindir The directory containing the plugins to load.
 # @param config    A reference to the global configuration.
@@ -148,23 +148,6 @@ sub load_plugins {
         $plugins -> {$htype} -> {$package} -> {"obj"} = $obj; 
     }
     use strict;
-
-    # If the user has requested a list of plugins, dump them here and exit
-    if($config -> {"Processor"} -> {"listhandlers"}) {
-        print "Available inputhandlers are:\n";
-        foreach $plugin (sort(keys(%{$plugins -> {"input"}}))) {
-            print "\t",$plugin,"\n";
-        }
-        print "Available outputhandlers are:\n";
-        foreach $plugin (sort(keys(%{$plugins -> {"output"}}))) {
-            print "\t",$plugin,"\n";
-        }
-        print "Available reference are:\n";
-        foreach $plugin (sort(keys(%{$plugins -> {"ref"}}))) {
-            print "\t",$plugin,"\n";
-        }
-        exit;
-    }
 
     return $plugins;
 }
@@ -351,6 +334,23 @@ my $filter = Filter -> new($config -> {"Processor"} -> {"filters"})
                                
 # Obtain a hashref of available plugin object handles.
 my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template, $filter);
+
+# If the user has requested a list of plugins, dump them here and exit
+if($config -> {"Processor"} -> {"listhandlers"}) {
+    print "Available inputhandlers are:\n";
+    foreach $plugin (sort(keys(%{$plugins -> {"input"}}))) {
+        print "\t",$plugin,"\n";
+    }
+    print "Available outputhandlers are:\n";
+    foreach $plugin (sort(keys(%{$plugins -> {"output"}}))) {
+        print "\t",$plugin,"\n";
+    }
+    print "Available reference are:\n";
+    foreach $plugin (sort(keys(%{$plugins -> {"ref"}}))) {
+        print "\t",$plugin,"\n";
+    }
+    exit;
+}
 
 # Determine whether the input plugins can run.
 check_input_plugins($plugins, $config, $log);
