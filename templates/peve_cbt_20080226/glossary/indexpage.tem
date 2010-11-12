@@ -26,9 +26,9 @@
     <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
     <script type="text/javascript" src="../../TWPopup/popup.js"></script>
     <script type="text/javascript" src="../../twtools/zebra.js"></script>
-    <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
-    <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
-    <link href="../../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
+    <link href="../TWPopup/popup.css" rel="stylesheet" type="text/css" />
+    <link href="../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
+    <link href="../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
 
 </head>
 <body id="glossary" onload="initializeFrameworkPage(2);">

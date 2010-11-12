@@ -785,36 +785,23 @@ sub write_glossary_file {
     my $title    = shift;
     my $letter   = shift;
     my $charmap  = shift;
-    my $terms    = $self -> {"terms"};
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing digit.html");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary page '$filename'");
 
-    # write the file header...
-    open(OUTFILE, "> $filename")
-        or die "FATAL: Unable to open $filename: $!";
-
-    print OUTFILE load_complex_template($self -> {"templatebase"}."/glossary/header.tem", 
-                                        {"***title***"         => $title,
-                                         "***include***"       => $self -> {"globalheader"},
-                                         "***glosrefblock***"  => $self -> build_glossary_references("glossary"),
-                                         "***index***"         => $self -> build_glossary_links($letter, $charmap),
-                                         "***breadcrumb***"    => load_complex_template($self -> {"templatebase"}."/glossary/breadcrumb-content.tem",
-                                                                                        {"***letter***" => $letter })
-                                        });
-
-    # print out the entries for this letter.
+    # Generate the entries for this letter.
+    my $entries = "";
     foreach my $term (@{$charmap -> {$letter}}) {
         # convert backlinks
-        my $linkrefs = $terms -> {$term} -> {"refs"};
+        my $linkrefs = $self -> {"terms"} -> {$term} -> {"refs"};
         my $backlinks = "";
         if($linkrefs && scalar(@$linkrefs)) {
             for(my $i = 0; $i < scalar(@$linkrefs); ++$i) {
                 my $backlink = $linkrefs -> [$i]; 
 
-                $backlinks .= load_complex_template($self -> {"templatebase"}."/glossary/backlink-divider.tem") if($i > 0);
-                $backlinks .= load_complex_template($self -> {"templatebase"}."/glossary/backlink.tem",
-                                                    { "***link***" => '../'.$backlink->[0].'/'.$backlink->[1].'/step'.lead_zero($backlink->[2]).'.html',
-                                                      "***text***" => ($i + 1) });
+                $backlinks .= $self -> {"template"} -> load_template("glossary/backlink-divider.tem") if($i > 0);
+                $backlinks .= $self -> {"template"} -> load_template("glossary/backlink.tem",
+                                                                     { "***link***" => '../'.$backlink->[0].'/'.$backlink->[1].'/step'.lead_zero($backlink->[2]).'.html',
+                                                                       "***text***" => ($i + 1) });
             }
         }
 
@@ -822,18 +809,25 @@ sub write_glossary_file {
         $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
         $key =~ s/\s/_/g;     # replace spaces with underscores.
 
-        print OUTFILE load_complex_template($self -> {"templatebase"}."/glossary/entry.tem",
-                                            { "***termname***"   => $key,
-                                              "***term***"       => $terms -> {$term} -> {"term"},
-                                              "***definition***" => $terms -> {$term} -> {"definition"},
-                                              "***backlinks***"  => $backlinks
-                                              });                
+        $entries .= $self -> {"template"} -> load_template("glossary/entry.tem",
+                                                           { "***termname***"   => $key,
+                                                             "***term***"       => $self -> {"terms"} -> {$term} -> {"term"},
+                                                             "***definition***" => $self -> {"terms"} -> {$term} -> {"definition"},
+                                                             "***backlinks***"  => $backlinks
+                                                           });                
     }
 
-    print OUTFILE load_complex_template($self -> {"templatebase"}."/glossary/footer.tem", 
-                                        { "***version***"      => $self -> {"cbtversion"} });
-    close(OUTFILE);
-
+    # Save the page out.
+    save_file(path_join($outdir, $filename), $self -> {"template"} -> load_template("glossary/entrypage.tem",
+                                                                                    {"***title***"        => $title,
+                                                                                     "***glosrefblock***" => $self -> build_glossary_references("glossary"),
+                                                                                     "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                                                     "***index***"        => $self -> build_glossary_links($letter, $charmap),
+                                                                                     "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-content.tem",
+                                                                                                                                                 {"***letter***" => $letter }),
+                                                                                     "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                                                     "***entries***"      => $entries,
+                                                                                    }));
 }
 
 
@@ -903,7 +897,8 @@ sub write_glossary_pages {
                                                                                        {"***glosrefblock***" => $self -> build_glossary_references("glossary"),
                                                                                         "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
                                                                                         "***index***"        => $self -> build_glossary_links("", $charmap),
-                                                                                        "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-indexonly.tem")
+                                                                                        "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-indexonly.tem"),
+                                                                                        "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                                                        }));
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished writing glossary pages");
