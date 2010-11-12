@@ -123,7 +123,7 @@ sub process {
 ## @method $ get_type()
 # Obtain the plugin's type string. This will return a string that identifies 
 # the plugin as either an 'input' plugin, and 'output' plugin, or potentially
-# 'reference' plugin.
+# 'ref' plugin.
 #
 # @return The plugin type string.
 sub get_type {
