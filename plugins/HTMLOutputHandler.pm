@@ -4,7 +4,7 @@
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 # @version 3.0
-# @date    20 Nov 2010
+# @date    11 Nov 2010
 # @copy    2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
@@ -30,9 +30,12 @@
 #
 package HTMLOutputHandler;
 
-use Cwd qw(getcwd chdir);
-use Utils qw(check_directory resolve_path load_file lead_zero);
 use strict;
+use base qw(Plugin); # This class extends Plugin
+
+use Cwd qw(getcwd chdir);
+use Utils qw(check_directory resolve_path load_file save_file lead_zero);
+
 
 # The location of htmltidy, this must be absolute as we can not rely on path being set.
 use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
@@ -43,75 +46,63 @@ use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes n
 # Should we even bother trying to do the tidy pass?
 use constant DEFAULT_TIDY         => 1;
 
+# Plugin basic information
+use constant PLUG_TYPE             => 'output';
+use constant PLUG_DESCRIPTION      => 'HTML output processor';
 
-my ($VERSION, $errstr, $htype, $desc);
-
-BEGIN {
-	$VERSION       = 3.0;
-    $htype         = 'output';                    # handler type - either input or output
-    $desc          = 'HTML CBT output processor'; # Human-readable name
-	$errstr        = '';                          # global error string
-}
 
 # ============================================================================
-#  Constructor and identifier functions.  
+#  Plugin class override functions
 #   
 
 ## @cmethod $ new(%args)
-# Create a new plugin object. This will intialise the plugin to a base state suitable
-# for use by the processor. The following arguments may be provided to this constructor:
+# Overridded plugin creator. This will create a new Plugin object, and then set
+# HTMLInputHandler-specific values in the new object.
 #
-# config     (required) A reference to the global configuration object.
-# logger     (required) A reference to the global logger object.
-# path       (required) The directory containing the processor
-# metadata   (required) A reference to the metadata handler object.
-# template   (required) A reference to the template engine object.
-#
-# @param args A hash of arguments to initialise the plugin with. 
+# @param args A hash of arguments to pass to the Plugin creator.
 # @return A new HTMLInputHandler object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = { @_, };
+    my $self     = $class -> SUPER::new(@_);
 
+    # Set the plugin-specific data
+    $self -> {"htype"}       = PLUG_TYPE;
+    $self -> {"description"} = PLUG_DESCRIPTION;
+    
     # Set defaults in the configuration if values have not been provided.
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}   = DEFAULT_TIDY_COMMAND if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}));
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}  = DEFAULT_TIDY_ARGS    if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}));
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}      = DEFAULT_TIDY         if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}));
-
-    return bless $self, $class;
 }
 
 
-## @fn $ get_type()
-# Determine the type of handler behaviour this plugin provides. This will always
-# return "input" for input plugins, "output" for output plugins, and "reference"
-# for reference handler plugins.
+## @method $ use_plugin()
+# This plugin can always be run against a tree, so we use the use check to ensure that
+# the templates are available. This should die if the templates are not avilable, rather
+# than return 0.
 #
-# @return The plugin type.
-sub get_type {
-    return $htype
-};
+# @return True if the plugin can run against the tree.
+sub use_plugin {
+    my $self    = shift;
 
+    die "FATAL: HTMLOutputHandler has no template selected.\n" if(!$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
-## @fn $ get_description()
-# Obtain the human-readable descriptive text for this plugin. This will return
-# a string that describes the processor in a way that is useful to the user.
-#
-# @return The handler description
-sub get_description {
-    return $desc 
-};
+    # prepend the processor template directory if the template is not absolute
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = $self -> {"config"} -> {"path"}."/templates/".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} 
+        if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
 
+    # Force the path to be absolute in all situations
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = resolve_path($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
-## @fn $ get_version()
-# Obtain the version string for the plugin. This returns a string containing the
-# version information for the plugin in a human-readable form.
-#
-# @return The handler version string.
-sub get_version {
-    return $VERSION 
-};
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler using template directory : ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
+
+    # Make sure the directory actually exists
+    check_directory($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}, "HTMLOutputHandler template directory");
+
+    # if we get here, we can guarantee to be able to use the plugin.
+    return 1;
+}
 
 
 ### FIXME for v3.7
@@ -237,38 +228,6 @@ sub process {
     $self -> write_courseindex($srcdir, $self -> {"fullmap"});
     $self -> framework_merge($srcdir, $frame);
 
-    return 1;
-}
-
-
-# ============================================================================
-#  Precheck - can this plugin be applied to the source tree?
-#   
-
-## @method $ use_plugin()
-# This plugin can always be run against a tree, so we use the use check to ensure that
-# the templates are available. This should die if the templates are not avilable, rather
-# than return 0.
-#
-# @return True if the plugin can run against the tree.
-sub use_plugin {
-    my $self    = shift;
-
-    die "FATAL: HTMLOutputHandler has no template selected.\n" if(!$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
-
-    # prepend the processor template directory if the template is not absolute
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = $self -> {"config"} -> {"path"}."/templates/".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} 
-        if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
-
-    # Force the path to be absolute in all situations
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = resolve_path($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
-
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler using template directory : ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
-
-    # Make sure the directory actually exists
-    check_directory($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}, "HTMLOutputHandler template directory");
-
-    # if we get here, we can guarantee to be able to use the plugin.
     return 1;
 }
 
@@ -828,6 +787,8 @@ sub write_glossary_file {
     my $charmap  = shift;
     my $terms    = $self -> {"terms"};
 
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing digit.html");
+
     # write the file header...
     open(OUTFILE, "> $filename")
         or die "FATAL: Unable to open $filename: $!";
@@ -877,87 +838,75 @@ sub write_glossary_file {
 
 
 ## @method void write_glossary_pages()
-# 
+# Generate the glossary pages, and an index page for the glossary. This will create
+# glossary pages (one page per alphabetic character, one for digits, one for symbols)
+# and an index page providing links to the term pages.
 sub write_glossary_pages {
     my $self   = shift;
 
     # Only do anything if we have any terms defined.
-    if($terms) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary pages.");
-
-        my $outdir = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "glossary");
-
-        # Create the glossary dir if it doesn't currently exist
-        if(!-d $outdir) {
-            mkdir $outdir
-                or die "FATAL: Unable to create glossary directory: $!\n";
-        }   
+    if(!$terms) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "No glossary terms to write");
+        return;
+    }
         
-        # get a list of all the terms
-        my @termlist = sort(keys(%$self -> {"terms"}));
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary pages.");
 
-        # calculate which characters are missing and which are available
-        my $charmap = {};
-        foreach my $term (@termlist) {
-            my $letter = lc(substr($term, 0, 1));
+    my $outdir = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "glossary");
 
-            # letters go into individual entries...
-            if($letter =~ /^[a-z]$/) {
-                push(@{$charmap -> {$letter}}, $term);
-                
-                # numbers all go together...
-            } elsif($letter =~ /^\d$/) {
-                push(@{$charmap -> {"digit"}}, $term);
-                
-                # everything else goes in the symbol group
-            } else {
-                push(@{$charmap -> {"symb"}}, $term);
-            }
+    # Create the glossary dir if it doesn't currently exist
+    if(!-d $outdir) {
+        mkdir $outdir
+            or die "FATAL: Unable to create glossary directory: $!\n";
+    }   
+    
+    # get a list of all the terms
+    my @termlist = sort(keys(%$self -> {"terms"}));
 
+    # calculate which characters are missing and which are available
+    my $charmap = {};
+    foreach my $term (@termlist) {
+        my $letter = lc(substr($term, 0, 1));
+
+        # letters go into individual entries...
+        if($letter =~ /^[a-z]$/) {
+            push(@{$charmap -> {$letter}}, $term);
+            
+            # numbers all go together...
+        } elsif($letter =~ /^\d$/) {
+            push(@{$charmap -> {"digit"}}, $term);
+            
+            # everything else goes in the symbol group
+        } else {
+            push(@{$charmap -> {"symb"}}, $term);
         }
 
-        # Process the letters first...
-        foreach my $letter ("a".."z") {
-            if($charmap -> {$letter} && scalar(@{$charmap -> {$letter}})) {
-                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/$letter.html");
-                $self -> write_glossary_file("$srcdir/glossary/$letter.html",
-                                             "Glossary of terms starting with '".uc($letter)."'",
-                                             $letter, $charmap);
-            }
-        }
-
-        # Now numbers...
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/digit.html");
-        $self -> write_glossary_file("$srcdir/glossary/digit.html",
-                                     "Glossary of terms starting with digits",
-                                     "digit", $charmap);
-        
-        # ... and everything else
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/symb.html");
-        $self -> write_glossary_file("$srcdir/glossary/symb.html",
-                                     "Glossary of terms starting with other characters",
-                                     "symb", $charmap);
-           
-        # Finally, write the index page
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing $srcdir/glossary/index.html");
-        open(INDEX, "> $srcdir/glossary/index.html")
-            or die "Unable to open glossary index $srcdir/glossary/index.html: $!";
-        print INDEX load_complex_template($self -> {"templatebase"}."/glossary/header.tem",
-                                          {"***title***"        => "Glossary Index",
-                                           "***glosrefblock***" => $self -> build_glossary_references("glossary"),
-                                           "***include***"      => $self -> {"globalheader"},
-                                           "***index***"        => $self -> build_glossary_links("mu", $charmap),
-                                           "***breadcrumb***"   => load_complex_template($self -> {"templatebase"}."/glossary/breadcrumb-indexonly.tem")
-                                          });
-        print INDEX load_complex_template($self -> {"templatebase"}."/glossary/index-body.tem");
-        print INDEX load_complex_template($self -> {"templatebase"}."/glossary/footer.tem");
-        close(INDEX);
-
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished writing glossary pages");
-    } else {
-        log_print($Utils::WARNING, $self -> {"verbose"}, "No glossary terms to write");
     }
 
+    # Process the letters first...
+    foreach my $letter ("a".."z") {
+        $self -> write_glossary_file(path_join($outdir, "$letter.html"), "Glossary of terms starting with '".uc($letter)."'", $letter, $charmap)
+            if($charmap -> {$letter} && scalar(@{$charmap -> {$letter}}));
+    }
+
+    # Now numbers...
+    $self -> write_glossary_file(path_join($outdir, "digit.html"), "Glossary of terms starting with digits", "digit", $charmap);
+    
+    # ... and everything else
+    $self -> write_glossary_file(path_join($outdir, "symb.html"), "Glossary of terms starting with other characters", "symb", $charmap);
+    
+    # Finally, we need the index page
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing index.html");
+
+    # Create the content of the page
+    save_file(path_join($outdir, "index.html"), $self -> {"template"} -> load_template("glossary/indexpage.tem",
+                                                                                       {"***glosrefblock***" => $self -> build_glossary_references("glossary"),
+                                                                                        "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                                                        "***index***"        => $self -> build_glossary_links("", $charmap),
+                                                                                        "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-indexonly.tem")
+                                                                                       }));
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished writing glossary pages");
 }
 
 

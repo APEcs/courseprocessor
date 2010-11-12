@@ -4,7 +4,7 @@
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 # @version 3.0
-# @date    20 Nov 2010
+# @date    11 Nov 2010
 # @copy    2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
@@ -42,11 +42,14 @@
 # processed html to the intermediate format.
 package HTMLInputHandler;
 
+use strict;
+use base qw(Plugin); # This class extends Plugin
+
 use Cwd qw(getcwd chdir);
+use Digest::MD5 qw(md5_hex);
 use ProgressBar;
 use Utils qw(path_join load_file);
-use Digest::MD5 qw(md5_hex);
-use strict;
+
 
 # The location of the latex processor, must be absolute, as the path may have been nuked.
 use constant DEFAULT_LATEX_COMMAND => "/usr/bin/latex2html";
@@ -60,76 +63,132 @@ use constant DEFAULT_LATEX_ARGS    => '-nonavigation -noaddress -white -noinfo -
 # Should temporary files be removed?
 use constant DEFAULT_CLEANUP       => 1;
 
-my ($VERSION, $type, $errstr, $htype, $extfilter, $desc);
+# File pattern for matching operations
+use constant FILE_REGEXP           => '[\s\w-]+\d+\.html?';
 
-BEGIN {
-    $VERSION       = "3.0";
-    $htype         = 'input';                 # handler type - either input or output
-    $extfilter     = '[\s\w-]+\d+\.html?';    # files matching this are assumed to be understood for processing.
-    $desc          = 'HTML input processor';  # Human-readable name 
-    $errstr        = '';                      # global error string
-}
+# Plugin basic information
+use constant PLUG_TYPE             => 'input';
+use constant PLUG_DESCRIPTION      => 'HTML input processor';
 
 
 # ============================================================================
-#  Constructor and required functions
+#  Plugin class override functions
 #   
 
 ## @cmethod $ new(%args)
-# Create a new plugin object. This will initialise the plugin to a base state suitable
-# for use by the processor. The following arguments may be provided to this constructor:
+# Overridded plugin creator. This will create a new Plugin object, and then set
+# HTMLInputHandler-specific values in the new object.
 #
-# config     (required) A reference to the global configuration object.
-# logger     (required) A reference to the global logger object.
-# path       (required) The directory containing the processor
-# metadata   (required) A reference to the metadata handler object.
-#
-# @param args A hash of arguments to initialise the plugin with. 
+# @param args A hash of arguments to pass to the Plugin creator.
 # @return A new HTMLInputHandler object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = { @_, };
+    my $self     = $class -> SUPER::new(@_);
+
+    # Set the plugin-specific data
+    $self -> {"htype"}       = PLUG_TYPE;
+    $self -> {"description"} = PLUG_DESCRIPTION;
+    
+    $self -> {"extfilter"}   = FILE_REGEXP;
 
     # Set defaults in the configuration if values have not been provided.
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexcmd"}   = DEFAULT_LATEX_COMMAND if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"latexcmd"}));
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexargs"}  = DEFAULT_LATEX_ARGS if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"latexargs"}));
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexintro"} = DEFAULT_LATEX_HEADER if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"latexintro"}));
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"cleanup"}    = DEFAULT_CLEANUP if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"cleanup"}));
-
-    return bless $self, $class;
 }
 
 
-## @fn $ get_type()
-# Determine the type of handler behaviour this plugin provides. This will always
-# return "input" for input plugins, "output" for output plugins, and "reference"
-# for reference handler plugins.
+## @method $ use_plugin()
+# Determine whether this plugin should be run against the source tree by looking for
+# files it recognises how to process in the directory structure. This will scan 
+# through the directory structure of the source and count how many files it thinks
+# the plugin should be able to process, and returns this count. If this is 0, the
+# plugin can not be used on the source tree.
 #
-# @return The plugin type.
-sub get_type {
-    return $htype
-};
+# @return The number of files in the source tree that the plugin can process, 0
+#         indicates that the plugin can not run on the source tree.
+sub use_plugin {
+    my $self   = shift;
+
+    # This gets set > 1 if there are any files this plugin understands, and it can be used
+    # during processing to show the progress of processing.
+    $self -> {"filecount"} = 0; 
+
+    # This should be the top-level "source data" directory, should contain theme dirs
+    opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"datasource"})
+        or die "FATAL: Unable to open source directory (".$self -> {"config"} -> {"Processor"} -> {"datasource"}.") for reading: $!";
+
+    # grab the directory list so we can check it for subdirs, strip .* files though
+    my @srcentries = grep(!/^\./, readdir(SRCDIR));
+    
+    foreach my $theme (@srcentries) {
+        $theme = path_join($self -> {"config"} -> {"Processor"} -> {"datasource"}, $theme); # prepend the source directory
+
+        # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
+        if(-d $theme) {
+            opendir(MODDIR, $theme)
+                or die "FATAL: Unable to open source module directory $theme for reading: $!";
+
+            # Obtain the list of files and direcories without dotfiles
+            my @modentries = grep(!/^\./, readdir(MODDIR));
+
+            # Process all the files and dirs in the theme directory.
+            foreach my $module (@modentries) {
+                $module = path_join($theme, $module); # prepend the module directory...
+
+                # If this is a module directory, we want to scan it for steps
+                if(-d $module) {
+                    opendir(SUBDIR, $module)
+                        or die "FATAL: Unable to open source subdir for reading: $!";
+            
+                    # grep returns the number of matches in scalar mode and that's all we
+                    # really want to know at this point
+                    $self -> {"filecount"} += grep(/^$self->{extfilter}$/, readdir(SUBDIR));
+
+                    closedir(SUBDIR);
+                }
+
+            } # foreach my $module (@modentries) {
+
+            closedir(MODDIR);
+
+        } # if(-d $theme) { 
+    } # foreach my $theme (@srcentries) {
+
+    closedir(SRCDIR);
+
+    return $self -> {"filecount"};
+}
 
 
-## @fn $ get_description()
-# Obtain the human-readable descriptive text for this plugin. This will return
-# a string that describes the processor in a way that is useful to the user.
+# @method $ module_check($themedir, $module)
+# Check whether the module specified is valid and usable by this plugin. This is
+# used by the metadata validation code to determine whether the module specified
+# appears to be valid. This will return a string containing an error message if 
+# there is a problem, 0 otherwise.
 #
-# @return The handler description
-sub get_description {
-    return $desc 
-};
+# @param themedir The directory containing the module to check.
+# @param module   The name of the module to check.
+# @return 0 if the module is valid, an error string otherwise.
+sub module_check {
+    my $self     = shift;
+    my $themedir = shift;
+    my $module     = shift;
 
+    # does the directory for the specified module exist?
+    return "HTMLInputHandler: Module $module does not have a corresponding module directory." unless(-e path_join($themedir, $module));
 
-## @fn $ get_version()
-# Obtain the version string for the plugin. This returns a string containing the
-# version information for the plugin in a human-readable form.
-#
-# @return The handler version string.
-sub get_version {
-    return $VERSION 
-};
+    # ensure it is a directory, not a file
+    return "HTMLInputHandler: $themedir/$module is a normal file or symlink, not a directory." unless(-d path_join($themedir, $module));
+
+    # is it readable? We just have to hope the files inside are too...
+    return "HTMLInputHandler: $themedir/$module is not readable." unless(-r path_join($themedir, $module));
+
+    # if we get here, it's okay.
+    return 0;
+}
 
 
 ## @method $ process()
@@ -184,7 +243,7 @@ sub process {
                         or die "FATAL: Unable to open module directory $module for reading: $!";
             
                     # Know grab a list of files we know how to process
-                    my @subfiles = grep(/^$extfilter$/, readdir(STEPS));
+                    my @subfiles = grep(/^$self->{extfilter}$/, readdir(STEPS));
 
                     if(scalar(@subfiles)) {
                         my $cwd = getcwd();
@@ -220,101 +279,6 @@ sub process {
     closedir(SRCDIR);
 
     return 1;
-}
-
-
-# ============================================================================
-#  Precheck - can this plugin be applied to the source tree?
-#   
-
-## @method $ use_plugin()
-# Determine whether this plugin should be run against the source tree by looking for
-# files it recognises how to process in the directory structure. This will scan 
-# through the directory structure of the source and count how many files it thinks
-# the plugin should be able to process, and returns this count. If this is 0, the
-# plugin can not be used on the source tree.
-#
-# @return The number of files in the source tree that the plugin can process, 0
-#         indicates that the plugin can not run on the source tree.
-sub use_plugin {
-    my $self   = shift;
-
-    # This gets set > 1 if there are any files this plugin understands, and it can be used
-    # during processing to show the progress of processing.
-    $self -> {"filecount"} = 0; 
-
-    # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"datasource"})
-        or die "FATAL: Unable to open source directory (".$self -> {"config"} -> {"Processor"} -> {"datasource"}.") for reading: $!";
-
-    # grab the directory list so we can check it for subdirs, strip .* files though
-    my @srcentries = grep(!/^\./, readdir(SRCDIR));
-    
-    foreach my $theme (@srcentries) {
-        $theme = path_join($self -> {"config"} -> {"Processor"} -> {"datasource"}, $theme); # prepend the source directory
-
-        # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
-        if(-d $theme) {
-            opendir(MODDIR, $theme)
-                or die "FATAL: Unable to open source module directory $theme for reading: $!";
-
-            # Obtain the list of files and direcories without dotfiles
-            my @modentries = grep(!/^\./, readdir(MODDIR));
-
-            # Process all the files and dirs in the theme directory.
-            foreach my $module (@modentries) {
-                $module = path_join($theme, $module); # prepend the module directory...
-
-                # If this is a module directory, we want to scan it for steps
-                if(-d $module) {
-                    opendir(SUBDIR, $module)
-                        or die "FATAL: Unable to open source subdir for reading: $!";
-            
-                    # grep returns the number of matches in scalar mode and that's all we
-                    # really want to know at this point
-                    $self -> {"filecount"} += grep(/^$extfilter$/, readdir(SUBDIR));
-
-                    closedir(SUBDIR);
-                }
-
-            } # foreach my $module (@modentries) {
-
-            closedir(MODDIR);
-
-        } # if(-d $theme) { 
-    } # foreach my $theme (@srcentries) {
-
-    closedir(SRCDIR);
-
-    return $self -> {"filecount"};
-}
-
-
-# @method $ module_check($themedir, $module)
-# Check whether the module specified is valid and usable by this plugin. This is
-# used by the metadata validation code to determine whether the module specified
-# appears to be valid. This will return a string containing an error message if 
-# there is a problem, 0 otherwise.
-#
-# @param themedir The directory containing the module to check.
-# @param module   The name of the module to check.
-# @return 0 if the module is valid, an error string otherwise.
-sub module_check {
-    my $self     = shift;
-    my $themedir = shift;
-    my $module     = shift;
-
-    # does the directory for the specified module exist?
-    return "HTMLInputHandler: Module $module does not have a corresponding module directory." unless(-e path_join($themedir, $module));
-
-    # ensure it is a directory, not a file
-    return "HTMLInputHandler: $themedir/$module is a normal file or symlink, not a directory." unless(-d path_join($themedir, $module));
-
-    # is it readable? We just have to hope the files inside are too...
-    return "HTMLInputHandler: $themedir/$module is not readable." unless(-r path_join($themedir, $module));
-
-    # if we get here, it's okay.
-    return 0;
 }
 
 
