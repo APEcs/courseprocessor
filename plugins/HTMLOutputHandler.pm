@@ -776,9 +776,10 @@ sub build_glossary_links {
 }
 
 
-# Write all the entries for a specified character class to the named
-# file.
-### FIXME for v3.7
+## @method void write_glossary_file($filename, $title, $letter, $charmap)
+# Write all the entries for a specified character class to the named file. This will
+# generate a glossary page for all terms starting with the specified letter, and
+# write it to the file.
 sub write_glossary_file {
     my $self     = shift;
     my $filename = shift;
@@ -794,6 +795,11 @@ sub write_glossary_file {
         # convert backlinks
         my $linkrefs = $self -> {"terms"} -> {$term} -> {"refs"};
         my $backlinks = "";
+
+        # Only generate the entry if we have one or more references to the term (this is necessary
+        # as a term may be defined in a filtered step, but never referenced from the rest of the
+        # course, and we don't want to include definitions of terms that don't appear in the 
+        # generated material at all)
         if($linkrefs && scalar(@$linkrefs)) {
             for(my $i = 0; $i < scalar(@$linkrefs); ++$i) {
                 my $backlink = $linkrefs -> [$i]; 
@@ -803,19 +809,19 @@ sub write_glossary_file {
                                                                      { "***link***" => '../'.$backlink->[0].'/'.$backlink->[1].'/step'.lead_zero($backlink->[2]).'.html',
                                                                        "***text***" => ($i + 1) });
             }
+
+            my $key = lc($term);
+            $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
+            $key =~ s/\s/_/g;     # replace spaces with underscores.
+
+            $entries .= $self -> {"template"} -> load_template("glossary/entry.tem",
+                                                               { "***termname***"   => $key,
+                                                                 "***term***"       => $self -> {"terms"} -> {$term} -> {"term"},
+                                                                 "***definition***" => $self -> {"terms"} -> {$term} -> {"definition"},
+                                                                 "***backlinks***"  => $backlinks
+                                                               });
         }
-
-        my $key = lc($term);
-        $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
-        $key =~ s/\s/_/g;     # replace spaces with underscores.
-
-        $entries .= $self -> {"template"} -> load_template("glossary/entry.tem",
-                                                           { "***termname***"   => $key,
-                                                             "***term***"       => $self -> {"terms"} -> {$term} -> {"term"},
-                                                             "***definition***" => $self -> {"terms"} -> {$term} -> {"definition"},
-                                                             "***backlinks***"  => $backlinks
-                                                           });                
-    }
+    } # foreach my $term (@{$charmap -> {$letter}})
 
     # Save the page out.
     save_file(path_join($outdir, $filename), $self -> {"template"} -> load_template("glossary/entrypage.tem",
