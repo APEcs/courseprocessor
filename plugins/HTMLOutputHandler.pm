@@ -132,60 +132,55 @@ sub process {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing complete");
 
-#####
+    # Go through each theme defined in the metadata, processing its contents into 
+    # the output format.
+    foreach my $theme (keys(%{$self -> {"mdata"} -> {"themes"}})) {
 
-    # This should be the top-level "source data" directory, should contain theme dirs
-    opendir(SRCDIR, $srcdir)
-        or die "FATAL: Unable to open source directory for reading: $!";
+        # Skip themes that should not be included
+        if($self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"})) {
+            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Theme $theme excluded by filtering rules.");
+            next;
+        }
 
-    # grab the directory list so we can check it for subdirs, strip .* files though
-    my @themes = grep(!/^(\.|CVS)/, readdir(SRCDIR));
-
-    die "FATAL: Unable to locate any themes to parse in $srcdir" if(scalar(@themes) == 0);
-
-    foreach my $theme (@themes) {
-        my $fulltheme = "$srcdir/$theme"; # prepend the source directory
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $theme");
 
-        # if this is a directory, check inside for subdirs ($theme is a theme, subdirs are modules)
+        # Confirm that the theme is a directory, and check inside for subdirs ($theme is a theme, subdirs are modules)
+        my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outdir"}, $theme);
         if(-d $fulltheme) {
 
-            # Load the theme metadata
-            my $metadata  = $self -> load_metadata($fulltheme);
+            # Now we need to get a list of modules inside the theme. This looks at the list of modules 
+            # stored in the metadata so that we don't need to worry about non-module directoried...
+            foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"}})) {
 
-            if($metadata && ($metadata != 1)) {
-                # Get the list of module directories in this theme
-                opendir(MODDIR, $fulltheme)
-                    or die "FATAL: Unable to open module directory $fulltheme for reading: $!";
-                my @modules = grep(!/^(\.|CVS)/, readdir(MODDIR));
+                # Determine whether the module will be included in the course
+                if($self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"} -> {$module})) {
+                    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Module $theme excluded by filtering rules.");
+                    next;
+                }
 
-                # Process each module.
-                foreach my $module (@modules) { 
-                    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $module ($fulltheme/$module)");
+                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $module ($fulltheme/$module)");
 
-                    my $fullmodule = "$fulltheme/$module"; # prepend the module directory...
+                my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
-                    # If this is a module directory, we want to scan it for steps
-                    if(-d $fullmodule) {
-                        
-                        # Scan for steps
-                        opendir(SUBDIR, $fullmodule)
-                            or die "FATAL: Unable to open subdir for reading: $!";
+                # If this is a module directory, we want to scan it for steps
+                if(-d $fullmodule) {
+                    my $cwd = getcwd();
+                    chdir($fullmodule);
 
-                        # now grab a list of files we know how to process, then call the internal process
-                        # function for each one, remembering to include the full path.
-                        my @stepfiles = grep(/^node\d+\.html/, readdir(SUBDIR));
-                        
-                        if(scalar(@stepfiles)) {
-                            my $cwd = getcwd();
-                            chdir($fullmodule);
-
-                            my $maxstep = get_maximum_stepid(\@stepfiles);
+                    # Determine what the maximum step id in the module is
+                    my $maxstep = get_maximum_stepid($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"} -> {$module});
                             
-                            $metadata -> {"module"} -> {$module} -> {"steps"} = { };
-                            for(my $i = 0; $i < scalar(@stepfiles); ++$i) {
-                                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing ".$stepfiles[$i]." as ".get_step_name($stepfiles[$i])."... ");
-                                my ($previous, $next, $prevlink, $nextlink) = $self -> build_prev_next(\@stepfiles, $i, $metadata -> {"module"} -> {$module} -> {"level"});
+                    foreach my $stepid (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"} -> {$module} -> {"step"}})) {
+                        
+                        # Step exclusion has already been determined by the preprocessor, so we can just check that
+                        if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"}) {
+                            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Step $stepid excluded by filtering rules.");
+                            next;
+                        }
+                            
+
+                        my ($previous, $next, $prevlink, $nextlink) = $self -> build_prev_next(\@stepfiles, $i, $metadata -> {"module"} -> {$module} -> {"level"});
+
                                 $self -> process_step($stepfiles[$i], 
                                                       $metadata -> {"module"} -> {$module} -> {"steps"}, 
                                                       $previous, 
@@ -200,16 +195,12 @@ sub process {
                                                       $maxstep,
                                                       $metadata);
                                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished processing $module ($fulltheme/$module)");
-                            }
-                            chdir($cwd);
-
-                            $self -> cleanup_module($fullmodule, $module);
-                        }
-
-                        closedir(SUBDIR);
                     }
-                }
-                closedir(MODDIR);
+                    chdir($cwd);
+
+                    $self -> cleanup_module($fullmodule, $module);
+                } # if(-d $fullmodule) 
+
                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing index files");
                 $self -> write_theme_indexmap($fulltheme, $theme, $metadata, $include);
 
@@ -1341,6 +1332,9 @@ sub build_theme_dropdowns {
 # into the target template.
 #
 # @note This will die if called on a module that contains no steps.
+#
+# @param theme  The name of the theme to generate the step dropdown for.
+# @param module The name of the module to generate the step dropdown for.
 sub build_step_dropdowns {
     my $self   = shift;
     my $theme  = shift;
@@ -1373,6 +1367,8 @@ sub build_step_dropdowns {
 #
 # @note This will die if any module is missing its indexorder (although this should
 #       not happen if the metadata was validated during loading)
+#
+# @param theme The name of the theme to generate the module dropdown for.
 sub build_module_dropdowns {
     my $self  = shift;
     my $theme = shift;
@@ -1756,8 +1752,10 @@ sub preprocess {
                         my $cwd = getcwd();
                         chdir($fullmodule);
 
+                        my @sortedsteps = sort step_sort @steps;
+
                         my $outstep = 0;
-                        foreach my $step (@steps) {
+                        foreach my $step (@sortedsteps) {
                             my ($stepid) = $step =~ /$node0?(\d+).html/;
 
                             # If we have a step entry in the metadata, check whether this step will be excluded
