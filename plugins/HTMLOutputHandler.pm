@@ -179,7 +179,7 @@ sub process {
                         }
                             
 
-                        my ($previous, $next, $prevlink, $nextlink) = $self -> build_prev_next(\@stepfiles, $i, $metadata -> {"module"} -> {$module} -> {"level"});
+                       = $self -> build_prev_next($stepid, $maxstep, $metadata -> {"module"} -> {$module} -> {"level"});
 
                                 $self -> process_step($stepfiles[$i], 
                                                       $metadata -> {"module"} -> {$module} -> {"steps"}, 
@@ -933,6 +933,53 @@ sub write_glossary_pages {
 #  Page interlink and index generation code.
 #  
 
+## @method $ build_prev_next($stepid, $maxstep, $level)
+# Construct the next and previous fragments based on the current position within 
+# the module. This creates the steps based on the rule that 1 <= $stepid <= $maxstep
+# and the steps are continuous. As of the changes introduced in 3.7 this can be
+# guaranteed in all courses, regardless of the scheme used by the author.
+#
+# @param stepid  The current step id number.
+# @param maxstep The maximum stepid in the module.
+# @param level   The module difficulty level ('green', 'yellow', etc)
+# @return A reference to a hash containing the next and previous button and link
+#         fragments.
+sub build_prev_next {
+    my $self      = shift;
+    my $stepid    = shift;
+    my $maxstep   = shift;
+    my $level     = shift;
+    my $fragments = {};
+    
+    if($stepid > 1) {
+        $fragments -> {"previous"} -> {"button"} = $self -> load_template("theme/module/previous_enabled.tem",
+                                                                          {"***prevlink***" => get_step_name($stepid - 1),
+                                                                           "***level***"    => $level});
+
+        $fragments -> {"previous"} -> {"link"}   = $self -> load_template("theme/module/link_prevstep.tem",
+                                                                          {"***prevstep***" => get_step_name($stepid - 1)});
+    } else {
+        $fragments -> {"previous"} -> {"button"} = $self -> load_template("theme/module/previous_disabled.tem",
+                                                                          {"***level***"    => $level});
+        $fragments -> {"previous"} -> {"link"}   = "";
+    }
+
+    if($stepid < $maxstep) {
+        $fragments -> {"next"} -> {"button"}     = $self -> load_template("theme/module/next_enabled.tem",
+                                                                          {"***nextlink***" => get_step_name($stepid + 1),
+                                                                           "***level***"    => $level});
+        $fragments -> {"next"} -> {"link"}       = $self -> load_template("theme/module/link_nextstep.tem",
+                                                                          {"***nextstep***" => get_step_name($stepid + 1)});
+    } else {
+        $fragments -> {"next"} -> {"button"}     = $self -> load_template("theme/module/next_disabled.tem",
+                                                                          {"***level***"    => $level});
+        $fragments -> {"next"} -> {"link"}       = "";
+    }
+
+    return $fragments;
+}
+
+
 ## @method $ build_dependencies($entries, $metadata)
 # Construct a string containing the module dependencies seperated by
 # the index_dependence delimiter.
@@ -1219,44 +1266,6 @@ sub write_courseindex {
                                        "***glosrefblock***" => $self -> build_glossary_references(""),
                                    });
     close(INDEX);
-}
-
-
-# Construct the next and previous fragments based on the current
-# position within the module.
-### FIXME for v3.7
-sub build_prev_next {
-    my $self    = shift;
-    my $steps   = shift;
-    my $current = shift;
-    my $level   = shift;
-    my ($previous, $next, $prevlink, $nextlink);
-    
-    if($current > 0) {
-        $previous = load_complex_template($self -> {"templatebase"}."/theme/module/previous_enabled.tem",
-                                          {"***prevlink***" => get_step_name(@$steps[$current - 1]),
-                                           "***level***"    => $level});
-        $prevlink = load_complex_template($self -> {"templatebase"}."/theme/module/link_prevstep.tem",
-                                          {"***prevstep***" => get_step_name(@$steps[$current - 1])});
-    } else {
-        $previous = load_complex_template($self -> {"templatebase"}."/theme/module/previous_disabled.tem",
-                                          {"***level***"    => $level});
-        $prevlink = "";
-    }
-
-    if($current < (scalar(@$steps) - 1)) {
-        $next     = load_complex_template($self -> {"templatebase"}."/theme/module/next_enabled.tem",
-                                          {"***nextlink***" => get_step_name(@$steps[$current + 1]),
-                                           "***level***"    => $level});
-        $nextlink = load_complex_template($self -> {"templatebase"}."/theme/module/link_nextstep.tem",
-                                          {"***nextstep***" => get_step_name(@$steps[$current + 1])});
-    } else {
-        $next     = load_complex_template($self -> {"templatebase"}."/theme/module/next_disabled.tem",
-                                          {"***level***"    => $level});
-        $nextlink = "";
-    }
-
-    return ($previous, $next, $prevlink, $nextlink);
 }
 
 
