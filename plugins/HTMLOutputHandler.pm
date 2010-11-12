@@ -237,6 +237,19 @@ sub numeric_order {
 }
 
 
+## @fn $ step_sort()
+# Sort function used to ensure that intermediate format steps are sorted in ascending
+# numeric order.
+#
+# @return < 0 if $a is less than $b, 0 if they are the same, >0 if $a is greater than $b. 
+sub step_sort {
+    my ($aid) = $a =~ /^node0?(\d+).html?$/;
+    my ($bid) = $b =~ /^node0?(\d+).html?$/;
+
+    return $aid <=> $bid;
+}
+
+
 ## @fn $ get_step_name($stepid)
 # Given a step id, this returns a string containing the canonical filename for the 
 # step. Note that this will ensure that the step number is given a leading zero
