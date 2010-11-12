@@ -86,6 +86,8 @@ sub use_plugin {
 #
 # @note Derived classes MUST override this function to provide the appropriate
 #       behaviour. If this function is called directly it will create an warning.
+# @note This function is only needed within input plugins, it is never called on
+#       output plugins.
 #
 # @param themedir The directory containing the module to check.
 # @param module   The name of the module to check.
@@ -111,6 +113,33 @@ sub process {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Direct call to base Plugin::process. Derived class is not overriding this function.");
     return 0;
+}
+
+
+# ============================================================================
+#  Plugin convenience functions. Should not be overridden, here mainly for
+#  readability
+
+## @method $ get_type()
+# Obtain the plugin's type string. This will return a string that identifies 
+# the plugin as either an 'input' plugin, and 'output' plugin, or potentially
+# 'reference' plugin.
+#
+# @return The plugin type string.
+sub get_type {
+    my $self = shift;
+
+    return $self -> {"htype"};
+}
+
+
+## @method $ get_description()
+# Obtain the plugin's descriptive string. This will return a string describing
+# the plugin in a human-readable format.
+sub get_description {
+    my $self = shift;
+
+    return $self -> {"description"};
 }
 
 
