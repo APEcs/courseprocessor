@@ -131,18 +131,21 @@ sub load_plugins {
         # Attempt to work out what its package name is from the filename
         my ($package) = $plugin =~ m|^$path/plugins/(\w+).pm$|;
 
+        # Create an instance of the new plugin so we can interrogate it
+        my $obj = $package -> new(config   => $config, 
+                                  logger   => $logger,  
+                                  path     => $path, 
+                                  metadata => $metadata,
+                                  template => $template,
+                                  filter   => $filter);
+
         # Obtain the handler type (should be input, output, or reference)
-        my $htype = &{$package."::get_type"};
+        my $htype = $obj -> get_type();
         
-        $logger -> print($logger -> DEBUG, "loaded, adding '".&{$package."::get_description"}."' as $htype handler.");
+        $logger -> print($logger -> DEBUG, "loaded, adding $htype plugin $package (".$obj -> get_description().").");
         
-        # Create and store an instance of the plugin for use later.
-        $plugins -> {$htype} -> {$package} -> {"obj"} = $package -> new(config   => $config, 
-                                                                        logger   => $logger,  
-                                                                        path     => $path, 
-                                                                        metadata => $metadata,
-                                                                        template => $template,
-                                                                        filter   => $filter);
+        # store the instance of the plugin for use later.
+        $plugins -> {$htype} -> {$package} -> {"obj"} = $obj; 
     }
     use strict;
 
