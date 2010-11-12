@@ -27,14 +27,19 @@
 package Plugin;
 
 use strict;
+use File::Path;
 
 # ============================================================================
-#  Plugin class required functions
+#  Plugin class required functions. These will usually be overridden/extended
+#  in derived classes.
 #   
 
 ## @cmethod $ new(%args)
 # Create a new plugin object. This will intialise the plugin to a base state suitable
-# for use by the processor. The following arguments may be provided to this constructor:
+# for use by the processor. This function does not NEED to be overridden in any
+# derived classes, but it usually will be so that the derived class can set its own
+# configuration defaults if necessary. The following arguments may be provided to 
+# this constructor:
 #
 # config     (required) A reference to the global configuration object.
 # logger     (required) A reference to the global logger object.
@@ -60,6 +65,9 @@ sub new {
 # the plugin should be able to process, and returns this count. If this is 0, the
 # plugin can not be used on the source tree.
 #
+# @note Derived classes MUST override this function to provide the appropriate
+#       behaviour. If this function is called directly it will create an warning.
+#
 # @return The number of files in the source tree that the plugin can process, 0
 #         indicates that the plugin can not run on the source tree.
 sub use_plugin {
@@ -76,6 +84,9 @@ sub use_plugin {
 # appears to be valid. This will return a string containing an error message if 
 # there is a problem, 0 otherwise.
 #
+# @note Derived classes MUST override this function to provide the appropriate
+#       behaviour. If this function is called directly it will create an warning.
+#
 # @param themedir The directory containing the module to check.
 # @param module   The name of the module to check.
 # @return 0 if the module is valid, an error string otherwise.
@@ -91,6 +102,9 @@ sub module_check {
 # perform plugin-specific operations on the course data in accordance with the
 # purpose of the plugin.
 #
+# @note Derived classes MUST override this function to provide the appropriate
+#       behaviour. If this function is called directly it will create an warning.
+#
 # @return true to indicate processing was successful, false otherwise.
 sub process {
     my $self = shift;
@@ -102,7 +116,42 @@ sub process {
 
 # ============================================================================
 #  Plugin utility functions (would be in Utils except need for access to $self)
-#   
+#  These should generally not be overridden in derived classes.
 
+## @method $ makedir($name, $no_warn_exists)
+# Attempt to create the specified directory if needed. This will determine
+# whether the directory exists, and if not whether it can be created.
+#
+# @param name           The name of the directory to create.
+# @param no_warn_exists If true, no warning is generated if the directory exists.
+# @return true if the directory was created, false otherwise.
+sub makedir {
+    my $self           = shift;
+    my $name           = shift;
+    my $no_warn_exists = shift;
+
+    # If the directory exists, we're okayish...
+    if(-d $name) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Dir $name exists, the contents will be overwritten.")
+            unless($quiet || $no_warn_exists);
+        return 1;
+
+    # It's not a directory, is it something... else?
+    } elsif(-e $name) {
+        # It exists, and it's not a directory, so we have a problem
+        die "FATAL: dir $name corresponds to a file or other resource.\n";
+
+    # Okay, it doesn't exist in any form, time to make it
+    } else {
+        eval { mkpath($name); };
+
+        if($@) {
+            die "FATAL: Unable to create directory $name: $@\n";
+        }
+        return 1;
+    }
+
+    return 0;
+}
 
 1;
