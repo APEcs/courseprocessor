@@ -147,7 +147,7 @@ sub validate_metadata_theme {
         }
 
         # Do the input handler(s) think the module is valid?
-        my $valid = 1;
+        my $valid = 0;
         my @errors = ();
         foreach my $plugin (sort(keys(%{$self -> {"plugins"} -> {"input"}}))) {
             if($self -> {"plugins"} -> {"input"} -> {$plugin} -> {"use"}) {
