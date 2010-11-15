@@ -26,6 +26,18 @@ package LatexInputHandler;
 # use_plugin      - returns true if th eplugin can be used on the tree, false if not
 # process         - actually does the processing.
 
+# IMPORTANT FOR v3.7: HTMLOutputHandler has been modified to remove all
+# specific format support (ie: the code to make up for latex2html's odd output 
+# has been removed). This plugin needs to be updated to compensate for this,
+# in particular:
+#
+# - removing <h\d>step titles</h\d> from steps
+# - removing trailing <hr> from steps
+# - fixing crossref icons (s{file:/usr/lib/latex2html/icons/crossref.png}{../../images/crossref.png}gi;)
+# - fixing escaped links (s/&lt;a\s+href="(.*?)"\s*&gt;/<a href="$1">/gi; s/&lt;\/a&gt;/<\/a>/gi;)
+#
+# For diff, see commit d931230084bfd5a191347a327de87ff4a54b3f13
+
 require 5.005;
 use Cwd qw(getcwd chdir);
 use Utils qw(load_file log_print blargh);
