@@ -150,10 +150,10 @@ sub process {
 
             # Now we need to get a list of modules inside the theme. This looks at the list of modules 
             # stored in the metadata so that we don't need to worry about non-module directoried...
-            foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"}})) {
+            foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
 
                 # Determine whether the module will be included in the course
-                if($self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"} -> {$module})) {
+                if($self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module})) {
                     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Module $theme excluded by filtering rules.");
                     next;
                 }
@@ -168,13 +168,13 @@ sub process {
                     chdir($fullmodule);
 
                     # Determine what the maximum step id in the module is
-                    my $maxstep = get_maximum_stepid($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"} -> {$module});
+                    my $maxstep = get_maximum_stepid($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module});
                             
                     # Process each step stored in the metadata
-                    foreach my $stepid (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"} -> {$module} -> {"step"}})) {
+                    foreach my $stepid (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"}})) {
                         
                         # Step exclusion has already been determined by the preprocessor, so we can just check that
-                        if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"}) {
+                        if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"}) {
                             $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Step $stepid excluded by filtering rules.");
                             next;
                         }
@@ -934,8 +934,8 @@ sub write_glossary_pages {
 #  Page interlink and index generation code.
 #  
 
-## @method $ build_prev_next($stepid, $maxstep, $level)
-# Construct the next and previous fragments based on the current position within 
+## @method $ build_navlinks($stepid, $maxstep, $level)
+# Construct the navigation link fragments based on the current position within 
 # the module. This creates the steps based on the rule that 1 <= $stepid <= $maxstep
 # and the steps are continuous. As of the changes introduced in 3.7 this can be
 # guaranteed in all courses, regardless of the scheme used by the author.
@@ -945,7 +945,7 @@ sub write_glossary_pages {
 # @param level   The module difficulty level ('green', 'yellow', etc)
 # @return A reference to a hash containing the next and previous button and link
 #         fragments.
-sub build_prev_next {
+sub build_navlinks {
     my $self      = shift;
     my $stepid    = shift;
     my $maxstep   = shift;
@@ -953,29 +953,32 @@ sub build_prev_next {
     my $fragments = {};
     
     if($stepid > 1) {
-        $fragments -> {"previous"} -> {"button"} = $self -> load_template("theme/module/previous_enabled.tem",
-                                                                          {"***prevlink***" => get_step_name($stepid - 1),
-                                                                           "***level***"    => $level});
+        $fragments -> {"button"} -> {"previous"} = $self -> {"template"} -> load_template("theme/module/previous_enabled.tem",
+                                                                                          {"***prevlink***" => get_step_name($stepid - 1),
+                                                                                           "***level***"    => $level});
 
-        $fragments -> {"previous"} -> {"link"}   = $self -> load_template("theme/module/link_prevstep.tem",
-                                                                          {"***prevstep***" => get_step_name($stepid - 1)});
+        $fragments -> {"link"} -> {"previous"}   = $self -> {"template"} -> load_template("theme/module/link_prevstep.tem",
+                                                                                          {"***prevstep***" => get_step_name($stepid - 1)});
     } else {
-        $fragments -> {"previous"} -> {"button"} = $self -> load_template("theme/module/previous_disabled.tem",
-                                                                          {"***level***"    => $level});
-        $fragments -> {"previous"} -> {"link"}   = "";
+        $fragments -> {"button"} -> {"previous"} = $self -> {"template"} -> load_template("theme/module/previous_disabled.tem",
+                                                                                          {"***level***"    => $level});
+        $fragments -> {"link"} -> {"previous"}   = "";
     }
 
     if($stepid < $maxstep) {
-        $fragments -> {"next"} -> {"button"}     = $self -> load_template("theme/module/next_enabled.tem",
-                                                                          {"***nextlink***" => get_step_name($stepid + 1),
-                                                                           "***level***"    => $level});
-        $fragments -> {"next"} -> {"link"}       = $self -> load_template("theme/module/link_nextstep.tem",
-                                                                          {"***nextstep***" => get_step_name($stepid + 1)});
+        $fragments -> {"button"} -> {"next"}     = $self -> {"template"} -> load_template("theme/module/next_enabled.tem",
+                                                                                          {"***nextlink***" => get_step_name($stepid + 1),
+                                                                                           "***level***"    => $level});
+        $fragments -> {"link"} -> {"next"}       = $self -> {"template"} -> load_template("theme/module/link_nextstep.tem",
+                                                                                          {"***nextstep***" => get_step_name($stepid + 1)});
     } else {
-        $fragments -> {"next"} -> {"button"}     = $self -> load_template("theme/module/next_disabled.tem",
-                                                                          {"***level***"    => $level});
-        $fragments -> {"next"} -> {"link"}       = "";
+        $fragments -> {"button"} -> {"next"}     = $self -> {"template"} -> load_template("theme/module/next_disabled.tem",
+                                                                                          {"***level***"    => $level});
+        $fragments -> {"link"} -> {"next"}       = "";
     }
+
+    $fragments -> {"link"} -> {"first"} = $self -> {"template"} -> load_template("theme/module/link_firststep.tem", { "***firststep***" => get_step_name(1) });
+    $fragments -> {"link"}  -> {"last"} = $self -> {"template"} -> load_template("theme/module/link_laststep.tem" , { "***firststep***" => get_step_name($maxstep) });
 
     return $fragments;
 }
@@ -1157,7 +1160,7 @@ sub build_courseindex_deps {
         $depend .= load_complex_template($self -> {"templatebase"}."/courseindex-dependency-delimit.tem") if($count > 0);
         $depend .= load_complex_template($self -> {"templatebase"}."/courseindex-dependency.tem",
                                          {"***url***" => "#$theme-$entry",
-                                          "***title***" => $metadata -> {$theme} -> {"module"} -> {$entry} -> {"title"}});
+                                          "***title***" => $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"title"}});
         ++$count;
     }         
 
@@ -1196,53 +1199,53 @@ sub write_courseindex {
 
         # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
         my @modnames = sort { die "Attempt to sort module without indexorder while comparing $a and $b" 
-                                  if(!$metadata -> {$theme} -> {"module"} -> {$a} -> {"indexorder"} or !$metadata -> {$theme} -> {"module"} -> {$b} -> {"indexorder"});
-                              defined($metadata -> {$theme} -> {"module"} -> {$a} -> {"indexorder"}) ?
-                                  $metadata -> {$theme} -> {"module"} -> {$a} -> {"indexorder"} <=> $metadata -> {$theme} -> {"module"} -> {$b} -> {"indexorder"} :
+                                  if(!$metadata -> {$theme} -> {"module"} -> {$a} -> {"indexorder"} or !$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+                              defined($metadata -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}) ?
+                                  $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $metadata -> {$theme} -> {"module"} -> {$b} -> {"indexorder"} :
                                   $a cmp $b; 
                             }
-                            keys(%{$metadata -> {$theme} -> {"module"}});
+                            keys(%{$metadata -> {$theme} -> {"theme"} -> {"module"}});
 
         my $modbody = "";
 
         # For each module, build a list of steps and interlinks.
         foreach my $module (@modnames) {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Module: $module = ".$metadata -> {$theme} -> {"module"} -> {$module} -> {"title"});
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Module: $module = ".$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"});
 
             # skip dummy modules
-            next if($module eq "dummy" || $metadata -> {$theme} -> {"module"} -> {$module} -> {"skip"});
+            next if($module eq "dummy" || $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"skip"});
 
             my ($prereq, $leadsto, $steps) = ("", "", "");
 
             # build the prerequisites and leadsto links for the module
             # Prerequisites first...
-            my $entries = $metadata -> {$theme} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"};
+            my $entries = $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"};
             if($entries) {
                 $prereq = load_complex_template($self -> {"templatebase"}."/courseindex-module-prereqs.tem",,
                                                 {"***prereqs***" => $self -> build_courseindex_deps($entries, $metadata, $theme)});
             }
 
             # ... then the leadstos...
-            $entries = $metadata -> {$theme} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"};
+            $entries = $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"};
             if($entries) {
                 $leadsto = load_complex_template($self -> {"templatebase"}."/courseindex-module-leadsto.tem",
                                                  {"***leadsto***" => $self -> build_courseindex_deps($entries, $metadata, $theme)});
             }
         
             # ... and then the steps.
-            foreach my $step (sort numeric_order keys(%{$metadata -> {$theme} -> {$module} -> {"steps"}})) {
+            foreach my $step (sort numeric_order keys(%{$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"}})) {
                 $steps .= load_complex_template($self -> {"templatebase"}."/courseindex-step.tem",
                                                 {"***url***"   => "$theme/$module/".get_step_name($step),
-                                                 "***title***" => $metadata -> {$theme} -> {$module} -> {"steps"} -> {$step}});
+                                                 "***title***" => $metadata -> {$theme} -> {"module"} -> {$module} -> {"steps"} -> {$step}});
             }
 
             # finally, glue them all together.
             $modbody .= load_complex_template($self -> {"templatebase"}."/courseindex-module.tem",
-                                              {"***title***"      => $metadata -> {$theme} -> {"module"} -> {$module} -> {"title"},
+                                              {"***title***"      => $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
                                                "***name***"       => "$theme-$module",
                                                "***stepurl***"    => "$theme/$module/step01.html",
-                                               "***level***"      => $metadata -> {$theme} -> {"module"} -> {$module} -> {"level"},
-                                               "***difficulty***" => ucfirst($metadata -> {$theme} -> {"module"} -> {$module} -> {"level"}),
+                                               "***level***"      => $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
+                                               "***difficulty***" => ucfirst($metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}),
                                                "***prereqs***"    => $prereq,
                                                "***leadsto***"    => $leadsto,
                                                "***steps***"      => $steps});
@@ -1251,7 +1254,7 @@ sub write_courseindex {
         # Shove the module into a theme...
         $body .= load_complex_template($self -> {"templatebase"}."/courseindex-theme.tem",
                                        {"***name***"    => $theme,
-                                        "***title***"   => $metadata -> {$theme} -> {"title"},
+                                        "***title***"   => $metadata -> {$theme} -> {"theme"} -> {"title"},
                                         "***modules***" => $modbody});
     } # foreach $theme (@themenames) {
 
@@ -1328,11 +1331,11 @@ sub build_theme_dropdowns {
     foreach $theme (@themenames) {
         $themedrop_theme  .= $self -> {"template"} -> load_template("theme/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
-                                                                      "***title***" => $layout -> {$theme} -> {"title"}});
+                                                                      "***title***" => $layout -> {$theme} -> {"theme"} -> {"title"}});
 
         $themedrop_module .= $self -> {"template"} -> load_template("theme/module/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
-                                                                      "***title***" => $layout -> {$theme} -> {"title"}});
+                                                                      "***title***" => $layout -> {$theme} -> {"theme"} -> {"title"}});
     }
 
     # Put the accumulated dropdowns into containers and store for later.
@@ -1367,20 +1370,20 @@ sub build_step_dropdowns {
 
     # Process the list of steps for this module, sorted by numeric order. Steps are stored using a numeric
     # step id (not 'nodeXX.html' as they were in < 3.7)
-    foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"}})) {
+    foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"}})) {
         # Skip steps with no output id
-        next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$step} -> {"output_id"});
+        next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"output_id"});
 
         $stepdrop .= $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
-                                                            { "***name***"  => get_step_name($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$step} -> {"output_id"}),
-                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"steps"} -> {$step} -> {"title"}});
+                                                            { "***name***"  => get_step_name($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"output_id"}),
+                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$step} -> {"title"}});
     }
      
     die "FATAL: No steps stored for \{$theme\} -> \{$module\} -> \{steps\}\n" if(!$stepdrop);
 
     # and store the partially-processed dropdown
-    $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"steps"} = $self -> {"template"} -> load_template("theme/module/stepdrop.tem",
-                                                                                                          {"***entries***" => $stepdrop });
+    $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} = $self -> {"template"} -> load_template("theme/module/stepdrop.tem",
+                                                                                                                                     {"***entries***" => $stepdrop });
 }
 
 
@@ -1426,8 +1429,8 @@ sub build_module_dropdowns {
         }
 
         # store the generated menu for this module
-        $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"modules"} = $self -> {"template"} -> load_template("theme/module/moduledrop.tem",
-                                                                                                                {"***entries***" => $moduledrop });
+        $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"modules"} = $self -> {"template"} -> load_template("theme/module/moduledrop.tem",
+                                                                                                                                           {"***entries***" => $moduledrop });
 
         # Now build the step dropdowns
         $self -> build_step_dropdowns($theme, $module);
@@ -1547,7 +1550,7 @@ sub get_step_dropdown {
     die "FATAL: Unable to open replace template stepdrop-entry.tem: $!" if(!$replace);
 
     # Create a copy of the step dropdown so it can be modified
-    my $dropdown = $self -> {"dropdowns"} -> {$theme} -> {$module} -> {"steps"};
+    my $dropdown = $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"};
 
     # replace the current step
     $dropdown =~ s/\Q$anchor\E/$replace/;
@@ -1755,7 +1758,7 @@ sub preprocess {
 
             # Now we need to get a list of modules inside the theme. This looks at the list of modules 
             # stored in the metadata so that we don't need to worry about non-module directoried...
-            foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"module"}})) {
+            foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
                 my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
                 # Determine whether the module will be included in the course (it will always be
@@ -1828,9 +1831,9 @@ sub preprocess {
                             # record the step details for later generation steps, if necessary
                             if(!$exclude_step) {
                                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step as $theme -> $module -> steps -> $step");
-                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}     = $title;
-                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}  = $step;
-                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"} = lead_zero(++$outstep);
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}     = $title;
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}  = $step;
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"} = lead_zero(++$outstep);
 
                                 # Increment the step count for later progress display
                                 ++$self -> {"stepcount"};
@@ -1859,15 +1862,15 @@ sub preprocess {
 ### FIXME for v3.7
 sub process_step {
     my $self      = shift;
+    my $theme     = shift;
+    my $module    = shift;
     my $stepid    = shift;
     my $laststep  = shift;
     my $navhash   = shift;
-    my $theme     = shift;
-    my $module    = shift;
     
     # Load the step content
-    my $content = load_file($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"})
-        or die "FATAL: Unable to open step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."': $!\n";
+    my $content = load_file($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"})
+        or die "FATAL: Unable to open step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."': $!\n";
     
     # extract the bits we're interested in...
     # IMPORTANT: This code has been modified from 3.6 behaviour to not strip trailing <hr>s out of
@@ -1876,68 +1879,76 @@ sub process_step {
     my ($title, $body) = $content =~ m|<title>\s*(.*?)\s*</title>.*<body.*?>\s*(.*?)\s*</body>|si;
 
     # We need title and body parts
-    die "FATAL: Unable to read body from step file '"$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."'\n" 
+    die "FATAL: Unable to read body from step file '"$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."'\n" 
         if(!$title || !$body);
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Obtained body for step $stepid, title is $title. Processing body.");
 
     # tag conversion
-    $body = $self -> convert_step_tags($body, $stepid, $metadata -> {"module"} -> {$module} -> {"level"}, $module);
+    $body = $self -> convert_step_tags($body, $stepid, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}, $module);
 
     # build an uppercase version of the level name for presentation
-    my $difficulty = ucfirst($metadata -> {"module"} -> {$module} -> {"level"});
+    my $difficulty = ucfirst($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
 
     # Save the step back...
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".get_step_name($filename));
-    open(STEP, "> ".get_step_name($filename))
-        or die "FATAL: Unable to open $filename: $!";
-       
-    print STEP load_complex_template($self -> {"templatebase"}."/theme/module/step.tem",
-                                     {"***title***"         => $title,
-                                      "***body***"          => $body,
-                                      "***previous***"      => $previous,
-                                      "***next***"          => $next,
-                                      "***startlink***"     => load_complex_template($self -> {"templatebase"}."/theme/module/link_firststep.tem", { "***firststep***" => $firststep }),
-                                      "***lastlink***"      => load_complex_template($self -> {"templatebase"}."/theme/module/link_laststep.tem",  { "***laststep***"  => $laststep  }),
-                                      "***prevlink***"      => $prevlink,
-                                      "***nextlink***"      => $nextlink,
-                                      "***level***"         => $metadata -> {"module"} -> {$module} -> {"level"},
-                                      "***difficulty***"    => $difficulty,
-                                      "***themename***"     => $metadata -> {"title"},
-                                      "***themeurl***"      => $metadata -> {"../index.html"},
-                                      "***modulename***"    => $metadata -> {"module"} -> {$module} -> {"title"},
-                                      "***version***"       => $self -> {"cbtversion"},
-                                      "***include***"       => $include,
-                                      "***stepnumber***"    => $stepid,
-                                      "***stepmax***"       => $maxstep,
-                                      "***glosrefblock***"  => $self -> build_glossary_references("theme/module"),
-                                      "***themedrop***"     => $self -> get_step_theme_dropdown($theme, $metadata),
-                                      "***moduledrop***"    => $self -> {"dropdowns"} -> {$theme} ->  {$module} -> {"modules"} || "<!-- No module dropdown! -->",
-                                      "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $filename, $metadata) || "<!-- No step dropdown! -->" ,
-                                      })
-        or die "FATAL: Unable to write to ".get_step_name($filename).", possible cause: $@";
+    save_file(get_step_name($stepid), 
+              $self -> {"template"} -> load_template("theme/module/step.tem",
+                                                     {# Basic content
+                                                      "***title***"         => $title,
+                                                      "***body***"          => $body,
 
-    close(STEP);
+                                                      # Navigation buttons
+                                                      "***previous***"      => $navhash -> {"button"} -> {"previous"},
+                                                      "***next***"          => $navhash -> {"button"} -> {"next"},
+
+                                                      # Header <link> elements
+                                                      "***startlink***"     => $navhash -> {"link"} -> {"first"},
+                                                      "***prevlink***"      => $prevlink,
+                                                      "***nextlink***"      => $nextlink,
+                                                      "***lastlink***"      => $navhash -> {"link"} -> {"last"},
+
+                                                      # Module complexity (difficulty is uc(level)
+                                                      "***level***"         => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
+                                                      "***difficulty***"    => $difficulty,
+
+                                                      # theme/module for presentation
+                                                      "***themename***"     => $metadata -> {"title"},
+                                                      "***themeurl***"      => $metadata -> {"../index.html"},
+                                                      "***modulename***"    => $metadata -> {"module"} -> {$module} -> {"title"},
+
+                                                      "***version***"       => $self -> {"cbtversion"},
+                                                      "***include***"       => $include,
+                                                      "***glosrefblock***"  => $self -> build_glossary_references("theme/module"),
+                                                      "***themedrop***"     => $self -> get_step_theme_dropdown($theme, $metadata),
+                                                      "***moduledrop***"    => $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"modules"} || "<!-- No module dropdown! -->",
+                                                      "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $filename, $metadata) || "<!-- No step dropdown! -->" ,
+                                      }))
+        or die "FATAL: Unable to write to ".get_step_name($stepid).", possible cause: $!\n";
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete");
 
     # Try to do tidying if the tidy mode has been specified and it exists
-    if($self -> {"tidy"}) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidying ".get_step_name($filename));
-        if(-e $tidybin) {
-            my $name = get_step_name($filename);
+    if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidying ".get_step_name($stepid));
 
-            # make a backup if we're running in debug mode
-            `cp -f $name $name.orig` if($self -> {"debug"});
+        die "FATAL: Unable to run htmltidy: tidy does not exist at ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}."\n"
+            if(-e $tidybin);
 
-            # Now invoke tidy
-            my $cmd = "$tidybin $tidyopts -m $name";
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Invoing $cmd");
-            my $out = `$cmd 2>&1`;
-            print $out if($self -> {"verbose"} > 1);            
-        } else {
-            blargh("Unable to run htmltidy: $tidybin does not exist");
-        }
+        my $name = get_step_name($stepid);
+
+        # make a backup if we're running in debug mode
+        `cp -f $name $name.orig` if($self -> {"debug"});
+
+        # Now invoke tidy
+        my $cmd = $self -> {"config"}-> {"HTMLOutputHandler"} -> {"tidycmd"}." ".
+            $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}." -m $name";
+        
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Invoing tidy using: $cmd");
+        my $out = `$cmd 2>&1`;
+
+        # Echo the output if needed so that debugging of tidy is doable.
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidy output: $out");
     }
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Step processing complete");
 }
