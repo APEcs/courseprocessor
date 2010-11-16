@@ -34,6 +34,7 @@ use strict;
 use base qw(Plugin); # This class extends Plugin
 
 use Cwd qw(getcwd chdir);
+use URI::Encode qw(uri_encode);
 use Utils qw(check_directory resolve_path load_file save_file lead_zero);
 
 
@@ -346,6 +347,25 @@ sub convert_link {
 #  Glossary handling
 #  
 
+## @fn $ cleanup_term_name($term)
+# Given a term name, convert it into a format suitable for using in html links.
+# This will ensure that the term is in lowercase, removes any spaces, and encodes
+# any non-word characters.
+#
+# @param term The term to convert to a safe format.
+# @return The converted term.
+sub cleanup_term_name {
+    my $term = shift;
+
+    # convert the term to a lowercase, space-converted name 
+    my $key = lc($term);
+    $key =~ s/\s/_/g;     # replace spaces with underscores.
+
+    # And URL-encode any unsafe characters (including reserved).
+    return uri_encode($key, 1);
+}
+
+
 ## @method $ build_glossary_references($level)
 # Generate a glossary and references block at a given level in the document. This will
 # generate a block with the glossary and references links enabled or disabled depending
@@ -395,9 +415,7 @@ sub set_glossary_point {
     $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
      
     # convert the term to a lowercase, space-converted name 
-    my $key = lc($term);
-    $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
-    $key =~ s/\s/_/g;     # replace spaces with underscores.
+    my $key = cleanup_term_name($term);
 
     # only need to do the redef check if definition is specified
     if($definition) {
@@ -413,6 +431,39 @@ sub set_glossary_point {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting glossary entry $term in $theme/$module/$step");
     push(@{$self -> {"terms"} -> {$key} -> {"refs"}}, [$theme, $module, $step, $title]) if($storeref);
+}
+
+
+## @method $ convert_glossary_term($termname)
+# Convert a glossary term marker into a html glossary link. This uses the provided
+# term name to derermine which glossary page and anchor to link the user to.
+#
+# @param termname The name of the term to link to.
+# @return A string containing a html link to the appropriate glossary page and entry.
+sub convert_glossary_term {
+    my $self     = shift;
+    my $termname = shift;
+
+    # Ensure the term is lowercase
+    my $key = cleanup_term_name($termname);
+
+    # We need the first character of the term for the index link
+    my $first = lc(substr($termname, 0, 1));
+
+    # Replace the contents of $first for digits and symbols
+    if($first =~ /^[a-z]$/) {
+        # do nothing...
+    } elsif($first =~ /^\d$/) {
+        $first = "digit";
+    } else {
+        $first = "symb";
+    }
+
+    # Build and return a glossary link
+    return $self -> {"template"} -> load_template("theme/module/glossary_link.tem",
+                                                  { "***letter***" => $first,
+                                                    "***term***"   => $key,
+                                                    "***name***"   => $termname });
 }
 
 
@@ -518,12 +569,8 @@ sub write_glossary_file {
                                                                        "***text***" => ($i + 1) });
             }
 
-            my $key = lc($term);
-            $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
-            $key =~ s/\s/_/g;     # replace spaces with underscores.
-
             $entries .= $self -> {"template"} -> load_template("glossary/entry.tem",
-                                                               { "***termname***"   => $key,
+                                                               { "***termname***"   => cleanup_term_name($term),
                                                                  "***term***"       => $self -> {"terms"} -> {$term} -> {"term"},
                                                                  "***definition***" => $self -> {"terms"} -> {$term} -> {"definition"},
                                                                  "***backlinks***"  => $backlinks
@@ -1552,42 +1599,6 @@ sub preprocess {
 #  Step processing and tag conversion code.
 #  
  
-## @method $ convert_term($termname)
-# Convert a glossary term marker into a html glossary link. This uses the provided
-# term name to derermine which glossary page and anchor to link the user to.
-#
-# @param termname The name of the term to link to.
-# @return A string containing a html link to the appropriate glossary page and entry.
-### FIXME for v3.7
-sub convert_term {
-    my $self = shift;
-    my $termname = shift;
-
-    # ensure the term is lowercase
-    my $key = lc($termname);
-
-    $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
-    $key =~ s/\s/_/g;     # replace spaces with underscores.
-
-    # We need the first character of the term for the index link
-    my $first = lc(substr($termname, 0, 1));
-
-    # replace the contents of $first for digits and symbols
-    if($first =~ /^[a-z]$/) {
-        # do nothing...
-    } elsif($first =~ /^\d$/) {
-        $first = "digit";
-    } else {
-        $first = "symb";
-    }
-
-    # Build and return a glossary link
-    return load_complex_template($self -> {"templatebase"}."/theme/module/glossary_link.tem",
-                                 { "***letter***" => $first,
-                                   "***term***"   => $key,
-                                   "***name***"   => $termname });
-}
-
 
 ## @method $ convert_image($tagdata)
 # Convert an image tag to html markup. This processes the specified list of tag args
