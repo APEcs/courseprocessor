@@ -43,12 +43,15 @@ use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
 # The commandline arguments to pass to htmltidy when cleaning up output.
 use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no";
 
+# Should backups be made before steps are tidied?
+use constant DEFAULT_BACKUP       => 1;
+
 # Should we even bother trying to do the tidy pass?
 use constant DEFAULT_TIDY         => 1;
 
 # Plugin basic information
-use constant PLUG_TYPE             => 'output';
-use constant PLUG_DESCRIPTION      => 'HTML output processor';
+use constant PLUG_TYPE            => 'output';
+use constant PLUG_DESCRIPTION     => 'HTML output processor';
 
 
 # ============================================================================
@@ -71,9 +74,10 @@ sub new {
     $self -> {"description"} = PLUG_DESCRIPTION;
     
     # Set defaults in the configuration if values have not been provided.
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}   = DEFAULT_TIDY_COMMAND if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}));
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}  = DEFAULT_TIDY_ARGS    if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}));
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}      = DEFAULT_TIDY         if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}));
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}    = DEFAULT_TIDY_COMMAND if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}));
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}   = DEFAULT_TIDY_ARGS    if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}));
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"} = DEFAULT_BACKUP       if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"}));
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}       = DEFAULT_TIDY         if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}));
 }
 
 
@@ -178,24 +182,9 @@ sub process {
                             $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Step $stepid excluded by filtering rules.");
                             next;
                         }
-                            
 
-                       = $self -> build_prev_next($stepid, $maxstep, $metadata -> {"module"} -> {$module} -> {"level"});
-
-                                $self -> process_step($stepfiles[$i], 
-                                                      $metadata -> {"module"} -> {$module} -> {"steps"}, 
-                                                      $previous, 
-                                                      $next,
-                                                      get_step_name($stepfiles[0]),
-                                                      $prevlink,
-                                                      $nextlink,
-                                                      get_step_name($stepfiles[scalar(@stepfiles) - 1]),
-                                                      $theme,
-                                                      $module,
-                                                      $include,
-                                                      $maxstep,
-                                                      $metadata);
-                                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished processing $module ($fulltheme/$module)");
+                        $self -> process_step($theme, $module, $stepid, $maxstep);
+                        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished processing $module ($fulltheme/$module)");
                     }
                     chdir($cwd);
 
@@ -1859,15 +1848,24 @@ sub preprocess {
 }
 
 
-### FIXME for v3.7
+## @method void process_step($theme, $module, $stepid, $laststep)
+# Convert thestep identified by the specified theme, module, and step id from the 
+# intermediate format data files into a processed, templated course step. This will
+# load the intermediate format data for the specified step from the filesystem, 
+# apply any necessary tag conversions to the body, and write out a templated step
+# file.
+#
+# @param theme    The theme the step resides within.
+# @param module   The module the step is in.
+# @param stepid   The ID of the step to process, must be 1 <= stepid <= laststep
+# @param laststep The ID of the last step that will be generated in the module.
 sub process_step {
     my $self      = shift;
     my $theme     = shift;
     my $module    = shift;
     my $stepid    = shift;
     my $laststep  = shift;
-    my $navhash   = shift;
-    
+
     # Load the step content
     my $content = load_file($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"})
         or die "FATAL: Unable to open step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."': $!\n";
@@ -1879,18 +1877,18 @@ sub process_step {
     my ($title, $body) = $content =~ m|<title>\s*(.*?)\s*</title>.*<body.*?>\s*(.*?)\s*</body>|si;
 
     # We need title and body parts
-    die "FATAL: Unable to read body from step file '"$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."'\n" 
+    die "FATAL: Unable to read body from step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."'\n" 
         if(!$title || !$body);
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Obtained body for step $stepid, title is $title. Processing body.");
 
     # tag conversion
-    $body = $self -> convert_step_tags($body, $stepid, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}, $module);
+    $body = $self -> convert_step_tags($body, $theme, $module, $stepid);
 
-    # build an uppercase version of the level name for presentation
-    my $difficulty = ucfirst($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
-
-    # Save the step back...
+    # Build the navigation data we need for the step
+    my $navhash = $self -> build_navlinks($stepid, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
+    
+    # Save the step out as a templated step...
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".get_step_name($filename));
     save_file(get_step_name($stepid), 
               $self -> {"template"} -> load_template("theme/module/step.tem",
@@ -1908,23 +1906,25 @@ sub process_step {
                                                       "***nextlink***"      => $nextlink,
                                                       "***lastlink***"      => $navhash -> {"link"} -> {"last"},
 
-                                                      # Module complexity (difficulty is uc(level)
+                                                      # Module complexity (difficulty is uc(level) for readability)
                                                       "***level***"         => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
-                                                      "***difficulty***"    => $difficulty,
+                                                      "***difficulty***"    => ucfirst($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}),
 
-                                                      # theme/module for presentation
-                                                      "***themename***"     => $metadata -> {"title"},
-                                                      "***themeurl***"      => $metadata -> {"../index.html"},
-                                                      "***modulename***"    => $metadata -> {"module"} -> {$module} -> {"title"},
+                                                      # theme/module for title and breadcrumb
+                                                      "***themename***"     => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"},
+                                                      "***modulename***"    => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
 
-                                                      "***version***"       => $self -> {"cbtversion"},
-                                                      "***include***"       => $include,
-                                                      "***glosrefblock***"  => $self -> build_glossary_references("theme/module"),
+                                                      # Dropdowns in the menu bar
                                                       "***themedrop***"     => $self -> get_step_theme_dropdown($theme, $metadata),
-                                                      "***moduledrop***"    => $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"modules"} || "<!-- No module dropdown! -->",
-                                                      "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $filename, $metadata) || "<!-- No step dropdown! -->" ,
-                                      }))
-        or die "FATAL: Unable to write to ".get_step_name($stepid).", possible cause: $!\n";
+                                                      "***moduledrop***"    => $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"modules"},
+                                                      "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $filename, $metadata),
+
+                                                      # Standard stuff
+                                                      "***glosrefblock***"  => $self -> build_glossary_references("theme/module"),
+                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                     }))
+        or die "FATAL: Unable to write to ".get_step_name($stepid).": $!\n";
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete");
 
@@ -1933,12 +1933,12 @@ sub process_step {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidying ".get_step_name($stepid));
 
         die "FATAL: Unable to run htmltidy: tidy does not exist at ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}."\n"
-            if(-e $tidybin);
+            if(-e $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"});
 
         my $name = get_step_name($stepid);
 
         # make a backup if we're running in debug mode
-        `cp -f $name $name.orig` if($self -> {"debug"});
+        `cp -f $name $name.orig` if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"});
 
         # Now invoke tidy
         my $cmd = $self -> {"config"}-> {"HTMLOutputHandler"} -> {"tidycmd"}." ".
@@ -1952,9 +1952,5 @@ sub process_step {
     }
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Step processing complete");
 }
-
-
-
-
 
 1;
