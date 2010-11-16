@@ -277,306 +277,6 @@ sub get_maximum_stepid {
 
 
 # ============================================================================
-#  Tag conversion code.
-#  
- 
-## @method $ convert_term($termname)
-# Convert a glossary term marker into a html glossary link. This uses the provided
-# term name to derermine which glossary page and anchor to link the user to.
-#
-# @param termname The name of the term to link to.
-# @return A string containing a html link to the appropriate glossary page and entry.
-### FIXME for v3.7
-sub convert_term {
-    my $self = shift;
-    my $termname = shift;
-
-    # ensure the term is lowercase
-    my $key = lc($termname);
-
-    $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
-    $key =~ s/\s/_/g;     # replace spaces with underscores.
-
-    # We need the first character of the term for the index link
-    my $first = lc(substr($termname, 0, 1));
-
-    # replace the contents of $first for digits and symbols
-    if($first =~ /^[a-z]$/) {
-        # do nothing...
-    } elsif($first =~ /^\d$/) {
-        $first = "digit";
-    } else {
-        $first = "symb";
-    }
-
-    # Build and return a glossary link
-    return load_complex_template($self -> {"templatebase"}."/theme/module/glossary_link.tem",
-                                 { "***letter***" => $first,
-                                   "***term***"   => $key,
-                                   "***name***"   => $termname });
-}
-
-
-## @method $ convert_image($tagdata)
-# Convert an image tag to html markup. This processes the specified list of tag args
-# and generates an appropriate html image element, or an error message to include
-# in the document.
-#
-# @param tagdata  The image tag attribute list
-# @return The string to replace the image tag with - either a html image element,
-#         or an error message.
-### FIXME for v3.7
-sub convert_image {
-    my $self     = shift;
-    my $tagdata = shift;
-
-    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [image] tag with attributes '$tagdata'"); 
-
-    my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
-
-    # We *NEED* a name, no matter what
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Image tag attribute list does not include name")
-         && return "<p class=\"error\">Image tag attribute list does not include name</p>")
-        if(!$attrs{"name"});
-
-    # Construct the URL of the image, relative to the module directory
-    my $url = "../../images/".$attrs{"name"};
-
-    # Start constructing the styles. The divstyle is needed for alignment issues.
-    my $divstyle = "";
-    if($attrs{"align"}) {
-        if($attrs{"align"} =~ /^left$/i) {
-            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~ /^right$/i) {        
-            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~/^center$/i) {
-            $divstyle = ' style="width: 100%; text-align: center;"';
-        }
-    }
-
-    # The image style deals with width, height, and other stuff...
-    my $imgstyle = "border: none;";
-    $imgstyle .= " width: $attrs{'width'};"   if($attrs{"width"});
-    $imgstyle .= " height: $attrs{'height'};" if($attrs{"height"});
-
-    return load_complex_template($self -> {"templatebase"}."/theme/module/image.tem",
-                                 {"***name***"     => $url,
-                                  "***divstyle***" => $divstyle,
-                                  "***imgstyle***" => $imgstyle,
-                                  "***alt***"      => $attrs{"alt"} || "",
-                                  "***title***"    => $attrs{"title"} || ""});
-}
-
-
-## @method $ convert_anim($tagdata)
-# Convert an anim tag to html markup. This processes the specified list of tag args
-# and generates the html elements needed to include a flash movie, or an error 
-# message to include in the document.
-#
-# @param tagdata  The anim tag attribute list
-# @return The string to replace the animtag with - either a chunk of html,
-#         or an error message.
-### FIXME for v3.7
-sub convert_anim {
-    my $self    = shift;
-    my $tagdata = shift;
-
-    my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
-
-    # We *NEED* a name, no matter what
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Anim tag attribute list does not include name")
-         && return "<p class=\"error\">Anim tag attribute list does not include name</p>")
-        if(!$attrs{"name"});
-
-    # As well as width and height
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Anim tag attribute list is missing width or height information")
-         && return "<p class=\"error\">Anim tag attribute list is missing width or height information </p>")
-        if(!$attrs{"width"} || !$attrs{"height"});
-    
-    # Construct the URL of the anim, relative to the module directory
-    my $url = "../../anims/".$attrs{"name"};
-
-    # Start constructing the styles. The divstyle is needed for alignment issues.
-    my $divstyle = "";
-    if($attrs{"align"}) {
-        if($attrs{"align"} =~ /^left$/i) {
-            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~ /^right$/i) {        
-            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~/^center$/i) {
-            $divstyle = ' style="width: 100%; text-align: center;"';
-        }
-    }
-
-    return load_complex_template($self -> {"templatebase"}."/theme/module/anim.tem",
-                                 {"***name***"     => $url,
-                                  "***divstyle***" => $divstyle,
-                                  "***width***"    => $attrs{"width"},
-                                  "***height***"   => $attrs{"height"}});
-}
-
-
-## @method $ convert_applet($tagdata)
-# Convert an applet tag to html markup. This processes the specified list of tag args
-# and generates the html elements needed to include an applet, or an error 
-# message to include in the document.
-#
-# @param tagdata  The applet tag attribute list
-# @return The string to replace the applet tag with - either a chunk of html,
-#         or an error message.
-### FIXME for v3.7
-sub convert_applet {
-    my $self    = shift;
-    my $tagdata = shift;
-
-    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [applet] tag with attributes '$tagdata'"); 
-
-    my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
-
-    # We *NEED* a name, no matter what
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Applet tag attribute list does not include name")
-         && return "<p class=\"error\">Applet tag attribute list does not include name</p>")
-        if(!$attrs{"name"});
-
-    # As well as width and height
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Applet tag attribute list is missing width or height information")
-         && return "<p class=\"error\">Applet tag attribute list is missing width or height information </p>")
-        if(!$attrs{"width"} || !$attrs{"height"});
-    
-    # Construct the URL of the anim, relative to the module directory
-    my $url = "../../applets/".$attrs{"name"};
-
-    # Start constructing the styles. The divstyle is needed for alignment issues.
-    my $divstyle = "";
-    if($attrs{"align"}) {
-        if($attrs{"align"} =~ /^left$/i) {
-            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~ /^right$/i) {        
-            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~/^center$/i) {
-            $divstyle = ' style="width: 100%; text-align: center;"';
-        }
-    }
-
-    return load_complex_template($self -> {"templatebase"}."/theme/module/applet.tem",
-                                 {"***name***"     => $url,
-                                  "***divstyle***" => $divstyle,
-                                  "***width***"    => $attrs{"width"},
-                                  "***height***"   => $attrs{"height"},
-                                  "***codebase***" => $attrs{"codebase"} || "",
-                                  "***archive***"  => $attrs{"archive"} || "",
-                                 });
-}
-
-
-## @method $ convert_local($text, $data, $stepid, $lcount, $level, $width, $height)
-# Converts a local tag into the appropriate html. This will process the specified
-# arguments and data into a popup on the page.
-#
-# @todo This code currently generates a separate file containing the popup text and
-#       generates a html block that opens the file in a popup window. This is 
-#       VASTLY less than useful, and should be changed to use div element popups.
-#       SEE ALSO: http://www.pat-burt.com/web-development/how-to-do-a-css-popup-without-opening-a-new-window/
-# @param text   The text to show in the popup link.
-# @param data   The contents of the popup. Should be valid html.
-# @param stepid The id of the step the popup occurs in.
-# @param lcount The popup count id for this step.
-# @param level  The step difficulty level. Must be green, yellow, orange, or red.
-# @param width  Optional window width. Defaults to 640.
-# @param height Optional window height. Defaults to 480.
-# @return The string to replace the local tag with, or an error message.
-### FIXME for v3.7
-sub convert_local {
-    my ($self, $text, $data, $stepid, $lcount, $level, $width, $height) = @_;
-  
-    $width  = 640 if(!defined($width)  || !$width);
-    $height = 480 if(!defined($height) || !$height);
-
-    # convert escaped characters to real ones
-    # $data = text_to_html(fix_entities($data));
-    $data =~ s/\\\[/\[/g;
-    $data =~ s/\\\"/\"/g;
-    #$data =~ s/&lt;/</g;
-    #$data =~ s/&gt;/>/g;
-
-    open(LOCAL, "> local-$stepid-$lcount.html")
-        or die "FATAL: Unable to open local-$stepid-$lcount.html: $!";
-
-    print LOCAL load_complex_template($self -> {"templatebase"}."/theme/module/local.tem",
-                                      {"***title***"   => $text,
-                                       "***body***"    => $data,
-                                       "***include***" => $self -> {"globalheader"},
-                                       "***version***" => $self -> {"cbtversion"},
-                                       "***level***"   => $level});
-    close(LOCAL);
-
-    return load_complex_template($self -> {"templatebase"}."/theme/module/local_link.tem",
-                                 {"***text***"   => $text,
-                                  "***stepid***" => $stepid,
-                                  "***lcount***" => $lcount,
-                                  "***width***"  => $width,
-                                  "***height***" => $height,
-                                 });
-}
-
-
-## @method $ convert_step_tags($content, $stepid, $level)
-# Convert any processor markup tags in the supplied step text into the equivalent 
-# html. This function scans the provided text for any of the special marker tags
-# supported by the processor and replaces them with the appropriate html, using
-# the various convert_ functions as needed to support the process.
-#
-# @param content The step text to process.
-# @param stepid  The step's id number.
-# @param level   The difficulty level of the step, should be green, yellow, 
-#                orange, or red.
-# @return The processed step text.
-### FIXME for v3.7
-sub convert_step_tags {
-    my $self    = shift;
-    my $content = shift;
-    my $stepid  = shift;
-    my $level   = shift;
-    my $module  = shift;
-    my $lcount  = 0;
-
-    # Glossary conversion
-    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\/\s*\]}{$self->convert_terms($1)}ige;              # [glossary term="" /]
-    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\].*?\[/glossary\]}{$self->convert_terms($1)}igse;  # [glossary term=""]...[/glossary]
-
-    # Image conversion
-    $content =~ s{\[img\s+(.*?)\/?\s*\]}{$self -> convert_image($1)}ige;  # [img name="" width="" height="" alt="" title="" align="left|right|center" /]
-
-    # Anim conversion
-    $content =~ s/\[anim\s+(.*?)\/?\s*\]/$self -> convert_anim($1)/ige;   # [anim name="" width="" height="" align="left|right|center" /]
-
-    # Applet conversion
-    $content =~ s/\[applet\s+(.*?)\/?\s*\]/$self -> convert_applet_newstyle($1)/ige; # [anim name="" width="" height="" codebase="" archive="" /]
-
-    # clears
-    $content =~ s/\[clear\s*\/?\s*\]/<div style="clear: both;"><\/div>/giso; # [clear /]
-
-    # Local conversion
-    $content =~ s/\[local\s+text\s*=\s*"(.*?)"\s+width\s*=\s*"(\d+)"\s+height\s*=\s*"(\d+)"\s*\](.*?)\[\/\s*local\s*\]/$self -> convert_local($1, $4, $stepid, ++$lcount, $level, $2, $3)/isge;
-    $content =~ s/\[local\s+text\s*=\s*"(.*?)"\s*\](.*?)\[\/\s*local\s*\]/$self -> convert_local($1, $2, $stepid, ++$lcount, $level)/isge;
-
-    # links
-    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"(.*?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_interlink($1, $2, $stepid, $module)}isge; # [link to=""]link text[/link]
-
-    # anchors
-    $content =~ s/\[target\s+name\s*=\s*\"(.*?)\"\s*\/?\s*\]/<a name=\"$1\"><\/a>/gis; # [target name="" /]
-
-    # convert references and do any work needed to compress them (eg: converting [1][2][3] to [1,2,3])
-    if($self -> {"refhandler"}) {
-        $content =~ s/\[ref\s+(.*?)\s*\/?\s*\]/$self -> {"refhandler"} -> convert_references($1)/ige;
-        $content = $self -> {"refhandler"} -> compress_references($content);
-    }
-
-    return $content;
-}
-
-
-# ============================================================================
 #  Interlink handling
 #  
 
@@ -1845,6 +1545,306 @@ sub preprocess {
     $self -> build_dropdowns();
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished preprocesss");
+}
+
+
+# ============================================================================
+#  Step processing and tag conversion code.
+#  
+ 
+## @method $ convert_term($termname)
+# Convert a glossary term marker into a html glossary link. This uses the provided
+# term name to derermine which glossary page and anchor to link the user to.
+#
+# @param termname The name of the term to link to.
+# @return A string containing a html link to the appropriate glossary page and entry.
+### FIXME for v3.7
+sub convert_term {
+    my $self = shift;
+    my $termname = shift;
+
+    # ensure the term is lowercase
+    my $key = lc($termname);
+
+    $key =~ s/[^\w\s]//g; # nuke any non-word/non-space chars
+    $key =~ s/\s/_/g;     # replace spaces with underscores.
+
+    # We need the first character of the term for the index link
+    my $first = lc(substr($termname, 0, 1));
+
+    # replace the contents of $first for digits and symbols
+    if($first =~ /^[a-z]$/) {
+        # do nothing...
+    } elsif($first =~ /^\d$/) {
+        $first = "digit";
+    } else {
+        $first = "symb";
+    }
+
+    # Build and return a glossary link
+    return load_complex_template($self -> {"templatebase"}."/theme/module/glossary_link.tem",
+                                 { "***letter***" => $first,
+                                   "***term***"   => $key,
+                                   "***name***"   => $termname });
+}
+
+
+## @method $ convert_image($tagdata)
+# Convert an image tag to html markup. This processes the specified list of tag args
+# and generates an appropriate html image element, or an error message to include
+# in the document.
+#
+# @param tagdata  The image tag attribute list
+# @return The string to replace the image tag with - either a html image element,
+#         or an error message.
+### FIXME for v3.7
+sub convert_image {
+    my $self     = shift;
+    my $tagdata = shift;
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [image] tag with attributes '$tagdata'"); 
+
+    my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
+
+    # We *NEED* a name, no matter what
+    (log_print($Utils::WARNING, $self -> {"verbose"}, "Image tag attribute list does not include name")
+         && return "<p class=\"error\">Image tag attribute list does not include name</p>")
+        if(!$attrs{"name"});
+
+    # Construct the URL of the image, relative to the module directory
+    my $url = "../../images/".$attrs{"name"};
+
+    # Start constructing the styles. The divstyle is needed for alignment issues.
+    my $divstyle = "";
+    if($attrs{"align"}) {
+        if($attrs{"align"} =~ /^left$/i) {
+            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
+        } elsif($attrs{"align"} =~ /^right$/i) {        
+            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
+        } elsif($attrs{"align"} =~/^center$/i) {
+            $divstyle = ' style="width: 100%; text-align: center;"';
+        }
+    }
+
+    # The image style deals with width, height, and other stuff...
+    my $imgstyle = "border: none;";
+    $imgstyle .= " width: $attrs{'width'};"   if($attrs{"width"});
+    $imgstyle .= " height: $attrs{'height'};" if($attrs{"height"});
+
+    return load_complex_template($self -> {"templatebase"}."/theme/module/image.tem",
+                                 {"***name***"     => $url,
+                                  "***divstyle***" => $divstyle,
+                                  "***imgstyle***" => $imgstyle,
+                                  "***alt***"      => $attrs{"alt"} || "",
+                                  "***title***"    => $attrs{"title"} || ""});
+}
+
+
+## @method $ convert_anim($tagdata)
+# Convert an anim tag to html markup. This processes the specified list of tag args
+# and generates the html elements needed to include a flash movie, or an error 
+# message to include in the document.
+#
+# @param tagdata  The anim tag attribute list
+# @return The string to replace the animtag with - either a chunk of html,
+#         or an error message.
+### FIXME for v3.7
+sub convert_anim {
+    my $self    = shift;
+    my $tagdata = shift;
+
+    my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
+
+    # We *NEED* a name, no matter what
+    (log_print($Utils::WARNING, $self -> {"verbose"}, "Anim tag attribute list does not include name")
+         && return "<p class=\"error\">Anim tag attribute list does not include name</p>")
+        if(!$attrs{"name"});
+
+    # As well as width and height
+    (log_print($Utils::WARNING, $self -> {"verbose"}, "Anim tag attribute list is missing width or height information")
+         && return "<p class=\"error\">Anim tag attribute list is missing width or height information </p>")
+        if(!$attrs{"width"} || !$attrs{"height"});
+    
+    # Construct the URL of the anim, relative to the module directory
+    my $url = "../../anims/".$attrs{"name"};
+
+    # Start constructing the styles. The divstyle is needed for alignment issues.
+    my $divstyle = "";
+    if($attrs{"align"}) {
+        if($attrs{"align"} =~ /^left$/i) {
+            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
+        } elsif($attrs{"align"} =~ /^right$/i) {        
+            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
+        } elsif($attrs{"align"} =~/^center$/i) {
+            $divstyle = ' style="width: 100%; text-align: center;"';
+        }
+    }
+
+    return load_complex_template($self -> {"templatebase"}."/theme/module/anim.tem",
+                                 {"***name***"     => $url,
+                                  "***divstyle***" => $divstyle,
+                                  "***width***"    => $attrs{"width"},
+                                  "***height***"   => $attrs{"height"}});
+}
+
+
+## @method $ convert_applet($tagdata)
+# Convert an applet tag to html markup. This processes the specified list of tag args
+# and generates the html elements needed to include an applet, or an error 
+# message to include in the document.
+#
+# @param tagdata  The applet tag attribute list
+# @return The string to replace the applet tag with - either a chunk of html,
+#         or an error message.
+### FIXME for v3.7
+sub convert_applet {
+    my $self    = shift;
+    my $tagdata = shift;
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [applet] tag with attributes '$tagdata'"); 
+
+    my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
+
+    # We *NEED* a name, no matter what
+    (log_print($Utils::WARNING, $self -> {"verbose"}, "Applet tag attribute list does not include name")
+         && return "<p class=\"error\">Applet tag attribute list does not include name</p>")
+        if(!$attrs{"name"});
+
+    # As well as width and height
+    (log_print($Utils::WARNING, $self -> {"verbose"}, "Applet tag attribute list is missing width or height information")
+         && return "<p class=\"error\">Applet tag attribute list is missing width or height information </p>")
+        if(!$attrs{"width"} || !$attrs{"height"});
+    
+    # Construct the URL of the anim, relative to the module directory
+    my $url = "../../applets/".$attrs{"name"};
+
+    # Start constructing the styles. The divstyle is needed for alignment issues.
+    my $divstyle = "";
+    if($attrs{"align"}) {
+        if($attrs{"align"} =~ /^left$/i) {
+            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
+        } elsif($attrs{"align"} =~ /^right$/i) {        
+            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
+        } elsif($attrs{"align"} =~/^center$/i) {
+            $divstyle = ' style="width: 100%; text-align: center;"';
+        }
+    }
+
+    return load_complex_template($self -> {"templatebase"}."/theme/module/applet.tem",
+                                 {"***name***"     => $url,
+                                  "***divstyle***" => $divstyle,
+                                  "***width***"    => $attrs{"width"},
+                                  "***height***"   => $attrs{"height"},
+                                  "***codebase***" => $attrs{"codebase"} || "",
+                                  "***archive***"  => $attrs{"archive"} || "",
+                                 });
+}
+
+
+## @method $ convert_local($text, $data, $stepid, $lcount, $level, $width, $height)
+# Converts a local tag into the appropriate html. This will process the specified
+# arguments and data into a popup on the page.
+#
+# @todo This code currently generates a separate file containing the popup text and
+#       generates a html block that opens the file in a popup window. This is 
+#       VASTLY less than useful, and should be changed to use div element popups.
+#       SEE ALSO: http://www.pat-burt.com/web-development/how-to-do-a-css-popup-without-opening-a-new-window/
+# @param text   The text to show in the popup link.
+# @param data   The contents of the popup. Should be valid html.
+# @param stepid The id of the step the popup occurs in.
+# @param lcount The popup count id for this step.
+# @param level  The step difficulty level. Must be green, yellow, orange, or red.
+# @param width  Optional window width. Defaults to 640.
+# @param height Optional window height. Defaults to 480.
+# @return The string to replace the local tag with, or an error message.
+### FIXME for v3.7
+sub convert_local {
+    my ($self, $text, $data, $stepid, $lcount, $level, $width, $height) = @_;
+  
+    $width  = 640 if(!defined($width)  || !$width);
+    $height = 480 if(!defined($height) || !$height);
+
+    # convert escaped characters to real ones
+    # $data = text_to_html(fix_entities($data));
+    $data =~ s/\\\[/\[/g;
+    $data =~ s/\\\"/\"/g;
+    #$data =~ s/&lt;/</g;
+    #$data =~ s/&gt;/>/g;
+
+    open(LOCAL, "> local-$stepid-$lcount.html")
+        or die "FATAL: Unable to open local-$stepid-$lcount.html: $!";
+
+    print LOCAL load_complex_template($self -> {"templatebase"}."/theme/module/local.tem",
+                                      {"***title***"   => $text,
+                                       "***body***"    => $data,
+                                       "***include***" => $self -> {"globalheader"},
+                                       "***version***" => $self -> {"cbtversion"},
+                                       "***level***"   => $level});
+    close(LOCAL);
+
+    return load_complex_template($self -> {"templatebase"}."/theme/module/local_link.tem",
+                                 {"***text***"   => $text,
+                                  "***stepid***" => $stepid,
+                                  "***lcount***" => $lcount,
+                                  "***width***"  => $width,
+                                  "***height***" => $height,
+                                 });
+}
+
+
+## @method $ convert_step_tags($content, $stepid, $level)
+# Convert any processor markup tags in the supplied step text into the equivalent 
+# html. This function scans the provided text for any of the special marker tags
+# supported by the processor and replaces them with the appropriate html, using
+# the various convert_ functions as needed to support the process.
+#
+# @param content The step text to process.
+# @param stepid  The step's id number.
+# @param level   The difficulty level of the step, should be green, yellow, 
+#                orange, or red.
+# @return The processed step text.
+### FIXME for v3.7
+sub convert_step_tags {
+    my $self    = shift;
+    my $content = shift;
+    my $stepid  = shift;
+    my $level   = shift;
+    my $module  = shift;
+    my $lcount  = 0;
+
+    # Glossary conversion
+    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\/\s*\]}{$self->convert_terms($1)}ige;              # [glossary term="" /]
+    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\].*?\[/glossary\]}{$self->convert_terms($1)}igse;  # [glossary term=""]...[/glossary]
+
+    # Image conversion
+    $content =~ s{\[img\s+(.*?)\/?\s*\]}{$self -> convert_image($1)}ige;  # [img name="" width="" height="" alt="" title="" align="left|right|center" /]
+
+    # Anim conversion
+    $content =~ s/\[anim\s+(.*?)\/?\s*\]/$self -> convert_anim($1)/ige;   # [anim name="" width="" height="" align="left|right|center" /]
+
+    # Applet conversion
+    $content =~ s/\[applet\s+(.*?)\/?\s*\]/$self -> convert_applet_newstyle($1)/ige; # [anim name="" width="" height="" codebase="" archive="" /]
+
+    # clears
+    $content =~ s/\[clear\s*\/?\s*\]/<div style="clear: both;"><\/div>/giso; # [clear /]
+
+    # Local conversion
+    $content =~ s/\[local\s+text\s*=\s*"(.*?)"\s+width\s*=\s*"(\d+)"\s+height\s*=\s*"(\d+)"\s*\](.*?)\[\/\s*local\s*\]/$self -> convert_local($1, $4, $stepid, ++$lcount, $level, $2, $3)/isge;
+    $content =~ s/\[local\s+text\s*=\s*"(.*?)"\s*\](.*?)\[\/\s*local\s*\]/$self -> convert_local($1, $2, $stepid, ++$lcount, $level)/isge;
+
+    # links
+    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"(.*?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_interlink($1, $2, $stepid, $module)}isge; # [link to=""]link text[/link]
+
+    # anchors
+    $content =~ s/\[target\s+name\s*=\s*\"(.*?)\"\s*\/?\s*\]/<a name=\"$1\"><\/a>/gis; # [target name="" /]
+
+    # convert references and do any work needed to compress them (eg: converting [1][2][3] to [1,2,3])
+    if($self -> {"refhandler"}) {
+        $content =~ s/\[ref\s+(.*?)\s*\/?\s*\]/$self -> {"refhandler"} -> convert_references($1)/ige;
+        $content = $self -> {"refhandler"} -> compress_references($content);
+    }
+
+    return $content;
 }
 
 
