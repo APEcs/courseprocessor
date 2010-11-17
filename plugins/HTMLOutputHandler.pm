@@ -801,10 +801,10 @@ sub write_theme_indexmap {
         }
         
          # ... and then the steps.
-         foreach my $step (sort numeric_order keys(%{$metadata -> {"module"} -> {$module} -> {"steps"}})) {
+         foreach my $step (sort numeric_order keys(%{$metadata -> {"module"} -> {$module} -> {"step"}})) {
             $steps .= load_complex_template($self -> {"templatebase"}."/theme/index_step.tem",
                                             {"***url***"   => "$module/".get_step_name($step),
-                                             "***title***" => $metadata -> {"module"} -> {$module} -> {"steps"} -> {$step}});
+                                             "***title***" => $metadata -> {"module"} -> {$module} -> {"step"} -> {$step}});
         }
 
         # finally, glue them all together.
@@ -969,10 +969,10 @@ sub write_courseindex {
             }
         
             # ... and then the steps.
-            foreach my $step (sort numeric_order keys(%{$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"}})) {
+            foreach my $step (sort numeric_order keys(%{$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"}})) {
                 $steps .= load_complex_template($self -> {"templatebase"}."/courseindex-step.tem",
                                                 {"***url***"   => "$theme/$module/".get_step_name($step),
-                                                 "***title***" => $metadata -> {$theme} -> {"module"} -> {$module} -> {"steps"} -> {$step}});
+                                                 "***title***" => $metadata -> {$theme} -> {"module"} -> {$module} -> {"step"} -> {$step}});
             }
 
             # finally, glue them all together.
@@ -1112,14 +1112,14 @@ sub build_step_dropdowns {
 
         $stepdrop .= $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
                                                             { "***name***"  => get_step_name($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"output_id"}),
-                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$step} -> {"title"}});
+                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"title"}});
     }
      
     die "FATAL: No steps stored for \{$theme\} -> \{$module\} -> \{steps\}\n" if(!$stepdrop);
 
     # and store the partially-processed dropdown
-    $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} = $self -> {"template"} -> load_template("theme/module/stepdrop.tem",
-                                                                                                                                     {"***entries***" => $stepdrop });
+    $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} = $self -> {"template"} -> load_template("theme/module/stepdrop.tem",
+                                                                                                                                    {"***entries***" => $stepdrop });
 }
 
 
@@ -1191,30 +1191,46 @@ sub build_dropdowns {
 }
 
 
-# returns a string containing the theme dropdown menu with the current theme 
-# marked. The menu produced is suitable for use in steps.
-### FIXME for v3.7
-sub get_step_theme_dropdown {
-    my $self     = shift;
-    my $theme    = shift;
-    my $metadata = shift;
+## @method $ get_theme_dropdown($theme, $mode)
+# Generate a string containing the theme dropdown menu with the current theme 
+# marked. The menu produced is suitable for use in steps if the mode argument is
+# set to "step", and for theme maps/indexes if it is set to "theme".
+#
+# @param theme The current theme.
+# @param mode  Should be "step" to generate a step-level theme dropdown, or "theme"
+#              to generate a theme-level dropdown. Any other value will cause the
+#              function to die.
+# @return A string containing the theme dropdown.
+sub get_theme_dropdown {
+    my $self  = shift;
+    my $theme = shift;
+    my $mode  = shift;
+    my $level;
+
+    if($mode eq "step") {
+        $level = "theme/module";
+    } elsif($mode eq "theme") {
+        $level = "theme";
+    } else {
+        die "FATAL: Illegal mode passed to get_theme_dropdown(). This should not happen!\n";
+    }
 
     # Load the chunk that needs to be located in the dropdown
-    my $anchor = load_complex_template($self -> {"templatebase"}."theme/module/themedrop-entry.tem",
-                                       { "***name***" => $theme,
-                                         "***title***" => $metadata -> {"title"}});
+    my $anchor = $self -> {"template"} -> load_template("$level/themedrop-entry.tem",
+                                                        { "***name***"  => $theme,
+                                                          "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}});
                                        
     # And the chunk that should replace the bit above
-    my $replace = load_complex_template($self -> {"templatebase"}."theme/module/themedrop-entry-current.tem",
-                                       { "***current***" => ' class="current"',
-                                         "***name***"    => $theme,
-                                         "***title***"   => $metadata -> {"title"}});
+    my $replace = $self -> {"template"} -> load_template("$level/themedrop-entry-current.tem",
+                                                         { "***name***"  => $theme,
+                                                           "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}});
+
  
     die "FATAL: Unable to open anchor template themedrop-entry.tem: $!"  if(!$anchor);
     die "FATAL: Unable to open replace template themedrop-entry.tem: $!" if(!$replace);
 
     # copy the theme dropdown so we can wrangle it
-    my $dropdown = $self -> {"dropdowns"} -> {"themes_module"};
+    my $dropdown = $self -> {"dropdowns"} -> {"themes_".$mode."view"};
 
     # replace the current theme
     $dropdown =~ s/\Q$anchor\E/$replace/;
@@ -1226,67 +1242,35 @@ sub get_step_theme_dropdown {
 }
 
 
-# returns a string containing the theme dropdown menu with the current theme 
-# marked. The menu produced is suitable for use in theme maps.
-### FIXME for v3.7
-sub get_map_theme_dropdown {
-    my $self     = shift;
-    my $theme    = shift;
-    my $metadata = shift;
-
-    # Load the chunk that needs to be located in the dropdown
-    my $anchor = load_complex_template($self -> {"templatebase"}."/theme/themedrop-entry.tem",
-                                       { "***name***" => $theme,
-                                         "***title***" => $metadata -> {"title"}});
-                                       
-    # And the chunk that should replace the bit above
-    my $replace = load_complex_template($self -> {"templatebase"}."/theme/themedrop-entry-current.tem",
-                                       { "***current***" => ' class="current"',
-                                         "***name***"    => $theme,
-                                         "***title***"   => $metadata -> {"title"}});
-
-    die "FATAL: Unable to open anchor template themedrop_entry.tem: $!"  if(!$anchor);
-    die "FATAL: Unable to open replace template themedrop_entry.tem: $!" if(!$replace);
-
-    # copy the theme dropdown so we can wrangle it
-    my $dropdown = $self -> {"dropdowns"} -> {"themes_theme"};
-
-    # replace the current theme
-    $dropdown =~ s/\Q$anchor\E/$replace/;
-
-    # now nuke the remainder of the current tags
-    $dropdown =~ s/\*\*\*current\*\*\*//g;
-
-    return $dropdown;
-}
-
-
+## @method $ get_step_dropdown($theme, $module, $stepid)
 # Obtain a string for the step dropdown, marking the current step so it can be 
 # inserted into the step body.
-### FIXME for v3.7
+#
+# @param theme  The theme the step is in.
+# @param module The module the step is in.
+# @param stepid The ID of the current step.
+# @return A string containing the step dropdown for the step.
 sub get_step_dropdown {
     my $self   = shift;
     my $theme  = shift;
     my $module = shift;
-    my $step   = shift;
-    my $title  = shift;
+    my $stepid = shift;
 
     # set up a chunk to use as an anchor in the menu
-    my $anchor = load_complex_template($self -> {"templatebase"}."/theme/module/stepdrop-entry.tem",
-                                       { "***name***" => get_step_name($step),
-                                         "***title***" => $title });
+    my $anchor = $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
+                                                        { "***name***"  => get_step_name($stepid),
+                                                          "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"} });
 
     # this chunk will replace the above
-    my $replace = load_complex_template($self -> {"templatebase"}."/theme/module/stepdrop-entry.tem",
-                                        { "***current***" => ' class="current"',
-                                          "***name***"    => get_step_name($step),
-                                          "***title***"   => $title });
+    my $replace = $self -> {"template"} -> load_template("theme/module/stepdrop-entry-current.tem",
+                                                         { "***name***"    => get_step_name($stepid),
+                                                           "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"} });
     
     die "FATAL: Unable to open anchor template stepdrop-entry.tem: $!"  if(!$anchor);
     die "FATAL: Unable to open replace template stepdrop-entry.tem: $!" if(!$replace);
 
     # Create a copy of the step dropdown so it can be modified
-    my $dropdown = $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"};
+    my $dropdown = $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"};
 
     # replace the current step
     $dropdown =~ s/\Q$anchor\E/$replace/;
@@ -1315,7 +1299,7 @@ sub cleanup_module {
 ### FIXME for v3.7
 sub cleanup_lists {
     my $self   = shift;
-    my $srcdir = shift;
+
     
     `rm -f $srcdir/animlist.txt`;
     `rm -f $srcdir/imagelist.txt`;
@@ -1434,7 +1418,7 @@ sub framework_merge {
 
 
 # ============================================================================
-#  Core processing code.
+#  Preprocessing code.
 #  
 
 ## @method void preprocess()
@@ -1599,7 +1583,6 @@ sub preprocess {
 #  Step processing and tag conversion code.
 #  
  
-
 ## @method $ convert_image($tagdata)
 # Convert an image tag to html markup. This processes the specified list of tag args
 # and generates an appropriate html image element, or an error message to include
@@ -1926,9 +1909,9 @@ sub process_step {
                                                       "***modulename***"    => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
 
                                                       # Dropdowns in the menu bar
-                                                      "***themedrop***"     => $self -> get_step_theme_dropdown($theme, $metadata),
+                                                      "***themedrop***"     => $self -> get_theme_dropdown($theme, "step"),
                                                       "***moduledrop***"    => $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"modules"},
-                                                      "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $filename, $metadata),
+                                                      "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $stepid),
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("theme/module"),
