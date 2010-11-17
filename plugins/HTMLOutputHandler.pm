@@ -189,7 +189,7 @@ sub process {
                     }
                     chdir($cwd);
 
-                    $self -> cleanup_module($fullmodule, $module);
+                    $self -> cleanup_module($fullmodule);
                 } # if(-d $fullmodule) 
 
                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing index files");
@@ -202,8 +202,6 @@ sub process {
     } # foreach my $theme (@themes) {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "HTMLOutputhandler processing complete");
-
-    $self -> cleanup_lists($srcdir);
 
     closedir(SRCDIR);
 
@@ -1286,25 +1284,21 @@ sub get_step_dropdown {
 #  Cleanup code.
 #  
 
-### FIXME for v3.7
+## @method void cleanup_module($moddir)
+# Remove all intermediate files from the specified module directory. When the
+# global debugging mode is disabled, this will remove all node*.html files 
+# from the specified module directory. If debugging is enabled, this does nothing.
+#
+# @param moddir The mdoule to remove the intermediate files from.
 sub cleanup_module {
-    my $self = shift;
-    my $moddir = shift;
-    my $modname = shift;
-
-    `rm -f $moddir/node*.html` unless($self -> {"debug"});
-}
-
-
-### FIXME for v3.7
-sub cleanup_lists {
     my $self   = shift;
+    my $moddir = shift;
 
-    
-    `rm -f $srcdir/animlist.txt`;
-    `rm -f $srcdir/imagelist.txt`;
-    `rm -f $srcdir/appletlist.txt`;    
-    `rm -f $srcdir/version.txt`;    
+    # do nothing if we have debug mode enabled
+    return unless($self -> {"config"} -> {"Processor"} -> {"debug"});
+
+    my $out = `rm -fv $moddir/node*.html`;
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Cleanup output:\n$out");
 }
 
 
