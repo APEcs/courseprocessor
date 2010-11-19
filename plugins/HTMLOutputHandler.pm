@@ -23,6 +23,8 @@
 # @todo Filtering
 # @todo Fix all `### FIXME for v3.7` functions
 # @todo Template links in convert_link()
+# @todo media directory cleanup (remove files no longer needed after filtering)
+# @todo check all templates and tags use the configuration to determine the media dir
 
 ## @class HTMLOutputHandler
 # This plugin takes a hierarchy of files stored in the processor intermediate
@@ -1577,7 +1579,30 @@ sub preprocess {
 # ============================================================================
 #  Step processing and tag conversion code.
 #  
- 
+
+## @fn $ media_alignment_class($align)
+# Convert a human-readable alignment ('left', 'right', 'center') into a class
+# name to apply to a media container div.
+#
+# @param align The alignment to convert.
+# @return The class to use for the media container div.
+sub media_alignment_class {
+    my $align = shift;
+
+    if($align) {
+        if($align =~ /^left$/i) {
+            return "floatleft";
+        } elsif($align =~ /^right$/i) {        
+            return "floatright";
+        } elsif($align =~/^center$/i) {
+            return "center";
+        }
+    }
+
+    return "floatleft";
+}
+
+
 ## @method $ convert_image($tagdata)
 # Convert an image tag to html markup. This processes the specified list of tag args
 # and generates an appropriate html image element, or an error message to include
@@ -1597,33 +1622,25 @@ sub convert_image {
 
     # Generate an error if we have no image name
     if(!$attrs{"name"}) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Image tag attribute list does not include name");
-        return "<p class=\"error\">Image tag attribute list does not include name</p>";
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Image tag attribute list does not include name.");
+        return "<p class=\"error\">Image tag attribute list does not include name.</p>";
     }
 
     # Work out the alignment class for the image
-    my $divclass = "floatleft";
-    if($attrs{"align"}) {
-        if($attrs{"align"} =~ /^left$/i) {
-            $divclass = "floatleft";
-        } elsif($attrs{"align"} =~ /^right$/i) {        
-            $divclass = "floatright";
-        } elsif($attrs{"align"} =~/^center$/i) {
-            $divclass = "center";
-        }
-    }
+    my $divclass = media_alignment_class($attrs{"align"});
 
     # The image style deals with width, height, and other stuff...
     my $imgstyle = "border: none;";
-    $imgstyle .= " width: $attrs{'width'};"   if($attrs{"width"});
-    $imgstyle .= " height: $attrs{'height'};" if($attrs{"height"});
+    $imgstyle .= " width: $attrs{width};"   if($attrs{"width"});
+    $imgstyle .= " height: $attrs{height};" if($attrs{"height"});
 
-    return load_complex_template($self -> {"templatebase"}."/theme/module/image.tem",
-                                 {"***name***"     => $attrs{"name"},
-                                  "***divstyle***" => $divstyle,
-                                  "***imgstyle***" => $imgstyle,
-                                  "***alt***"      => $attrs{"alt"} || "",
-                                  "***title***"    => $attrs{"title"} || ""});
+    return $self -> load_template("theme/module/image.tem",
+                                  {"***name***"     => $attrs{"name"},
+                                   "***mediadir***" => $self -> {"config"} -> {"Processor"} -> {"mediadir"},
+                                   "***divclass***" => $divclass,
+                                   "***imgstyle***" => $imgstyle,
+                                   "***alt***"      => $attrs{"alt"} || "image",
+                                   "***title***"    => $attrs{"title"} || "image"});
 }
 
 
@@ -1635,96 +1652,51 @@ sub convert_image {
 # @param tagdata  The anim tag attribute list
 # @return The string to replace the animtag with - either a chunk of html,
 #         or an error message.
-### FIXME for v3.7
 sub convert_anim {
     my $self    = shift;
     my $tagdata = shift;
 
+    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Use of deprecated [anim] tag with attributes '$tagdata'"); 
+
+    # Convert the tag arguments into an attribute hash
     my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
 
-    # We *NEED* a name, no matter what
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Anim tag attribute list does not include name")
-         && return "<p class=\"error\">Anim tag attribute list does not include name</p>")
-        if(!$attrs{"name"});
-
-    # As well as width and height
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Anim tag attribute list is missing width or height information")
-         && return "<p class=\"error\">Anim tag attribute list is missing width or height information </p>")
-        if(!$attrs{"width"} || !$attrs{"height"});
-    
-    # Construct the URL of the anim, relative to the module directory
-    my $url = "../../anims/".$attrs{"name"};
-
-    # Start constructing the styles. The divstyle is needed for alignment issues.
-    my $divstyle = "";
-    if($attrs{"align"}) {
-        if($attrs{"align"} =~ /^left$/i) {
-            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~ /^right$/i) {        
-            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~/^center$/i) {
-            $divstyle = ' style="width: 100%; text-align: center;"';
-        }
+    # A name is needed for the animation
+    if(!$attrs{"name"}) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Anim tag attribute list does not include name.");
+        return "<p class=\"error\">Anim tag attribute list does not include name.</p>";
     }
 
-    return load_complex_template($self -> {"templatebase"}."/theme/module/anim.tem",
-                                 {"***name***"     => $url,
-                                  "***divstyle***" => $divstyle,
-                                  "***width***"    => $attrs{"width"},
-                                  "***height***"   => $attrs{"height"}});
+    # Width and height are needed as well
+    if(!$attrs{"width"} || !$attrs{"height"}) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Anim tag attribute list is missing width or height information.");
+        return "<p class=\"error\">Anim tag attribute list is missing width or height information.</p>";
+    }
+     
+    # obtain the alignment class for the container
+    my $divclass = media_alignment_class($attrs{"align"});
+
+    return $self -> {"template"} -> load_template("theme/module/anim.tem",
+                                                  {"***name***"     => $attrs{"name"},
+                                                   "***mediadir***" => $self -> {"config"} -> {"Processor"} -> {"mediadir"},
+                                                   "***divclass***" => $divclass,
+                                                   "***width***"    => $attrs{"width"},
+                                                   "***height***"   => $attrs{"height"}});
 }
 
 
 ## @method $ convert_applet($tagdata)
-# Convert an applet tag to html markup. This processes the specified list of tag args
-# and generates the html elements needed to include an applet, or an error 
-# message to include in the document.
+# Applet support has been removed; this prints a warning and returns an error.
 #
 # @param tagdata  The applet tag attribute list
-# @return The string to replace the applet tag with - either a chunk of html,
-#         or an error message.
-### FIXME for v3.7
+# @return An error message.
 sub convert_applet {
     my $self    = shift;
     my $tagdata = shift;
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [applet] tag with attributes '$tagdata'"); 
-
-    my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
-
-    # We *NEED* a name, no matter what
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Applet tag attribute list does not include name")
-         && return "<p class=\"error\">Applet tag attribute list does not include name</p>")
-        if(!$attrs{"name"});
-
-    # As well as width and height
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Applet tag attribute list is missing width or height information")
-         && return "<p class=\"error\">Applet tag attribute list is missing width or height information </p>")
-        if(!$attrs{"width"} || !$attrs{"height"});
+    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Applet support has been removed. If you require applet support, contact Chris.");
     
-    # Construct the URL of the anim, relative to the module directory
-    my $url = "../../applets/".$attrs{"name"};
-
-    # Start constructing the styles. The divstyle is needed for alignment issues.
-    my $divstyle = "";
-    if($attrs{"align"}) {
-        if($attrs{"align"} =~ /^left$/i) {
-            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~ /^right$/i) {        
-            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
-        } elsif($attrs{"align"} =~/^center$/i) {
-            $divstyle = ' style="width: 100%; text-align: center;"';
-        }
-    }
-
-    return load_complex_template($self -> {"templatebase"}."/theme/module/applet.tem",
-                                 {"***name***"     => $url,
-                                  "***divstyle***" => $divstyle,
-                                  "***width***"    => $attrs{"width"},
-                                  "***height***"   => $attrs{"height"},
-                                  "***codebase***" => $attrs{"codebase"} || "",
-                                  "***archive***"  => $attrs{"archive"} || "",
-                                 });
+    return "<p class=\"error\">Applets are no longer supported by the APEcs processor.</p>";    
 }
 
 
@@ -1781,6 +1753,7 @@ sub convert_step_tags {
     $content =~ s/\[anim\s+(.*?)\/?\s*\]/$self -> convert_anim($1)/ige;   # [anim name="" width="" height="" align="left|right|center" /]
 
     # Applet conversion
+    # Remove entirely in 3.8?
     $content =~ s/\[applet\s+(.*?)\/?\s*\]/$self -> convert_applet($1)/ige; # [anim name="" width="" height="" codebase="" archive="" /]
 
     # clears

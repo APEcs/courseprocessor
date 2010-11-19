@@ -1,11 +1,11 @@
-<div style="***divstyle***">
+<div class="***divclass***">
 <!-- NOTE: THIS IS NOT VALID XHTML! Unfortunately, no reliable, user-transparedn method appears
      to exist to avoid this mess because of browser compatibility issues. Pages including this template
      will break XHTML Strict and there's nothing we can do about it. -->
-<object id="***name***" height="***height***" width="***width***" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0">
+<object id="../../***mediadir***/***name***" height="***height***" width="***width***" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0">
 <param name="allowScriptAccess" value="sameDomain" />
-<param name="movie" value="***name***" />
-<param name="src" value="***name***" />
+<param name="movie" value="../../***mediadir***/***name***" />
+<param name="src" value="../../***mediadir***/***name***" />
 <param name="wmode" value="window" />
 <param name="play" value="0" />
 <param name="loop" value="-1" />
@@ -15,6 +15,6 @@
 <param name="devicefont" value="0" />
 <param name="embedmovie" value="0" />
 <param name="bgcolor" value="#ffffff" />
-<embed src="***name***" quality="high" bgcolor="#ffffff" name="***name***" allowscriptaccess="sameDomain" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" height="***height***" width="***width***">
+<embed src="../../***mediadir***/***name***" quality="high" bgcolor="#ffffff" name="../../***mediadir***/***name***" allowscriptaccess="sameDomain" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" height="***height***" width="***width***">
 </object>
 </div>

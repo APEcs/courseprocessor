@@ -1,1 +1,1 @@
-<div style="***divstyle***"><img src="***name***" style="***imgstyle***" alt="***alt***" title="***title***" /></div>
+<div class="***divclass***"><img src="../../***mediadir***/***name***" style="***imgstyle***" alt="***alt***" title="***title***" /></div>
