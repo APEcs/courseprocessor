@@ -1580,6 +1580,30 @@ sub preprocess {
 #  Step processing and tag conversion code.
 #  
 
+## @method void scan_step_media($body)
+# Scan the contents of the specified step, adding any media files detected to the
+# 'used_media' hash stored in the plugin object. This allows the plugin to determine
+# which files can be safely removed from the media directory after cleanup.
+#
+# @param body The body of the step to scan.
+sub scan_step_media {
+    my $self = shift;
+    my $body = shift;
+
+    # we could use this straight in the regexp, but this is more readable
+    my $mediadir = $self -> {"config"} -> {"Processor"} -> {"mediadir"};
+
+    # Grab a list of media files in the step. This will try to pull out anything
+    # between the mediadir name and a speechmark
+    my @files = $body =~ m|$mediadir/(.*?)["']|g;
+
+    # Mark all these files in the used_media hash
+    foreach my $file (@files) {
+        $self -> {"used_media"} -> {$file} = 1;
+    }
+}
+
+
 ## @fn $ media_alignment_class($align)
 # Convert a human-readable alignment ('left', 'right', 'center') into a class
 # name to apply to a media container div.
@@ -1856,7 +1880,7 @@ sub process_step {
                                                      }))
         or die "FATAL: Unable to write to ".get_step_name($stepid).": $!\n";
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete.");
 
     # Try to do tidying if the tidy mode has been specified and it exists
     if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}) {
@@ -1880,6 +1904,10 @@ sub process_step {
         # Echo the output if needed so that debugging of tidy is doable.
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidy output: $out");
     }
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Scanning step for media file use.");
+    scan_step_media($body);
+
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Step processing complete");
 }
 
