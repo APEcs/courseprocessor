@@ -49,6 +49,12 @@ use ProcessorVersion;
 use Template;
 use Utils qw(check_directory resolve_path path_join);
 
+# In the absence of a user-defined verbosity level, what should we run at?
+use constant DEFAULT_VERBOSITY => 0;
+
+# What should the media directory be called if the user does not specify it?
+use constant DEFAULT_MEDIADIR  => 'media'; 
+
 
 ## @fn $ handle_commandline(void)
 # Parse the command line into a hash, and invoke pod2usage if the appropriate
@@ -66,6 +72,7 @@ sub handle_commandline {
                'coursedata|c=s' => \$args -> {"datasource"},
                'dest|d=s'       => \$args -> {"outputdir"},
                'config|f:s'     => \$args -> {"configfile"},
+               'mediadir|m:s'   => \$args -> {"mediadir"},
                'outhandler|o:s' => \$args -> {"output_handler"},
                'listhandlers|l' => \$args -> {"listhandlers"},
                'filter:s@'      => \$args -> {"filters"},    # filter can be specified once with a comma list, or many times
@@ -93,8 +100,9 @@ sub merge_commandline {
         $config -> {"Processor"} -> {$arg} = $args -> {$arg};
     }
 
-    # Explicitly set the verbosity if it has not been set yet
-    $config -> {"Processor"} -> {"verbosity"} = 0 if(!defined($config -> {"Processor"} -> {"verbosity"}));
+    # Explicitly set the verbosity and media directorues if they have not been set yet
+    $config -> {"Processor"} -> {"verbosity"} = DEFAULT_VERBOSITY if(!defined($config -> {"Processor"} -> {"verbosity"}));
+    $config -> {"Processor"} -> {"mediadir"}  = DEFAULT_MEDIADIR  if(!defined($config -> {"Processor"} -> {"mediadir"}));
 }
 
 
@@ -438,6 +446,10 @@ pre-existing data as the processed course will completely overwrite it.
 
 Specify an alternative configuration file to use during processing. If not set,
 the .courseprocessor.cfg file in the user's home directory will be used instead.
+
+=item B<-m, --mediadir>
+
+Specify an alternative media directory name (by default, this will be 'media')
 
 =item B<-h, -?, --help>
 
