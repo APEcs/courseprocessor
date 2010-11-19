@@ -34,6 +34,7 @@ use strict;
 use base qw(Plugin); # This class extends Plugin
 
 use Cwd qw(getcwd chdir);
+use MIME::Base64;
 use URI::Encode qw(uri_encode);
 use Utils qw(check_directory resolve_path load_file save_file lead_zero);
 
@@ -45,7 +46,7 @@ use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
 use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no";
 
 # Should backups be made before steps are tidied?
-use constant DEFAULT_BACKUP       => 1;
+use constant DEFAULT_BACKUP       => 0;
 
 # Should we even bother trying to do the tidy pass?
 use constant DEFAULT_TIDY         => 1;
@@ -313,7 +314,7 @@ sub set_anchor_point {
 }
 
 
-## @method $ convert_link($anchor, $text)
+## @method $ convert_link($anchor, $text, $level)
 # Convert a link to a target into a html hyperlink. This will attempt to locate 
 # the anchor specified and create a link to it.
 #
@@ -712,7 +713,7 @@ sub build_navlinks {
     }
 
     $fragments -> {"link"} -> {"first"} = $self -> {"template"} -> load_template("theme/module/link_firststep.tem", { "***firststep***" => get_step_name(1) });
-    $fragments -> {"link"}  -> {"last"} = $self -> {"template"} -> load_template("theme/module/link_laststep.tem" , { "***firststep***" => get_step_name($maxstep) });
+    $fragments -> {"link"}  -> {"last"} = $self -> {"template"} -> load_template("theme/module/link_laststep.tem" , { "***laststep***"  => get_step_name($maxstep) });
 
     return $fragments;
 }
@@ -1585,32 +1586,30 @@ sub preprocess {
 # @param tagdata  The image tag attribute list
 # @return The string to replace the image tag with - either a html image element,
 #         or an error message.
-### FIXME for v3.7
 sub convert_image {
-    my $self     = shift;
+    my $self    = shift;
     my $tagdata = shift;
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Use if deprecated [image] tag with attributes '$tagdata'"); 
+    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Use of deprecated [image] tag with attributes '$tagdata'"); 
 
+    # Convert the tag arguments into an attribute hash
     my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
 
-    # We *NEED* a name, no matter what
-    (log_print($Utils::WARNING, $self -> {"verbose"}, "Image tag attribute list does not include name")
-         && return "<p class=\"error\">Image tag attribute list does not include name</p>")
-        if(!$attrs{"name"});
+    # Generate an error if we have no image name
+    if(!$attrs{"name"}) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Image tag attribute list does not include name");
+        return "<p class=\"error\">Image tag attribute list does not include name</p>";
+    }
 
-    # Construct the URL of the image, relative to the module directory
-    my $url = "../../images/".$attrs{"name"};
-
-    # Start constructing the styles. The divstyle is needed for alignment issues.
-    my $divstyle = "";
+    # Work out the alignment class for the image
+    my $divclass = "floatleft";
     if($attrs{"align"}) {
         if($attrs{"align"} =~ /^left$/i) {
-            $divstyle = ' style="clear: left; float: left; margin: 0 0.5em 0.5em 0; position: relative;"';
+            $divclass = "floatleft";
         } elsif($attrs{"align"} =~ /^right$/i) {        
-            $divstyle = ' style="clear: right; float: right; margin: 0 0.5em 0.5em 0; position: relative;"';
+            $divclass = "floatright";
         } elsif($attrs{"align"} =~/^center$/i) {
-            $divstyle = ' style="width: 100%; text-align: center;"';
+            $divclass = "center";
         }
     }
 
@@ -1620,7 +1619,7 @@ sub convert_image {
     $imgstyle .= " height: $attrs{'height'};" if($attrs{"height"});
 
     return load_complex_template($self -> {"templatebase"}."/theme/module/image.tem",
-                                 {"***name***"     => $url,
+                                 {"***name***"     => $attrs{"name"},
                                   "***divstyle***" => $divstyle,
                                   "***imgstyle***" => $imgstyle,
                                   "***alt***"      => $attrs{"alt"} || "",
@@ -1729,80 +1728,51 @@ sub convert_applet {
 }
 
 
-## @method $ convert_local($text, $data, $stepid, $lcount, $level, $width, $height)
+## @method $ convert_local($args, $data)
 # Converts a local tag into the appropriate html. This will process the specified
 # arguments and data into a popup on the page.
 #
-# @todo This code currently generates a separate file containing the popup text and
-#       generates a html block that opens the file in a popup window. This is 
-#       VASTLY less than useful, and should be changed to use div element popups.
-#       SEE ALSO: http://www.pat-burt.com/web-development/how-to-do-a-css-popup-without-opening-a-new-window/
-# @param text   The text to show in the popup link.
-# @param data   The contents of the popup. Should be valid html.
-# @param stepid The id of the step the popup occurs in.
-# @param lcount The popup count id for this step.
-# @param level  The step difficulty level. Must be green, yellow, orange, or red.
-# @param width  Optional window width. Defaults to 640.
-# @param height Optional window height. Defaults to 480.
+# @param args The arguments to the local tag.
+# @param data The contents of the popup. Should be valid html.
 # @return The string to replace the local tag with, or an error message.
-### FIXME for v3.7
 sub convert_local {
-    my ($self, $text, $data, $stepid, $lcount, $level, $width, $height) = @_;
-  
-    $width  = 640 if(!defined($width)  || !$width);
-    $height = 480 if(!defined($height) || !$height);
+    my $self  = shift;
+    my $args  = shift;
+    my $body  = shift;
 
-    # convert escaped characters to real ones
-    # $data = text_to_html(fix_entities($data));
-    $data =~ s/\\\[/\[/g;
-    $data =~ s/\\\"/\"/g;
-    #$data =~ s/&lt;/</g;
-    #$data =~ s/&gt;/>/g;
+    # Pull out the title from the arguments
+    my ($title) = $args =~ /title="([^"]+)"/si;
 
-    open(LOCAL, "> local-$stepid-$lcount.html")
-        or die "FATAL: Unable to open local-$stepid-$lcount.html: $!";
+    # Other arguments are discarded in this version as they no longer have any real meaning.
 
-    print LOCAL load_complex_template($self -> {"templatebase"}."/theme/module/local.tem",
-                                      {"***title***"   => $text,
-                                       "***body***"    => $data,
-                                       "***include***" => $self -> {"globalheader"},
-                                       "***version***" => $self -> {"cbtversion"},
-                                       "***level***"   => $level});
-    close(LOCAL);
-
-    return load_complex_template($self -> {"templatebase"}."/theme/module/local_link.tem",
-                                 {"***text***"   => $text,
-                                  "***stepid***" => $stepid,
-                                  "***lcount***" => $lcount,
-                                  "***width***"  => $width,
-                                  "***height***" => $height,
-                                 });
+    return $self -> load_template("theme/module/popup.tem",
+                                  {"***title***" => $title,
+                                   "***body***"  => encode_base64($data),
+                                  });
 }
 
 
-## @method $ convert_step_tags($content, $stepid, $level)
+## @method $ convert_step_tags($content, $theme, $module, stepid)
 # Convert any processor markup tags in the supplied step text into the equivalent 
 # html. This function scans the provided text for any of the special marker tags
 # supported by the processor and replaces them with the appropriate html, using
 # the various convert_ functions as needed to support the process.
 #
 # @param content The step text to process.
+# @param theme   The theme the step resides within.
+# @param module  The module the step is in.
 # @param stepid  The step's id number.
-# @param level   The difficulty level of the step, should be green, yellow, 
-#                orange, or red.
 # @return The processed step text.
-### FIXME for v3.7
 sub convert_step_tags {
     my $self    = shift;
     my $content = shift;
-    my $stepid  = shift;
-    my $level   = shift;
+    my $theme   = shift;
     my $module  = shift;
-    my $lcount  = 0;
+    my $stepid  = shift;
 
     # Glossary conversion
-    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\/\s*\]}{$self->convert_terms($1)}ige;              # [glossary term="" /]
-    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\].*?\[/glossary\]}{$self->convert_terms($1)}igse;  # [glossary term=""]...[/glossary]
+    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\/\s*\]}{$self->convert_glossary_term($1)}ige;              # [glossary term="" /]
+    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\].*?\[/glossary\]}{$self->convert_glossary_term($1)}igse;  # [glossary term=""]...[/glossary]
 
     # Image conversion
     $content =~ s{\[img\s+(.*?)\/?\s*\]}{$self -> convert_image($1)}ige;  # [img name="" width="" height="" alt="" title="" align="left|right|center" /]
@@ -1811,20 +1781,19 @@ sub convert_step_tags {
     $content =~ s/\[anim\s+(.*?)\/?\s*\]/$self -> convert_anim($1)/ige;   # [anim name="" width="" height="" align="left|right|center" /]
 
     # Applet conversion
-    $content =~ s/\[applet\s+(.*?)\/?\s*\]/$self -> convert_applet_newstyle($1)/ige; # [anim name="" width="" height="" codebase="" archive="" /]
+    $content =~ s/\[applet\s+(.*?)\/?\s*\]/$self -> convert_applet($1)/ige; # [anim name="" width="" height="" codebase="" archive="" /]
 
     # clears
     $content =~ s/\[clear\s*\/?\s*\]/<div style="clear: both;"><\/div>/giso; # [clear /]
 
-    # Local conversion
-    $content =~ s/\[local\s+text\s*=\s*"(.*?)"\s+width\s*=\s*"(\d+)"\s+height\s*=\s*"(\d+)"\s*\](.*?)\[\/\s*local\s*\]/$self -> convert_local($1, $4, $stepid, ++$lcount, $level, $2, $3)/isge;
-    $content =~ s/\[local\s+text\s*=\s*"(.*?)"\s*\](.*?)\[\/\s*local\s*\]/$self -> convert_local($1, $2, $stepid, ++$lcount, $level)/isge;
-
     # links
-    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"(.*?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_interlink($1, $2, $stepid, $module)}isge; # [link to=""]link text[/link]
+    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"(.*?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_link($1, $2, 'step')}isge; # [link to=""]link text[/link]
 
     # anchors
     $content =~ s/\[target\s+name\s*=\s*\"(.*?)\"\s*\/?\s*\]/<a name=\"$1\"><\/a>/gis; # [target name="" /]
+
+    # Local conversion
+    $content =~ s/\[local\s+(.*?)\s*\](.*?)\[\/\s*local\s*\]/$self -> convert_local($1, $2)/isge;
 
     # convert references and do any work needed to compress them (eg: converting [1][2][3] to [1,2,3])
     if($self -> {"refhandler"}) {
