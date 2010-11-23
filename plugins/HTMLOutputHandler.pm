@@ -145,7 +145,7 @@ sub process {
     foreach my $theme (keys(%{$self -> {"mdata"} -> {"themes"}})) {
 
         # Skip themes that should not be included
-        if($self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"})) {
+        if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"}) {
             $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Theme $theme excluded by filtering rules.");
             next;
         }
@@ -161,7 +161,7 @@ sub process {
             foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
 
                 # Determine whether the module will be included in the course
-                if($self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module})) {
+                if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"})) {
                     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Module $theme excluded by filtering rules.");
                     next;
                 }
@@ -749,6 +749,19 @@ sub build_dependencies {
 }
 
 
+## @method void write_theme_index($theme)
+# Writes out the text-only index file for the course. This will go through each module in the
+# course in index order, and generate the list of steps and the prerequisites and leadstos the
+# module has.
+#
+# @param theme The name of the theme to generate the index for.
+sub write_theme_index {
+    my $self  = shift;
+    my $theme = shift;
+
+}
+
+
 ## @method void write_theme_indexmap($themedir, $theme, $metadata, $headerinclude)
 # Write out the contents of the specified theme's 'themeindex.html' and 'index.html' files.
 # This will generate the theme-level text index (containing the list of modules in the 
@@ -1066,6 +1079,9 @@ sub build_theme_dropdowns {
 
     # Build the ordered list of themes for both levels.
     foreach $theme (@themenames) {
+        # skip themes that won't be included in the course
+        next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"});
+
         $themedrop_theme  .= $self -> {"template"} -> load_template("theme/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
                                                                       "***title***" => $layout -> {$theme} -> {"theme"} -> {"title"}});
@@ -1146,10 +1162,16 @@ sub build_module_dropdowns {
     foreach my $module (@modulenames) {
         my $moduledrop = "";
             
+        # skip modules that won't be included in the course
+        next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"});
+
         # first create the module dropdown for this module (ie: show all modules in this theme and how they relate)
         foreach my $buildmod (@modulenames) {
             my $relationship = "";
                 
+            # skip modules that won't be included in the course
+            next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$buildmod} -> {"exclude_resource"});
+
             # first determine whether buildmod is a prerequisite, leadsto or the current module
             if($buildmod eq $module) {
                 $relationship = "-current";
@@ -1473,6 +1495,9 @@ sub preprocess {
             # Determine whether this theme will actually end up in the generated course
             my $exclude_theme = $self -> {"filter"} -> exclude_resource($metadata -> {"theme"});
 
+            # Store the exclude for later use
+            $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"} = $exclude_theme;
+
             # Now we need to get a list of modules inside the theme. This looks at the list of modules 
             # stored in the metadata so that we don't need to worry about non-module directoried...
             foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
@@ -1481,6 +1506,9 @@ sub preprocess {
                 # Determine whether the module will be included in the course (it will always be
                 # excluded if the theme is excluded)
                 my $exclude_module = $exclude_theme || $self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module});
+
+                # Store the exclude for later use
+                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"} = $exclude_module;
 
                 # If this is a module directory, we want to scan it for steps
                 if(-d $fullmodule) {
