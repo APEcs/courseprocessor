@@ -127,27 +127,6 @@ sub load_config {
 }
 
 
-## @fn $ html_clean_message($text)
-# Process the specified text, converting ampersands, quotes, and angled brakets
-# into xml-safe character entity codes.
-#
-# @param text The text to process.
-# @return The text with &, ", < and > replaces with &amp;, $quot;, $lt;, and &gt;
-sub html_clean_message {
-    my $text = shift;
-
-    # replace the four common character entities (FIXME: support more entities)
-    if($text) {
-        $text =~ s/&(?!amp|quot|lt|gt)/&amp;/g; # only replace & if it isn't already prefixing a character entity we know
-        $text =~ s/\"/&quot;/g;
-        $text =~ s/\</&lt;/g;
-        $text =~ s/\>/&gt;/g;
-    }
-
-    return "<message>$text</message>";
-}
-
-
 ## @fn $ makedir($name, $no_warn_exists)
 # Attempt to create the specified directory if needed. This will determine
 # whether the directory exists, and if not whether it can be created.
@@ -734,9 +713,6 @@ sub course_metadata_save {
 
     die "FATAL: Unable to locate course metadata in the course data page.\n"
         if(!$metadata);
-
-    # Fix up the message body
-    $metadata =~ s/<message>(.*?)<\/message>/html_clean_message($1)/ges;
 
     # We have metadata, so save it
     metadata_save($metadata, $destdir);
