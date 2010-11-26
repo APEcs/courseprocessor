@@ -834,15 +834,12 @@ sub write_theme_index {
 # @param metadata      The theme metadata.
 # @param headerinclude Any additional data to include in the header, optional.
 ### FIXME for v3.7
-sub write_theme_indexmap {
+sub write_theme_map {
     my $self     = shift;
     my $themedir = shift;
     my $theme    = shift;
     my $metadata = shift;
     my $headerinclude = shift;
-
-    # Build the main index
-
 
     # Build the theme map page...
     my $mapbody;
@@ -881,38 +878,25 @@ sub write_theme_indexmap {
                                        "***glosrefblock***" => $self -> build_glossary_references("theme"),
                                       });
     close(INDEX);
+
+    # Write the index.
+    save_file(path_join($themedir, "index.html"),
+              $self -> {"template"} -> load_template("theme/index.tem",
+                                                     {# Basic content
+                                                      "***body***"         => $body,
+                                                      "***title***"        => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"title"},
+
+                                                      # Dropdown in the menu bar
+                                                      "***themedrop***"    => $self -> get_theme_dropdown($theme, "theme"),
+
+                                                      # Standard stuff
+                                                      "***glosrefblock***"  => $self -> build_glossary_references("theme"),
+                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                     }));
+
 }
 
-
-## @method $ build_courseindex_deps($entries, $metadata, $theme)
-# Create module dependency entries for the top-level course index. This will
-# process the supplied entries into dependency list templates and return the
-# composite string.
-#
-# @param entries  A reference to an array of module names forming a dependency.
-# @param metadata A reference to the course-wide composite metadata hash.
-# @param theme    The current theme name.
-# @return A string containing the dependency list.
-### FIXME for v3.7
-sub build_courseindex_deps {
-    my $self     = shift;
-    my $entries  = shift;
-    my $metadata = shift;
-    my $theme    = shift;
-    my $depend   = "";
-    
-    $entries = [ $entries ] if(!ref($entries)); # make sure we're looking at an arrayref
-    my $count = 0;
-    foreach my $entry (@$entries) {
-        $depend .= load_complex_template($self -> {"templatebase"}."/courseindex-dependency-delimit.tem") if($count > 0);
-        $depend .= load_complex_template($self -> {"templatebase"}."/courseindex-dependency.tem",
-                                         {"***url***" => "#$theme-$entry",
-                                          "***title***" => $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"title"}});
-        ++$count;
-    }         
-
-    return $depend;
-}
 
 
 ## @method void write_courseindex($coursedir, $metadata, $headerinclude)
