@@ -146,6 +146,12 @@ sub validate_metadata_theme {
             }
         }
 
+        # If we have an includes section, we must have at least one resource section
+        if($xml -> {"theme"} -> {"includes"}) {
+            die "FATAL: metadata_validate: $shortname/metadata.xml contains an includes element with no resources\n" if(!$xml -> {"theme"} -> {"includes"} -> {"resource"} ||
+                                                                                                                        !scalar($xml -> {"theme"} -> {"includes"} -> {"resource"}));
+        }
+
         # Do the input handler(s) think the module is valid?
         my $valid = 0;
         my @errors = ();
@@ -225,7 +231,7 @@ sub load_metadata {
 
     # If the xml file exists, attempt to load it
     if(-e "$srcdir/metadata.xml") {
-        $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude' ]);
+        $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude', 'resource' ]);
 
         # If we need to validate the metadata, go ahead and do so.
         if($validate) {

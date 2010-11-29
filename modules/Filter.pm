@@ -161,4 +161,46 @@ sub exclude_resource {
     return !$self -> filter($resource);
 }
 
+
+## @method $ includes_filter($resource)
+# A special filtering function needed to support filtering of resources in theme
+# include blocks. This function will attempt to match the filters set by the user
+# against the filters set for the specified resource and only indicate that the 
+# resource should be included if all filters set by the user match those on the 
+# resource exactly.
+#
+# @note This function will include resources iff the filters set by the user 
+#       match those on the resource. This behaviour differs from normal filtering
+#       in that it does not follow the normal include/exclude options. Please see
+#       the documentation for more details.
+#
+# @param resource A reference to the hash containing the include resource metadata.
+# @return true if the resource should be included, false otherwise.
+sub includes_filter {
+    my $self = shift;
+    my $resource = shift;
+
+    # First off, if there are no filters on the resource we return true if the user
+    # has set no filters, otherwise false...
+    return (scalar(keys(%{$self -> {"filters"}})) == 0) if(!defined($resource -> {"filters"}) || !$resource -> {"filters"});
+
+    # Okay, we have some filters on the resource, split them 
+    my @resfilters = split(/,/, $resource -> {"filters"});
+
+    # We can immediately fall over here if the count of user-set and resource-set filters differ
+    return 0 if(scalar(@resfilters) != scalar(keys(%{$self -> {"filters"}})));
+
+    # Okay, now we know the number of filters match, but they could be different filter names,
+    # so we need to go through the filters on the resource, check that they match the user-set
+    # ones, and store them in a checked hash to make sure that we don't check the same filter 
+    # twice.
+    my $checked;
+    foreach my $filter (@resfilters) {
+        $checked -> {$filter} = 1 if($self -> {"filters"} -> {$filter});
+    }
+
+    # now, if the size of the checked hash matches the filters hash, we have complete match
+    return scalar(keys(%$checked)) == scalar(keys(%{$self -> {"filters"}}));
+}
+
 1;

@@ -161,7 +161,7 @@ sub process {
             foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
 
                 # Determine whether the module will be included in the course
-                if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"})) {
+                if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"}) {
                     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Module $theme excluded by filtering rules.");
                     next;
                 }
@@ -196,13 +196,14 @@ sub process {
                 } # if(-d $fullmodule) 
 
                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing index files");
-                $self -> write_theme_indexmap($fulltheme, $theme, $metadata, $include);
+                $self -> write_theme_index($fulltheme, $theme);
+                $self -> write_theme_textindex($fulltheme, $theme);
 
             } else { # if($metadata && ($metadata != 1)) {
                 $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Skipping directory $fulltheme: no metadata in directory");
             }
         } # if(-d $fulltheme) {
-    } # foreach my $theme (@themes) {
+    } # foreach my $theme (@themes) 
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "HTMLOutputhandler processing complete");
 
@@ -212,6 +213,7 @@ sub process {
     $self -> framework_merge($srcdir, $frame);
 
     return 1;
+
 }
 
 
@@ -757,13 +759,13 @@ sub build_dependencies {
 }
 
 
-## @method void write_theme_index($theme)
+## @method void write_theme_textindex($theme)
 # Writes out the text-only index file for the course. This will go through each module in the
 # course in index order, and generate the list of steps and the prerequisites and leadstos the
 # module has.
 #
 # @param theme The name of the theme to generate the index for.
-sub write_theme_index {
+sub write_theme_textindex {
     my $self  = shift;
     my $theme = shift;
 
@@ -823,61 +825,39 @@ sub write_theme_index {
 }
 
 
-## @method void write_theme_indexmap($themedir, $theme, $metadata, $headerinclude)
-# Write out the contents of the specified theme's 'themeindex.html' and 'index.html' files.
-# This will generate the theme-level text index (containing the list of modules in the 
-# theme, their prerequisites and leadstos, and the steps they contain), and the 'cloud map'
-# index page. 
+## @method void write_theme_index($themedir, $theme, $metadata, $headerinclude)
+# Write out the contents of the specified theme's 'index.html' file. This will 
+# generate the theme-level text index page using the data in the theme's includes
+# or, if no includes are set, an auto-generate theme map.
 #
-# @param themedir      The directory containing the theme data.
-# @param theme         The theme name as specified in the metadata name element.
-# @param metadata      The theme metadata.
-# @param headerinclude Any additional data to include in the header, optional.
-### FIXME for v3.7
-sub write_theme_map {
+# @note As of the current version of this tool, auto-generation of theme maps is
+#       not done, and themes must include the appropriate includes and resources
+#       in their metadata.
+#
+# @param themedir The directory containing the theme data.
+# @param theme    The theme name as specified in the metadata name element.
+sub write_theme_index {
     my $self     = shift;
     my $themedir = shift;
     my $theme    = shift;
-    my $metadata = shift;
-    my $headerinclude = shift;
+    my $body;
 
-    # Build the theme map page...
-    my $mapbody;
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Building theme map page for".($metadata -> {"title"} || "Unknown theme"));
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Building theme map page for ".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"});
 
-    # First load any metadata-specified content, if any...
-    if($metadata -> {"includes"} -> {"resource"}) {
-        my $includes = $metadata -> {"includes"} -> {"resource"};
-        $includes = [ $includes ] if(!ref($includes)); # make sure we're looking at an arrayref
-        foreach my $include (sort(@$includes)) {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Including $include");
-            
-            # if the include is not absolute, prepend the theme directory
-            $include = "$themedir/$include" if($include !~ /^\//);
+    # Do we have any resources for this theme map? If so, see whether they should be included
+    if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"includes"} &&
+       $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"resource"} &&
+       scalar($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"resource"})) {
 
-            my $content = load_complex_template($include);
-            if($content) {
-                $mapbody .= $content;
-            } else {
-                blargh("Unable to open include file $include: $!");
-                $mapbody .= "<p class=\"error\">Unable to open include file $include: $!</p>\n";
-            }
+        foreach my $resource (@{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"resource"}}) {
+            # Skip resources that should not be included
+            next if(!$self -> {"filter"} -> includes_filter($resource));
+
+            # The resource is being included, so add its contents to the map body
+            $body .= $resource -> {"content"};
         }
     }
     $mapbody = '<p class="error">No body content specified for this theme. Add an <includes> section to the metadata!</p>' if(!$mapbody);
-
-    open(INDEX, "> $themedir/index.html")
-        or die "FATAL: Unable to open $themedir/index.html for writing: $!";
-
-    print INDEX load_complex_template($self -> {"templatebase"}."/theme/index.tem",
-                                      {"***body***"         => $mapbody,
-                                       "***title***"        => $metadata -> {"title"},
-                                       "***include***"      => $headerinclude,
-                                       "***version***"      => $self -> {"cbtversion"},
-                                       "***themedrop***"    => $self -> get_map_theme_dropdown($theme, $metadata),
-                                       "***glosrefblock***" => $self -> build_glossary_references("theme"),
-                                      });
-    close(INDEX);
 
     # Write the index.
     save_file(path_join($themedir, "index.html"),
@@ -896,7 +876,6 @@ sub write_theme_map {
                                                      }));
 
 }
-
 
 
 ## @method void write_courseindex($coursedir, $metadata, $headerinclude)
