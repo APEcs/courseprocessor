@@ -907,7 +907,7 @@ sub write_theme_index {
 # of the whole course, sorted by theme order and module order, and save the
 # index to the top-level courseindex.html
 sub write_course_textindex {
-    my $self          = shift;
+    my $self = shift;
 
     # Obtain a sorted list of theme names
     my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
@@ -949,24 +949,34 @@ sub write_course_textindex {
 #  
 
 ## @method $ is_related($theme, $module, $mode, $check)
+# Determine whether the module name specified exists as a prerequisite or leadsto
+# for the specified module. This will check the specified module's prerequisite
+# or leadsto lists (depending on the mode specified) and return true if the named
+# check module exists in that list, and false otherwise.
 #
+# @param theme  The theme the module resides within.
+# @param module The name of the current module.
+# @param mode   The list to check - should be "prerequisites" or "leadsto".
+# @param check  The name of the module to check.
+# @return true if check is in the appropriate list for the current module, false 
+#         if it is not.
 sub is_related {
     my $self    = shift;
     my $theme   = shift;
     my $module  = shift;
-    my $mode
-    my $entries = shift;
+    my $mode    = shift;
     my $check   = shift;
 
-    return 0 if (!$); # do nothing if there are no entries
-
-    $entries = [ $entries ] if(!ref($entries)); # makes sure this is an arrayref
+    # do nothing if there are no entries
+    return 0 if (!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} ||
+                 !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"} ||
+                 !scalar($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"}));
 
     # return true if the name we are supposed to check appears in the list
-    foreach my $entry (@$entries) {
+    foreach my $entry (@{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"}}) {
         return 1 if($entry eq $check);
     }
-
+                 
     return 0;
 }
 
