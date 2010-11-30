@@ -177,7 +177,7 @@ sub load_file {
 #
 # @param name The name of the file to load into memory.
 # @param data The string, or string reference, to save into the file.
-# @return undef on success, otherwise an error message.
+# @return undef on success, otherwise this dies with an error message.
 # @note This function assumes that the data passed in the second argument is a string,
 #       and it does not do any binmode shenanigans on the file. Expect it to break if
 #       you pass it any kind of binary data, or use this on Windows.
@@ -189,12 +189,12 @@ sub save_file {
         print OUTFILE ref($data) ? ${$data} : $data;
         
         close(OUTFILE)
-            or return "Unable to close $name after write: $!";
+            or die "FATAL: Unable to close $name after write: $!\n";
 
         return undef;
     } 
 
-    return "Unable to open $name for writing: $!";
+    die "FATAL: Unable to open $name for writing: $!\n";
 }
         
 
