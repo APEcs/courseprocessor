@@ -20,11 +20,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# @todo Filtering
 # @todo Fix all `### FIXME for v3.7` functions
 # @todo Template links in convert_link()
 # @todo media directory cleanup (remove files no longer needed after filtering)
 # @todo check all templates and tags use the configuration to determine the media dir
+# @todo front page generation
+# @todo course map generation (create buttons, layout)
 
 ## @class HTMLOutputHandler
 # This plugin takes a hierarchy of files stored in the processor intermediate
@@ -209,7 +210,7 @@ sub process {
 
     closedir(SRCDIR);
 
-    $self -> write_courseindex($srcdir, $self -> {"fullmap"});
+    $self -> write_course_textindex();
     $self -> framework_merge($srcdir, $frame);
 
     return 1;
@@ -374,12 +375,15 @@ sub cleanup_term_name {
 # generate a block with the glossary and references links enabled or disabled depending
 # on whether the global glossary and references hashes contain data.
 #
-# @param level The level to pull the templates from. Should be "", "theme", "theme/module", 
-#              "glossary", or "references". DO NOT include a leading slash!
+# @param level The level to pull the templates from. Should be "course", "theme", "module", 
+#              "glossary", or "references".
 # @return A string containing the glossary and reference navigation block.
 sub build_glossary_references {
     my $self       = shift;
     my $level      = shift;
+    
+    $level = "" if($level eq "course");
+    $level = "theme/module" if($level eq "module");
 
     # construct the filename for the subtemplates
     my $glossary   = ($self -> {"terms"} && scalar(keys(%{$self -> {"terms"}}))) ? "glossary_en" : "glossary_dis";
@@ -733,7 +737,6 @@ sub build_navlinks {
 # @param module The module to generate the dependency list for.
 # @param level  The level the list is being generated for, should be "course" or "theme".
 # @param mode   The dependency mode, should be "prerequisites" or "leadsto"
-#
 # @return A string containing the dependency list.
 sub build_dependencies {
     my $self    = shift;
@@ -759,21 +762,26 @@ sub build_dependencies {
 }
 
 
-## @method void write_theme_textindex($theme)
-# Writes out the text-only index file for the course. This will go through each module in the
-# course in index order, and generate the list of steps and the prerequisites and leadstos the
-# module has.
+## @method $ build_index_modules($theme, $level)
+# Generate the text index of modules and steps inside the specified theme, ordered by 
+# the indexorder set for each module. This will generate the index body used in the 
+# write_theme_textindex() and write_course_textindex() functions.
 #
-# @param theme The name of the theme to generate the index for.
-sub write_theme_textindex {
+# @param theme The theme the index should be generated for.
+# @param leve  The level the index is being generated for, should be "course" or "theme".
+# @return A string containing the theme index body.
+sub build_index_modules {
     my $self  = shift;
     my $theme = shift;
+    my $level = shift;
 
+    my $prefix  = ($level eq "course" ? "" : "theme/");
+    
     # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
                                if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
 
-                           return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"} :
+                           return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"};
                          }
                          keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
 
@@ -791,27 +799,41 @@ sub write_theme_textindex {
             # Skip steps that should not be included
             next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"});
 
-            $steps .= $self -> {"template"} -> load_template("theme/index_step.tem",
+            $steps .= $self -> {"template"} -> load_template($prefix."index_step.tem",
                                                              {"***url***"   => "$module/".get_step_name($stepid),
                                                               "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}});
         }
 
         # Generate the entry for the module.
-        $body .= $self -> {"template"} -> load_template("theme/index_entry.tem",
+        $body .= $self -> {"template"} -> load_template($prefix."index_entry.tem",
                                                         {"***name***"       => $module,
                                                          "***title***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
                                                          "***level***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
                                                          "***difficulty***" => ucfirst($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}),
-                                                         "***prereqs***"    => $self -> build_dependencies($theme, $module, "theme", "prerequisites"),
-                                                         "***leadsto***"    => $self -> build_dependencies($theme, $module, "theme", "leadsto"),
+                                                         "***prereqs***"    => $self -> build_dependencies($theme, $module, $level, "prerequisites"),
+                                                         "***leadsto***"    => $self -> build_dependencies($theme, $module, $level, "leadsto"),
                                                          "***steps***"      => $steps});
     }
+
+    return $body;
+}
+
+
+## @method void write_theme_textindex($theme)
+# Writes out the text-only index file for the course. This will go through each module in the
+# course in index order, and generate the list of steps and the prerequisites and leadstos the
+# module has.
+#
+# @param theme The name of the theme to generate the index for.
+sub write_theme_textindex {
+    my $self  = shift;
+    my $theme = shift;
 
     # Write the index.
     save_file(path_join($themedir, "themeindex.html"),
               $self -> {"template"} -> load_template("theme/themeindex.tem",
                                                      {# Basic content
-                                                      "***data***"         => $body,
+                                                      "***data***"         => $self -> build_index_modules($theme, "theme"),
                                                       "***title***"        => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"title"},
 
                                                       # Dropdown in the menu bar
@@ -857,6 +879,8 @@ sub write_theme_index {
             $body .= $resource -> {"content"};
         }
     }
+
+    # FIXME: Replace this with a call to the automatic map generator in 3.8!
     $mapbody = '<p class="error">No body content specified for this theme. Add an <includes> section to the metadata!</p>' if(!$mapbody);
 
     # Write the index.
@@ -878,121 +902,63 @@ sub write_theme_index {
 }
 
 
-## @method void write_courseindex($coursedir, $metadata, $headerinclude)
+## @method void write_course_textindex()
 # Write out the course-wide courseindex file. This will generate a full index
 # of the whole course, sorted by theme order and module order, and save the
 # index to the top-level courseindex.html
-#
-# @param coursedir The directory into which the index should be written.
-# @param metadata  A reference to the course-wide composite metadata hash.
-# @param headerinclude Any additional data to include in the header, optional.
-### FIXME for v3.7
-sub write_courseindex {
+sub write_course_textindex {
     my $self          = shift;
-    my $coursedir     = shift;
-    my $metadata      = shift;
-    my $headerinclude = shift;
-    my $body = "";
 
     # Obtain a sorted list of theme names
     my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
-                                if(!defined($metadata -> {$a} -> {"indexorder"}) or !defined($metadata -> {$b} -> {"indexorder"}));
-                            defined($metadata -> {$a} -> {"indexorder"}) ?
-                                $metadata -> {$a} -> {"indexorder"} <=> $metadata -> {$b} -> {"indexorder"} :
-                                $a cmp $b; 
+                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"indexorder"}));
+
+                            return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"indexorder"};
                           }
-                          keys(%$metadata);
-    
+                          keys(%{$self -> {"mdata"} -> {"themes"}});
     
     # Now we can process all the modules in the theme...
+    my $body = "";
     foreach my $theme (@themenames) {
+        # skip themes that won't be included in the course
+        next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"});
 
-        # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
-        my @modnames = sort { die "Attempt to sort module without indexorder while comparing $a and $b" 
-                                  if(!$metadata -> {$theme} -> {"module"} -> {$a} -> {"indexorder"} or !$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
-                              defined($metadata -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}) ?
-                                  $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $metadata -> {$theme} -> {"module"} -> {$b} -> {"indexorder"} :
-                                  $a cmp $b; 
-                            }
-                            keys(%{$metadata -> {$theme} -> {"theme"} -> {"module"}});
-
-        my $modbody = "";
-
-        # For each module, build a list of steps and interlinks.
-        foreach my $module (@modnames) {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Module: $module = ".$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"});
-
-            # skip dummy modules
-            next if($module eq "dummy" || $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"skip"});
-
-            my ($prereq, $leadsto, $steps) = ("", "", "");
-
-            # build the prerequisites and leadsto links for the module
-            # Prerequisites first...
-            my $entries = $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"};
-            if($entries) {
-                $prereq = load_complex_template($self -> {"templatebase"}."/courseindex-module-prereqs.tem",,
-                                                {"***prereqs***" => $self -> build_courseindex_deps($entries, $metadata, $theme)});
-            }
-
-            # ... then the leadstos...
-            $entries = $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"};
-            if($entries) {
-                $leadsto = load_complex_template($self -> {"templatebase"}."/courseindex-module-leadsto.tem",
-                                                 {"***leadsto***" => $self -> build_courseindex_deps($entries, $metadata, $theme)});
-            }
-        
-            # ... and then the steps.
-            foreach my $step (sort numeric_order keys(%{$metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"}})) {
-                $steps .= load_complex_template($self -> {"templatebase"}."/courseindex-step.tem",
-                                                {"***url***"   => "$theme/$module/".get_step_name($step),
-                                                 "***title***" => $metadata -> {$theme} -> {"module"} -> {$module} -> {"step"} -> {$step}});
-            }
-
-            # finally, glue them all together.
-            $modbody .= load_complex_template($self -> {"templatebase"}."/courseindex-module.tem",
-                                              {"***title***"      => $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
-                                               "***name***"       => "$theme-$module",
-                                               "***stepurl***"    => "$theme/$module/step01.html",
-                                               "***level***"      => $metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
-                                               "***difficulty***" => ucfirst($metadata -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}),
-                                               "***prereqs***"    => $prereq,
-                                               "***leadsto***"    => $leadsto,
-                                               "***steps***"      => $steps});
-        } # foreach my $module (@modnames) {
-        
-        # Shove the module into a theme...
-        $body .= load_complex_template($self -> {"templatebase"}."/courseindex-theme.tem",
-                                       {"***name***"    => $theme,
-                                        "***title***"   => $metadata -> {$theme} -> {"theme"} -> {"title"},
-                                        "***modules***" => $modbody});
-    } # foreach $theme (@themenames) {
+        # generate the index for the module, and shove it into a theme entry
+        $body .= $self -> {"template"} -> load_template("index_theme.tem",
+                                                        {"***name***"    => $theme,
+                                                         "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"},
+                                                         "***modules***" => $self -> build_index_modules($theme, "course")});
+    } # foreach $theme (@themenames)
 
     # dump the index.
-    open(INDEX, "> $coursedir/courseindex.html")
-        or die "FATAL: Unable to open $coursedir/courseindex.html for writing: $!";
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
+              load_complex_template("courseindex.tem",
+                                    {"***body***"         => $body,
+                                     "***title***"        => "Course index",
 
-    print INDEX load_complex_template($self -> {"templatebase"}."/courseindex.tem",
-                                      {"***body***"         => $body,
-                                       "***title***"        => "Course index",
-                                       "***include***"      => $headerinclude,
-                                       "***version***"      => $self -> {"cbtversion"},
-                                       "***glosrefblock***" => $self -> build_glossary_references(""),
-                                   });
-    close(INDEX);
+                                     # Standard stuff
+                                     "***glosrefblock***"  => $self -> build_glossary_references("course"),
+                                     "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                     "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                    }));
 }
 
 
-# returns true if the named module appears in the arrayref provided. Returns
-# false otherwise. If the first argument is not an arrayref, it is coerced 
-# into one. Used to determine whether the named module is a prerequisite or
-# leadsto of another module.
-### FIXME for v3.7
+# ============================================================================
+#  Dropdown handling
+#  
+
+## @method $ is_related($theme, $module, $mode, $check)
+#
 sub is_related {
+    my $self    = shift;
+    my $theme   = shift;
+    my $module  = shift;
+    my $mode
     my $entries = shift;
     my $check   = shift;
 
-    return 0 if (!$entries); # do nothing if there are no entries
+    return 0 if (!$); # do nothing if there are no entries
 
     $entries = [ $entries ] if(!ref($entries)); # makes sure this is an arrayref
 
@@ -1004,11 +970,6 @@ sub is_related {
     return 0;
 }
 
-
-
-# ============================================================================
-#  Dropdown handling
-#  
 
 ## @method $ build_theme_dropdowns()
 # Generate the theme dropdowns shown on theme map and theme index pages, and included
@@ -1115,7 +1076,7 @@ sub build_module_dropdowns {
     my @modulenames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b" 
                                   if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                                   
-                              return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"} :
+                              return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"};
                             }
                             keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
 
@@ -1135,9 +1096,9 @@ sub build_module_dropdowns {
             # first determine whether buildmod is a prerequisite, leadsto or the current module
             if($buildmod eq $module) {
                 $relationship = "-current";
-            } elsif(is_related($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"}, $buildmod)) {
+            } elsif(is_related($theme, $module, "prerequisites", $buildmod)) {
                 $relationship = "-prereq";
-            } elsif(is_related($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"}, $buildmod)) {
+            } elsif(is_related($theme, $module, "leadsto", $buildmod)) {
                 $relationship = "-leadsto";
             } 
 
@@ -1862,7 +1823,7 @@ sub process_step {
                                                       "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, $stepid),
 
                                                       # Standard stuff
-                                                      "***glosrefblock***"  => $self -> build_glossary_references("theme/module"),
+                                                      "***glosrefblock***"  => $self -> build_glossary_references("module"),
                                                       "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
                                                       "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                      }))
