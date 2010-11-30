@@ -231,7 +231,7 @@ sub load_metadata {
 
     # If the xml file exists, attempt to load it
     if(-e "$srcdir/metadata.xml") {
-        $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude', 'resource' ]);
+        $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file' ]);
 
         # If we need to validate the metadata, go ahead and do so.
         if($validate) {
