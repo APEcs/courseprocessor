@@ -22,7 +22,6 @@
 #
 # @todo Fix all `### FIXME for v3.7` functions
 # @todo Template links in convert_link()
-# @todo media directory cleanup (remove files no longer needed after filtering)
 # @todo check all templates and tags use the configuration to determine the media dir
 # @todo front page generation
 # @todo course map generation (create buttons, layout)
@@ -213,6 +212,9 @@ sub process {
     $self -> write_course_textindex();
     $self -> framework_merge($srcdir, $frame);
 
+    # Last stage is to remove all unnecessary media from the media directory.
+    $self -> cleanup_media();
+
     return 1;
 
 }
@@ -285,7 +287,7 @@ sub get_maximum_stepid {
 #  Interlink handling
 #  
 
-## @method void set_anchor_point($name, $theme, $module, $step)
+## @method void set_anchor_point($name, $theme, $module, $stepid)
 # Record the position of named anchor points. This is the first step in allowing
 # user-defined links within the material, in that it records the locations of
 # anchor points (similar to anchors in html, but course-wide) so that later 
@@ -300,22 +302,19 @@ sub get_maximum_stepid {
 # @param name   The name of the anchor point.
 # @param theme  The name of the theme the anchor is in (should be the theme dir name).
 # @param module The module the anchor is in (should be the module directory name).
-# @param step   The step the anchor is in (should be the step filename).
+# @param stepid The id of step the anchor is in.
 sub set_anchor_point {
-    my ($self, $name, $theme, $module, $step) = @_;
+    my ($self, $name, $theme, $module, $stepid) = @_;
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting anchor $name in $theme/$module/$step");
 
     die "FATAL: Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]\n"
         if($self -> {"anchors"} && $self -> {"anchors"} -> {$name});
 
-    # we're actually only interested in the step number, not the name (which is likely to change anyway)
-    $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/ if($step);
-
     # Record the location
     $self -> {"anchors"} -> {$name} = {"theme"  => $theme, 
                                        "module" => $module, 
-                                       "stepid" => $step };
+                                       "stepid" => $stepid};
 }
 
 
@@ -343,7 +342,13 @@ sub convert_link {
 
     my $backup = $level eq "step" ? "../../" : $level eq "theme" ? "../" : die "FATAL: Illegal level specified in convert_link. This should not happen.\n";
     
-    return "<a href=\"".$backup.$targ -> {"theme"}."/".$targ -> {"module"}."/step".lead_zero($targ -> {"step"}).".html#$anchor\">$text</a>";
+    return $self -> {"template"} -> load_template("theme/module/link.tem",
+                                                  {"***backup***" => $backup,
+                                                   "***theme***"  => $targ -> {"theme"},
+                                                   "***module***" => $targ -> {"module"},
+                                                   "***step***"   => get_step_name($targ -> {"stepid"}),
+                                                   "***anchor***" => $anchor,
+                                                   "***text***"   => $text});
 }
 
 
@@ -1479,7 +1484,7 @@ sub preprocess {
                             if(!$exclude_step) {
                                 pos($content) = 0;
                                 while($content =~ /\[target\s+name\s*=\s*\"([-\w]+)\"\s*\/?\s*\]/isg) {
-                                    $self -> set_anchor_point($1, $theme, $module, $step);
+                                    $self -> set_anchor_point($1, $theme, $module, $stepid
                                 }
                             }
 
@@ -1536,7 +1541,7 @@ sub preprocess {
 
 
 # ============================================================================
-#  Step processing and tag conversion code.
+#  Media usage check and cleanup
 #  
 
 ## @method void scan_step_media($body)
@@ -1562,6 +1567,44 @@ sub scan_step_media {
     }
 }
 
+
+## @method void cleanup_media()
+# Remove any files from the media directory that do not appear in the used_media
+# hash or forcemedia list.
+sub cleanup_media {
+    my $self = shift;
+
+    # Process any entries in the forcemedia list into the used_media hash
+    # for lookup convenience
+    if($self -> {"mdata"} -> {"course"} -> {"forcemedia"} && $self -> {"mdata"} -> {"course"} -> {"forcemedia"} -> {"file"}) {
+        foreach my $file (@{$self -> {"mdata"} -> {"course"} -> {"forcemedia"} -> {"file"}}) {
+            $self -> {"used_media"} -> {$file} = 1;
+        }
+    }
+
+    my $mediadir = path_join($self -> {"config"} -> {"Process"} -> {"outputdir"}, $self -> {"config"} -> {"Processor"} -> {"mediadir"});
+
+    # Get a list of filenames in the media directory
+    opendir(MEDIA, $mediadir)
+        or die "FATAL: Unable to open media directory for reading: $!\n";
+    my @names = readdir(MEDIA);
+    closedir(MEDIA);
+
+    # Now go through the files
+    foreach my $filename (@names) {
+        if(!$self -> {"used_media"} -> {$filename}) {
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Removing unused media file $filename.");
+
+            unlink path_join($mediadir, $filename)
+                or die "FATAL: Unable to delete unused media file $filename: $!\n";
+        }
+    }
+}
+
+
+# ============================================================================
+#  Step processing and tag conversion code.
+#  
 
 ## @fn $ media_alignment_class($align)
 # Convert a human-readable alignment ('left', 'right', 'center') into a class
