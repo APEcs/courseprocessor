@@ -21,7 +21,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # @todo Fix all `### FIXME for v3.7` functions
-# @todo Template links in convert_link()
 # @todo check all templates and tags use the configuration to determine the media dir
 # @todo front page generation
 # @todo course map generation (create buttons, layout)
@@ -113,32 +112,34 @@ sub use_plugin {
 }
 
 
-### FIXME for v3.7
+## @method $ process()
+# Run the plugin over the contents of the course data. This will process all 
+# intermediate files in the course directory into a templated xhtml course cbt.
 sub process {
     my $self   = shift;
 
-    # kill the reference handler value if the caller has indicated one is not valid.
-    if($self -> {"refhandler"} eq "none") {
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing course using HTMLOutputHandler.");
+
+    # kill the reference handler value unless the caller has indicated one is valid.
+    if(!$self -> {"refhandler"} || $self -> {"refhandler"} eq "none") {
         $self -> {"refhandler"} = undef;
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler disabling references processing");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler disabling centralised references processing.");
     }
 
     # Update the template engine to use the handler's templates. This is needed to allow different
     # handlers to use different templates (as input handlers may need to use templates too!)
     $self -> {"template"} -> set_template_dir($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
-
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing using HTMLOutputHandler");
-
     # preprocess to get the anchors and terms recorded
     $self -> preprocess($srcdir);
 
     # Write out the glossary, and possibly reference, pages at this point.
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary and reference files.");
     $self -> write_glossary_pages();
     $self -> {"refhandler"} -> write_reference_page()
         if($self -> {"refhandler"});
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing complete");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing themes.");
 
     # Go through each theme defined in the metadata, processing its contents into 
     # the output format.
@@ -150,7 +151,7 @@ sub process {
             next;
         }
 
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $theme");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing theme $theme.");
 
         # Confirm that the theme is a directory, and check inside for subdirs ($theme is a theme, subdirs are modules)
         my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outdir"}, $theme);
@@ -166,7 +167,7 @@ sub process {
                     next;
                 }
 
-                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $module ($fulltheme/$module)");
+                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $module ($fulltheme/$module).");
 
                 my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
@@ -188,35 +189,43 @@ sub process {
                         }
 
                         $self -> process_step($theme, $module, $stepid, $maxstep);
-                        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished processing $module ($fulltheme/$module)");
                     }
                     chdir($cwd);
 
                     $self -> cleanup_module($fullmodule);
+                    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished processing $module ($fulltheme/$module).");
+
                 } # if(-d $fullmodule) 
+            } # foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}}))
 
-                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing index files");
-                $self -> write_theme_index($fulltheme, $theme);
-                $self -> write_theme_textindex($fulltheme, $theme);
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing theme index files.");
+            $self -> write_theme_index($fulltheme, $theme);
+            $self -> write_theme_textindex($fulltheme, $theme);
 
-            } else { # if($metadata && ($metadata != 1)) {
-                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Skipping directory $fulltheme: no metadata in directory");
-            }
-        } # if(-d $fulltheme) {
+        } else { # if(-d $fulltheme) 
+            # Seriously, this should never happen, unless the filesystem has been changed under the processor -
+            # the only way we can actually get to check this theme is if metadata has been loaded for it, which
+            # can't happen if the theme directory does not exist.
+            die "FATAL: Attempt to access non-existent directory $fulltheme. This should not happen.\n";
+        }
+
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $theme.");
     } # foreach my $theme (@themes) 
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "HTMLOutputhandler processing complete");
-
-    closedir(SRCDIR);
-
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing course index files.");
+    $self -> write_course_index();
     $self -> write_course_textindex();
-    $self -> framework_merge($srcdir, $frame);
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merging template framework.");
+    $self -> framework_merge();
 
     # Last stage is to remove all unnecessary media from the media directory.
     $self -> cleanup_media();
 
-    return 1;
+    # All done...
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "HTMLOutputhandler processing complete");
 
+    return 1;
 }
 
 
@@ -949,6 +958,13 @@ sub write_course_textindex {
 }
 
 
+sub write_course_index {
+    my $self = shift;
+
+    # IMPLEMENT ME.
+}
+
+
 # ============================================================================
 #  Dropdown handling
 #  
@@ -1395,7 +1411,7 @@ sub framework_merge {
 sub preprocess {
     my $self = shift;
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Starting preprocesss");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Starting preprocesss.");
 
     # A bunch of references to hashes built up as preprocessing proceeds.
     $self -> {"terms"} = { } if(!defined($self -> {"terms"}));
@@ -1484,7 +1500,7 @@ sub preprocess {
                             if(!$exclude_step) {
                                 pos($content) = 0;
                                 while($content =~ /\[target\s+name\s*=\s*\"([-\w]+)\"\s*\/?\s*\]/isg) {
-                                    $self -> set_anchor_point($1, $theme, $module, $stepid
+                                    $self -> set_anchor_point($1, $theme, $module, $stepid);
                                 }
                             }
 
@@ -1534,9 +1550,10 @@ sub preprocess {
 
     closedir(SRCDIR);
     
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Building navigation menus.");
     $self -> build_dropdowns();
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished preprocesss");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished preprocesss.");
 }
 
 
@@ -1559,7 +1576,7 @@ sub scan_step_media {
 
     # Grab a list of media files in the step. This will try to pull out anything
     # between the mediadir name and a speechmark
-    my @files = $body =~ m|$mediadir/(.*?)["']|g;
+    my @files = $body =~ m|$mediadir/(.*?)["'\b]|g;
 
     # Mark all these files in the used_media hash
     foreach my $file (@files) {
