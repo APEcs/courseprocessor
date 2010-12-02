@@ -138,7 +138,7 @@
     </div><!--footer-->
 
     <!-- activate flowplayer links -->
-    <script type="text/javascript">flowplayer("a.streamplayer", "../../flowplayer/flowplayer-3.2.4.swf");</script>
+    <script type="text/javascript">flowplayer("a.streamplayer", "../../flowplayer/flowplayer-3.2.5.swf");</script>
 </div><!-- id="page" -->
 </body>
 </html>
