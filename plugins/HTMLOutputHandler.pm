@@ -81,6 +81,8 @@ sub new {
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}   = DEFAULT_TIDY_ARGS    if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}));
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"} = DEFAULT_BACKUP       if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"}));
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}       = DEFAULT_TIDY         if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}));
+
+    return $self;
 }
 
 
