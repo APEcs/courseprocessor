@@ -1,0 +1,13 @@
+<?xml version='1.0' standalone='yes'?>
+<image base="theme_button_on.png" basex="0" basey="0" width="256" height="64">
+    <colours>
+        <colour name="white">#FFFFFF</colour>
+    </colours>
+    <fonts>
+        <font name="arialbd">/usr/share/fonts/corefonts/arialbd.ttf</font>
+    </fonts>
+    <elements>
+        <text name="title" font="arialbd" color="white" x="128" y="32" width="240" height="50" size="24" minsize="11">***theme_title***</text>
+    </elements>
+</image>
+
