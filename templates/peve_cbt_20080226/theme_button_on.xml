@@ -7,7 +7,7 @@
         <font name="arialbd">/usr/share/fonts/corefonts/arialbd.ttf</font>
     </fonts>
     <elements>
-        <text name="title" font="arialbd" color="white" x="128" y="32" width="240" height="50" size="24" minsize="11">***theme_title***</text>
+        <element type="text" name="title" font="arialbd" colour="white" x="128" y="32" width="240" height="50" size="24" minsize="11">***theme_title***</element>
     </elements>
 </image>
 
