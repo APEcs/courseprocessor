@@ -24,6 +24,9 @@ package ImageTools;
 use strict;
 use GD;
 use Text::Wrap; # FIXME: This will break on languages like japanese/chinese!
+use Utils qw(path_join);
+use XML::Simple;
+
 
 # ============================================================================
 #  Constructor
@@ -39,7 +42,8 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
 
-    my $self = { 
+    my $self = {
+        "line_limit" => 2,
          @_,
     };
 
@@ -82,7 +86,7 @@ sub ttf_string_calcsize {
     my $scount = scalar(@$strings);
     for(my $pos = 0; $pos < $scount; ++$pos) {
         # work out how big the string is at the requested size. Doing the bounds test at 100,100 helps avoid fun with negatives...
-        my @bounds = GD::Image -> stringFT($colour, $fontname, $reqsize, 0, 100, 100, $strings -> [$pos], $linespacing ? {"linespacing" => $linespacing } : {}) ;
+        my @bounds = GD::Image -> stringFT($colour, $fontname, $reqsize, 0, 100, 100, $strings -> [$pos], {"linespacing" => $linespacing, "resolution" => "200,200" });
 
         # We can't do anything if we can't get bounds
         return $self -> {"template"} -> replace_langvar("CERT_ERR_NOBOUND", "", {"***error***" => $@}) if(!@bounds);
@@ -187,7 +191,7 @@ sub ttf_string_centred {
                            $cx - ($sdata -> {$pos} -> {"width"} / 2)  + $sdata -> {$pos} -> {"xoff"}, 
                            $cy - ($sdata -> {"_"} -> {"sumhigh"} / 2) + $sdata -> {$pos} -> {"ypos"} + $sdata -> {$pos} -> {"yoff"},
                            $strings[$pos], 
-                           $linespacing ? {"linespacing" => $linespacing } : {});
+                           {"linespacing" => $linespacing, "resolution" => "200,200" });
     }
 
     return undef;
@@ -222,14 +226,14 @@ sub ttf_string_wrap {
     # Start off with the string 'as is'
     my $wstring = $string;
    
-    # There's a single 
-    my $lines = 1;
+    my $sdata;     # somewhere to store size data
+    my $lines = 1; # there's currently only one line in the string, we assume...
     do {
         # Split the string into lines if needed
         my @strings = split /\|/, $wstring;
 
         # Will the string fit into the space needed?
-        my $sdata = $self -> ttf_string_calcsize($fontname, $colour, \@strings, $reqsize, $linespacing);
+        $sdata = $self -> ttf_string_calcsize($fontname, $colour, \@strings, $minsize, $linespacing);
     
         # If it won't fit in the width, we need to wrap it (height will be handled for us, but that should
         # never be an issue in normal situations anyway)
@@ -240,13 +244,37 @@ sub ttf_string_wrap {
         }
 
     # keep going until the string fits, or we hit the line limit
-    } while($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $lines < $self -> {"line_limit"});
+    } while(($sdata -> {"_"} -> {"maxwide"} > $maxwidth) && ($lines < $self -> {"line_limit"}));
 
     # Bomb if we hit the split limit
     return "Unable to wrap text into the available space. Line limit exceeded." if($lines >= $self -> {"line_limit"});
 
     # Okay, get here and wstring contains the wrapped string, so draw it
     return $self -> ttf_string_centred($image, $fontname, $colour, $wstring, $cx, $cy, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing);
+}
+
+
+## @method $ render_text($image, $render, $elemdata)
+# Render a text element onto the specified image. This uses the settings in the given
+# elemdata hash, in combination with data stored in the render hash, to generate a
+# text string on the specified image.
+#
+# @param image    The image to render the text onto.
+# @param render   A reference to the current render hash. This is needed for font and colour lookups.
+# @param elemdata A hash ref containing the information about the text to render.
+# @return A string containing an error message on error, or undef on success.
+sub render_text {
+    my $self   = shift;
+    my ($image, $render, $elemdata) = @_;
+
+    return $self -> ttf_string_wrap($image, 
+                                    $render -> {"image"} -> {"fonts"} -> {"font"} -> {$elemdata -> {"font"}} -> {"content"},
+                                    $render -> {"image"} -> {"colours"} -> {"colour"} -> {$elemdata -> {"colour"}} -> {"data"},
+                                    $elemdata -> {"content"},
+                                    $elemdata -> {"x"}    , $elemdata -> {"y"},
+                                    $elemdata -> {"size"} , $elemdata -> {"minsize"},
+                                    $elemdata -> {"width"}, $elemdata -> {"height"},
+                                    $elemdata -> {"spacing"});
 }
 
 
@@ -270,7 +298,7 @@ sub render_hash {
     # If we have a base image, load and blit it
     if($render -> {"image"} -> {"base"}) {
         # Unless the base appears absolute, we need to prepend the template base directory
-        $render -> {"image"} -> {"base"} = path_join($self -> {"template"} -> {"basedir"}, $render -> {"image"} -> {"base"})
+        $render -> {"image"} -> {"base"} = path_join($self -> {"template"} -> {"templatedir"}, $render -> {"image"} -> {"base"})
             unless($render -> {"image"} -> {"base"} =~ m|^/|);
 
         # does the file exist?
@@ -296,28 +324,26 @@ sub render_hash {
             unless(defined($vals[0]) && defined($vals[1]) && defined($vals[2]));
 
         # Do the allocate...
-        $render -> {"image"} -> {"colours"} -> {"colour"} -> {$col} -> {"data"} = $image -> colorAllocate(hex($vals[0]),
-                                                                                                          hex($vals[1]),
-                                                                                                          hex($vals[2]));
+        $render -> {"image"} -> {"colours"} -> {"colour"} -> {$col} -> {"data"} = $image -> colorAllocateAlpha(hex($vals[0]),
+                                                                                                               hex($vals[1]),
+                                                                                                               hex($vals[2]),
+                                                                                                               hex($vals[3] || 0));
         # bomb if the result was -1
         return "Unable to allocate colour $col for drawing"
             if($render -> {"image"} -> {"colours"} -> {"colour"} -> {$col} -> {"data"} == -1);
     }
 
     # Now process each of the elements 
+    my $error;
     foreach my $element (keys(%{$render -> {"image"} -> {"elements"} -> {"element"}})) {
         my $elemdata = $render -> {"image"} -> {"elements"} -> {"element"} -> {$element};
 
         if($elemdata -> {"type"} eq "text") {
-            $self -> ttf_string_wrap($image, 
-                                     $render -> {"image"} -> {"fonts"} -> {"font"} -> {$elemdata -> {"font"}} -> {"content"},
-                                     $render -> {"image"} -> {"colours"} -> {"colour"} -> {$elemdata -> {"colour"}} -> {"data"},
-                                     $elemdata -> {"content"},
-                                     $elemdata -> {"x"}    , $elemdata -> {"y"},
-                                     $elemdata -> {"size"} , $elemdata -> {"minsize"},
-                                     $elemdata -> {"width"}, $elemdata -> {"height"},
-                                     $elemdata -> {"spacing"});
-        }                                                                                  
+            $error = $self -> render_text($image, $render, $elemdata);
+        }
+
+        # Did we have any problems? If so, give up now.
+        return $error if($error);
     }
 
     # Save the generated image to the specified file as png
@@ -331,7 +357,7 @@ sub render_hash {
 }
 
 
-## @method $ load_template_xml($xmlname, $replhash)
+## @method $ load_xml($xmlname, $replhash)
 # Load the specified xml file from the template tree, replacing any markers it contains
 # with the contents of the specified hash, and then convert it to a hash. This uses the
 # template module load_template() function to load the xml into memory, the replhash
@@ -342,7 +368,7 @@ sub render_hash {
 # @param replhash A reference to a hash of key-value pairs that will be used to replace
 #                 markers in the xml.
 # @return A reference to the parsed XML hash.
-sub load_template_xml {
+sub load_xml {
     my $self     = shift;
     my $xmlname  = shift;
     my $replhash = shift;
@@ -355,5 +381,30 @@ sub load_template_xml {
 
     return $xmldata;
 }
+
+
+## @method $ load_render_xml($xmlname, $replhash, $output)
+# A convenience function that will load and render the specified render spec xml 
+# file to the provided outname as png. This essentially does the same thing as
+# calling load_xml() followed by render_hash() on the former's result.
+#
+# @param xmlname  The name of the xml file to load from the template hierarchy.
+# @param replhash A reference to a hash of key-value pairs that will be used to replace
+#                 markers in the xml.
+# @param output The name of the file to write the generated image to.
+# @return undef on success, otherwise an error message.
+sub load_render_xml {
+    my $self     = shift;
+    my $xmlname  = shift;
+    my $replhash = shift;
+    my $output   = shift;
+
+    my $render = $self -> load_xml($xmlname, $replhash);
+
+    return $self -> render_hash($output, $render) if($render);
+
+    return "Unable to load xml file.";
+}
+
 
 1;
