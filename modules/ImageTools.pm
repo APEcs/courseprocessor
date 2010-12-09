@@ -34,9 +34,13 @@ use XML::Simple;
 
 ## @cmethod $ new($args)
 # Create a new ImageTools object. This should be called with, at minimum, a reference
-# to the template engine.
+# to the template engine. Valid arguments that may be specified in args are:
 #
-# @param args A hash of arguments to set. Must minimally include an entry for 'template'
+# line_limit  The maximum number of lines that a string may be split into during wrapping.
+#             This defaults to 2.
+# template    A reference to a template engine object. Must be provided.
+#
+# @param args A hash of arguments to set.
 # @return A new ImageTools object.
 sub new {
     my $invocant = shift;
