@@ -90,6 +90,9 @@ sub new {
         $obj -> load_language() or return undef;
     }
 
+    # precalc the template directory.
+    $self -> {"templatedir"} = path_join($self -> {"basedir"}, $self -> {"theme"});
+
     return $obj;
 }
 
@@ -265,20 +268,26 @@ sub replace_blockname {
 # ============================================================================
 #  Templating functions
 
-## @method void set_template_dir($directory)
+## @method void set_template_dir($directory, $theme)
 # Set the directory that contains the templates to use. This sets the base directory
 # for the template system, any relative path passed to load_template() will have
 # the directory set through this prepended to it. This will check the directory exists,
 # and will die with a fatal error if it does not.
 #
 # @param directory The new template base directory.
+# @param theme     Optional theme name. If not specified, defaults to "".
 sub set_template_dir {
     my $self      = shift;
     my $directory = shift;
+    my $theme     = shift || "";
 
     die "FATAL: template directory '$directory' does not exist!\n" if(!-d $directory);
 
     $self -> {"basedir"} = $directory;
+    $self -> {"theme"}   = $theme;
+
+    # precalc the template directory.
+    $self -> {"templatedir"} = path_join($self -> {"basedir"}, $self -> {"theme"});
 }
 
 
@@ -306,7 +315,7 @@ sub load_template {
    
     # Otherwise, prepend the base path and possibly theme.
     } else {
-        $filename = path_join($self -> {"basedir"}, $self -> {"theme"}, $name);
+        $filename = path_join($self -> {"templatedir"}, $name);
     }
 
     if(open(TEMPLATE, "<:utf8", $filename)) {
@@ -526,7 +535,7 @@ sub send_email_sendmail {
 sub get_bbcode_path {
     my $self = shift;
 
-    my $filename = path_join($self -> {"basedir"}, $self -> {"theme"});
+    my $filename = path_join($self -> {"templatedir"});
     
     return (-d $filename) ? $filename : undef;
 }
