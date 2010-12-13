@@ -35,6 +35,7 @@ use strict;
 use base qw(Plugin); # This class extends Plugin
 
 use Cwd qw(getcwd chdir);
+use ImageTools;
 use MIME::Base64;
 use URI::Encode qw(uri_encode);
 use Utils qw(check_directory resolve_path load_file save_file lead_zero);
@@ -927,9 +928,9 @@ sub write_course_textindex {
 
     # Obtain a sorted list of theme names
     my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
-                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"indexorder"}));
+                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
 
-                            return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"indexorder"};
+                            return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"};
                           }
                           keys(%{$self -> {"mdata"} -> {"themes"}});
     
@@ -950,7 +951,7 @@ sub write_course_textindex {
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
               load_complex_template("courseindex.tem",
                                     {"***body***"         => $body,
-                                     "***title***"        => "Course index",
+                                     "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
 
                                      # Standard stuff
                                      "***glosrefblock***"  => $self -> build_glossary_references("course"),
@@ -960,10 +961,98 @@ sub write_course_textindex {
 }
 
 
+## @method void write_course_index()
+# Generate the course map page. This will either automatically generate a series of 
+# buttons arranged in a table from which users may choose a thing to view, or if the
+# course metadata contains a user-defined map it will use that instead.
 sub write_course_index {
     my $self = shift;
+    my $body;
 
-    # IMPLEMENT ME.
+    # First, does the course explicity provide a course map?
+    if($self -> {"mdata"} -> {"course"} -> {"map"}) {
+        # Yes! We need to do no work - just output the user-specified map without messing around!
+        $body = $self -> {"mdata"} -> {"course"} -> {"map"}; 
+
+        # Better scan the text for media to retain, though.
+        $self -> scan_step_media($body);
+    } else {
+        # Boo, no user-set course map, so we need to generate one. We need a sorted list of themes then...
+        my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
+                                    if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
+
+                                return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"};
+                              }
+                              keys(%{$self -> {"mdata"} -> {"themes"}});
+    
+        # Now, for each theme we need to generate on and off buttons, and a html fragment
+        my $relpath = path_join($self -> {"config"} -> {"Processor"} -> {"mediadir"}, "generated");
+        my $imgpath = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $relpath);
+        my @outlist;
+        foreach my $theme (@themenames) {  
+            # skip themes we don't need to process
+            next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"});
+
+            # Buttons first...
+            my $errors = $self -> {"ImageTools"} -> load_render_xml("theme_button_off.xml", 
+                                                                    {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
+                                                                    path_join($imgpath, "cmap_".$theme."_off.png"));
+            die "FATAL: Unable to generate $theme off image: $errors\n" if($errors);
+
+            $errors = $self -> {"ImageTools"} -> load_render_xml("theme_button_on.xml", 
+                                                                 {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
+                                                                 path_join($imgpath, "cmap_".$theme."_on.png"));
+            die "FATAL: Unable to generate $theme off image: $errors\n" if($errors);
+
+            # the span has to be handled later, as at this point we can't assume that
+            # scalar(@themenames) is the number of themes that will end up generated.
+            push(@outlist, $self -> {"template"} -> load_template("map_cell.tem",
+                                                                  {"***name***"    => $theme,
+                                                                   "***mediadir**" => $relpath,
+                                                                   "***button***"  => "cmap_".$theme."_off.png",
+                                                                   "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}}));
+        }
+
+        # Need to store the table somewhere.
+        my $tablebody;
+
+        # Now we have cell fragments and a count of themes, we can work out how
+        # to lay the content out. We favour a single cell on the first row when there are
+        # an odd number of rows.
+        my $cellcount = scalar(@outlist);
+        my $cell = 0; 
+        while($cell < $cellcount) {
+            # If this is the first cell, and the cell count is odd, we want a single cell on the row
+            if(($cell == 0) && ($cellcount % 2 == 1)) {
+                $tablebody .= $self -> {"template"} -> load_template("map_row.tem", 
+                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], 
+                                                                                                                                 {"***span***" => 'colspan="2"'})});
+            # Otherwise, we want to pull out two cells at a time
+            } else {
+                $tablebody .= $self -> {"template"} -> load_template("map_row.tem", 
+                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], 
+                                                                                                                                 {"***span***" => ''})});
+                $tablebody .= $self -> {"template"} -> load_template("map_row.tem", 
+                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], 
+                                                                                                                                 {"***span***" => ''})});
+            }
+        }
+
+        # And the body is just the table body wrapped in, well, a table..
+        $body = $self -> {"template"} -> load_template("map.tem", {"***rows***" => $tablebody});
+    }
+
+    # dump the index.
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
+              load_complex_template("coursemap.tem",
+                                    {"***body***"         => $body,
+                                     "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
+
+                                     # Standard stuff
+                                     "***glosrefblock***"  => $self -> build_glossary_references("course"),
+                                     "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                     "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                    }));
 }
 
 
@@ -1611,6 +1700,11 @@ sub cleanup_media {
 
     # Now go through the files
     foreach my $filename (@names) {
+        # skip directories - this will let through some resources, but not enough to worry about
+        # FIXME: investigate ways to deal with subdirs of media
+        next if(-d path_join($mediadir, $filename));
+
+        # Otherwise, if the file is not in the used media, remove it
         if(!$self -> {"used_media"} -> {$filename}) {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Removing unused media file $filename.");
 
