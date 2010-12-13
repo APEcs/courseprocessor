@@ -35,6 +35,7 @@ use strict;
 use base qw(Plugin); # This class extends Plugin
 
 use Cwd qw(getcwd chdir);
+use File::Path;
 use ImageTools;
 use MIME::Base64;
 use URI::Encode qw(uri_encode);
@@ -985,9 +986,15 @@ sub write_course_index {
                               }
                               keys(%{$self -> {"mdata"} -> {"themes"}});
     
-        # Now, for each theme we need to generate on and off buttons, and a html fragment
+        # Build the paths we will need...
         my $relpath = path_join($self -> {"config"} -> {"Processor"} -> {"mediadir"}, "generated");
         my $imgpath = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $relpath);
+
+        # And make sure the path exists
+        make_path($imgpath)
+            or die "FATAL: Unable to create generated media directory: $!\n";
+
+        # Now, for each theme we need to generate on and off buttons, and a html fragment
         my @outlist;
         foreach my $theme (@themenames) {  
             # skip themes we don't need to process
