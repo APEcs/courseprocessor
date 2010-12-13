@@ -155,16 +155,22 @@ sub validate_metadata_theme {
         # Do the input handler(s) think the module is valid?
         my $valid = 0;
         my @errors = ();
-        foreach my $plugin (sort(keys(%{$self -> {"plugins"} -> {"input"}}))) {
-            if($self -> {"plugins"} -> {"input"} -> {$plugin} -> {"use"}) {
-                my $result = $self -> {"plugins"} -> {"input"} -> {$plugin} -> {"obj"} -> module_check($themedir, $module);
-                if(!$result) {
-                    $valid = 1;
-                    last;
-                } else {
-                    push(@errors, $result);
+
+        if($self -> {"plugins"} -> {"input"}) {
+            foreach my $plugin (sort(keys(%{$self -> {"plugins"} -> {"input"}}))) {
+                if($self -> {"plugins"} -> {"input"} -> {$plugin} -> {"use"}) {
+                    my $result = $self -> {"plugins"} -> {"input"} -> {$plugin} -> {"obj"} -> module_check($themedir, $module);
+                    if(!$result) {
+                        $valid = 1;
+                        last;
+                    } else {
+                        push(@errors, $result);
+                    }
                 }
             }
+        } else {
+            # No input handlers to do any testing, just assume it's valid then...
+            $valid = 1;
         }
 
         if(!$valid) {
