@@ -286,14 +286,8 @@ my $args = handle_commandline();
 # Can we load any configuration?
 my $config = load_config($args -> {"configfile"});
 
-# Potentially be far more strict about this. Blarghs default to non-fatal, so this will
-# just be a warning. Perhaps we should just die here.
-if(!$config) {
-    $log -> blargh("Unable to read configuration file");
-
-    # If blarghs aren't fatal, we need an empty hash to work in.
-    $config = { };
-}
+# Force the presence of a configuration file
+die "FATAL: No configuration file loaded. Halting.\n" if(!$config);
 
 # override configuration settings with command line settings if needed
 merge_commandline($args, $config);
