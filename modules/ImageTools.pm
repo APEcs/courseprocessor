@@ -27,6 +27,7 @@ use Text::Wrap; # FIXME: This will break on languages like japanese/chinese!
 use Utils qw(path_join);
 use XML::Simple;
 
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -296,6 +297,9 @@ sub render_hash {
     my $output = shift;
     my $render = shift;
 
+    die "FATAL: Unable to create $output: image width or height can not be 0\n".Data::Dumper -> Dump([$render]) 
+        if(!$render -> {"image"} -> {"width"} || !$render -> {"image"} -> {"height"});
+
     my $image = GD::Image -> new($render -> {"image"} -> {"width"}, $render -> {"image"} -> {"height"}, 1)
         or return "Unable to create new image.";
 
@@ -313,6 +317,9 @@ sub render_hash {
             or return "Unable to load base image.";
         
         my ($basew, $baseh) = $baseimg -> getBounds();
+
+        die "FATAL: Unable to create $output: base image width or height can not be 0\n" 
+            if(!$basew || !$baseh);
 
         # Copy into the working image
         $image -> copy($baseimg, $render -> {"image"} -> {"basex"} || 0, $render -> {"image"} -> {"basey"} || 0,
@@ -404,10 +411,9 @@ sub load_render_xml {
     my $output   = shift;
 
     my $render = $self -> load_xml($xmlname, $replhash);
-
-    return $self -> render_hash($output, $render) if($render);
-
-    return "Unable to load xml file.";
+    return "Unable to load xml file" if(!$render);
+    
+    return $self -> render_hash($output, $render);
 }
 
 
