@@ -47,6 +47,7 @@ use base qw(Plugin); # This class extends Plugin
 
 use Cwd qw(getcwd chdir);
 use Digest::MD5 qw(md5_hex);
+use File::Path;
 use ProgressBar;
 use Utils qw(path_join load_file);
 
@@ -293,8 +294,15 @@ sub process {
 sub check_media_dirs {
     my $self = shift;
 
-    mkdir path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media") if(!-e path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media"));
-    mkdir path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media", "generated") if(!-e path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media", "generated"));
+    if(!-e path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media")) {
+        make_path(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media"))
+            or die "FATAL: Unable to create media directory: $!\n";
+    }
+
+    if(!-e path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media", "generated")) {
+        make_path(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "media", "generated"))
+            or die "FATAL: Unable to create generated media directory: $!\n";
+    }
 }
 
 
