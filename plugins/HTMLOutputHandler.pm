@@ -991,8 +991,10 @@ sub write_course_index {
         my $imgpath = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $relpath);
 
         # And make sure the path exists
-        make_path($imgpath)
-            or die "FATAL: Unable to create generated media directory: $!\n";
+        if(!-e $imgpath) {
+            make_path($imgpath)
+                or die "FATAL: Unable to create generated media directory: $!\n";
+        }
 
         # Now, for each theme we need to generate on and off buttons, and a html fragment
         my @outlist;
