@@ -98,6 +98,8 @@ sub new {
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexargs"}  = DEFAULT_LATEX_ARGS if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"latexargs"}));
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexintro"} = DEFAULT_LATEX_HEADER if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"latexintro"}));
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"cleanup"}    = DEFAULT_CLEANUP if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"cleanup"}));
+
+    return $self;
 }
 
 
