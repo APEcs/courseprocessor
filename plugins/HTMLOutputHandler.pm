@@ -1418,99 +1418,50 @@ sub cleanup_module {
 #  Postprocess
 #
 
-## @method void framework_template($source, $dest, $template)
-# Attempt to template a top-level framework file. This will attempt to load and
-# parse the contents of the specified framework file, and if it can extract the
-# required data (title and 'real' body) it will save the data to dest using the
-# specified template. If the required data can not be parsed from the file, this
-# simply copies source to dest.
-#
-# @param source   The file to be processed.
-# @param dest     The name of the file to write the processed data to.
-# @param template The template to use when generating the output file, if possible.
-### FIXME for v3.7
-sub framework_template {
-    my ($self, $source, $dest, $template) = @_;
-
-    # First load the source file and extract the gubbins we're interested in
-    open(SOURCE, $source)
-        or die "FATAL: Unable to open top-level source file $source: $!";
-
-    undef $/;
-    my $sourcedata = <SOURCE>;
-    $/ = "\n";
-
-    close(SOURCE);
-
-    my ($title, $content) = $sourcedata =~ m{<title>(.*?)</title>.*<div\s+id="content">(.*?)</div>\s*<!-- id="content" -->}iso;
-
-    if($title && $content) {  
-        open(DEST, "> $dest")
-            or die "FATAL: Unable to save top-level file $dest: $!";
-        
-        print DEST load_complex_template($self -> {"templatebase"}."/$template",
-                                         {"***title***"         => $title,
-                                          "***body***"          => $content,
-                                          "***version***"       => $self -> {"cbtversion"},
-                                          "***glosrefblock***"  => $self -> build_glossary_references(""),
-                                      });
-
-        close(DEST);
-    } else {
-        blargh("HTMLOutputhandler::framework_template(): Unable to locate required sections in $source, falling back on copy");
-        `cp $source $dest`;
-    }
-
-}
-
-
-## @method void framework_merge($outdir, $framedir)
+## @method void framework_merge()
 # Merge the framework directory into the output, rewriting the content into the
 # templates as needed.
-#
-# @param outdir   The directory to write the templated framework files to.
-# @param franedir The framework directory to read data from.
-### FIXME for v3.7
 sub framework_merge {
-    my ($self, $outdir, $framedir) = @_;
+    my $self = shift;
 
+    # The framework is inside the template directory
+    my $framedir = path_join($self -> {"template"} -> {"templatedir"}, "framework");
+
+    # Open the framework directory so that we can go through the list of files therein
     opendir(FRAME, $framedir)
-        or die "FATAL: Unable to open framework directory: $!";
+        or die "FATAL: Unable to open framework directory: $!\n";
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merging framework at $framedir to $outdir...");
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merging framework to output...");
 
+    my $outdir = $self -> {"config"} -> {"Processor"} -> {"outputdir"};
     while(my $entry = readdir(FRAME)) {
         next if($entry =~ /^\./);
+
+        # Cache the filename, to make life easier later
+        my $entryfile = path_join($framedir, $entry);
 
         # if the entry is a directory then we want to simply copy it (NOTE: This behaviour depends
         # on the framework html files being in the top level of the tree. Were this is not the case
         # then far more advanced path handling would be required in generating the templated pages.
         # Unless there is a /blindingly/ good reason, I suggest avoiding changing this setup!)
-        if(-d "$framedir/$entry") {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying directory $framedir/$entry and its contents to $outdir...");
-            my $out = `cp -rv $framedir/$entry $outdir`;
+        if(-d $entryfile) {
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying directory $entry and its contents to $outdir...");
+            my $out = `cp -rv $entryfile $outdir`;
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is:\n$out");
         
-        # process html files
-        } elsif($entry =~ /\.html?$/) {
-            my ($name) = $entry =~ /^(.*?)\.html?$/;
-            die "FATAL: HTMLOutputhandler::framework_merge(): unable to get name from $entry!" if(!$name);
+        # convert templates
+        } elsif($entry =~ /\.tem?$/) {
+            my ($name) = $entry =~ /^(.*?)\.tem?$/;
+            die "FATAL: Unable to get name from $entry!" if(!$name);
             
-            # First, if a template exists with the same name as the file, use it
-            if(-e $self -> {"templatebase"}."/$name.tem") {
-                $self -> framework_template("$framedir/$entry", "$outdir/$entry", "$name.tem");
+            save_file(path_join($outdir, "$name.html"),
+                      $self -> {"template"} -> load_template(path_join("framework", $entry),
+                                                             {"***glosrefblock***"  => $self -> build_glossary_references("course"),
+                                                              "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"}}));
 
-            # Handle popups...
-            } elsif($entry =~ /_popup.html?$/) {
-                $self -> framework_template("$framedir/$entry", "$outdir/$entry", "popup.tem");
-
-            # Otherwise pass through the standard template
-            } else {
-                $self -> framework_template("$framedir/$entry", "$outdir/$entry", "global.tem");
-            }
         # otherwise just straight-copy the file, as we don't know what to do with it
         } else {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying $framedir/$entry to $outdir...");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying $entry to $outdir...");
             my $out = `cp -rv $framedir/$entry $outdir`;
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is: $out");
         }   
@@ -1519,7 +1470,6 @@ sub framework_merge {
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merge complete.");
 
     closedir(FRAME);
-
 }
 
 
