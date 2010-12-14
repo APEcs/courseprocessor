@@ -295,27 +295,6 @@ merge_commandline($args, $config);
 $log -> set_verbosity($config -> {"Processor"} -> {"verbosity"});
 
 # ------------------------------------------------------------------------------
-#  Path checks
-#
-
-# Check that we have required path vriables
-setting_error("Course data directory", "--coursedata") if(!$config -> {"Processor"} -> {"datasource"});
-setting_error("Output directory"     , "--dest")       if(!$config -> {"Processor"} -> {"outputdir"});
-
-# ensure the paths are really absolute
-$config -> {"Processor"} -> {"datasource"} = resolve_path($config -> {"Processor"} -> {"datasource"});
-$config -> {"Processor"} -> {"outputdir"}  = resolve_path($config -> {"Processor"} -> {"outputdir"});
-
-# Dump the input/output names for reference
-$log -> print($log -> DEBUG, "Using data directory  : ".$config -> {"Processor"} -> {"datasource"});
-$log -> print($log -> DEBUG, "Using output directory: ".$config -> {"Processor"} -> {"outputdir"});
- 
-# Verify that the source dirs /are/ dirs
-check_directory($config -> {"Processor"} -> {"datasource"}, "course data source directory");
-check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", {"exists" => 0, "nolink" => 1, "checkdir" => 0});
-
-
-# ------------------------------------------------------------------------------
 #  Plugin initalisation
 #
 
@@ -340,19 +319,40 @@ my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template,
 # If the user has requested a list of plugins, dump them here and exit
 if($config -> {"Processor"} -> {"listhandlers"}) {
     print "Available inputhandlers are:\n";
-    foreach $plugin (sort(keys(%{$plugins -> {"input"}}))) {
+    foreach my $plugin (sort(keys(%{$plugins -> {"input"}}))) {
         print "\t",$plugin,"\n";
     }
     print "Available outputhandlers are:\n";
-    foreach $plugin (sort(keys(%{$plugins -> {"output"}}))) {
+    foreach my $plugin (sort(keys(%{$plugins -> {"output"}}))) {
         print "\t",$plugin,"\n";
     }
     print "Available reference are:\n";
-    foreach $plugin (sort(keys(%{$plugins -> {"ref"}}))) {
+    foreach my $plugin (sort(keys(%{$plugins -> {"ref"}}))) {
         print "\t",$plugin,"\n";
     }
     exit;
 }
+
+# ------------------------------------------------------------------------------
+#  Path checks
+#
+
+# Check that we have required path vriables
+setting_error("Course data directory", "--coursedata") if(!$config -> {"Processor"} -> {"datasource"});
+setting_error("Output directory"     , "--dest")       if(!$config -> {"Processor"} -> {"outputdir"});
+
+# ensure the paths are really absolute
+$config -> {"Processor"} -> {"datasource"} = resolve_path($config -> {"Processor"} -> {"datasource"});
+$config -> {"Processor"} -> {"outputdir"}  = resolve_path($config -> {"Processor"} -> {"outputdir"});
+
+# Dump the input/output names for reference
+$log -> print($log -> DEBUG, "Using data directory  : ".$config -> {"Processor"} -> {"datasource"});
+$log -> print($log -> DEBUG, "Using output directory: ".$config -> {"Processor"} -> {"outputdir"});
+ 
+# Verify that the source dirs /are/ dirs
+check_directory($config -> {"Processor"} -> {"datasource"}, "course data source directory");
+check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", {"exists" => 0, "nolink" => 1, "checkdir" => 0});
+
 
 # Determine whether the input plugins can run.
 check_input_plugins($plugins, $config, $log);
