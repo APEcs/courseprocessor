@@ -82,7 +82,28 @@
 
                             <h1 class="main">***title***</h1>
                             <div id="content">
-                                ***body***
+<table style="width: 100%; padding: 2em; border: none" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+    <td>***bodytext***
+        <div style="text-align: center"> <!-- start course/continue course buttons -->
+        <p><a href="coursemap.html" onmouseout="MM_swapImgRestore()"  onmouseover="MM_swapImage('Begin','','framework-images/docs/home_begin_button_over.gif',1)"><img src="framework-images/docs/home_begin_button.gif" alt="Begin CBT" name="Begin" border="0"></a></p>
+        <script language="javascript" type="text/javascript">
+			var currentPage = location.href;
+			var cbtKey = dotdot(currentPage, 1);
+			var lastPageKey = cbtKey + "[lastpage]";
+			var lastPageUrl = readCookie(lastPageKey);
+			if(lastPageUrl != null && lastPageUrl.length > 0)
+			{
+				document.write('<p><a href="' + lastPageUrl + '" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage(\'LastViewedPage\',\'\',\'framework-images/docs/home_last_viewed_button_over.gif\',1)"><img src="framework-images/docs/home_last_viewed_button.gif" alt="Last Viewed Page" name="LastViewedPage" border="0"></a></p>');
+			}
+        </script>
+        </div>
+    </td>
+    <td style="width: 300px">***graphic***</td>
+</tr>
+</tbody>
+</table>
                             </div><!-- id="content" -->
                             <div class="clearer"></div>
                         </div><!-- id="middle-center" --></div><!-- id="middle-right" --></div><!-- id="middle-left" -->
