@@ -30,16 +30,7 @@
                             <img src="framework-images/header/blue/logo-active.gif" alt="PEVE IT logo" name="logo" width="125" height="75" border="0" id="logo" /></div>
 
                         <div class="center">
-                            <div id="resources">
-	                            <h2 class="accesshide">Resource links</h2>
-	                            <ul class="link-list">
-		                            <li class="first">
-			                            <a href="glossary/index.html" title="Links to a glossary of terms used in the course">Glossary</a>
-			                            <span class="accesshide">/ </span>		</li>
-		                            <li><a href="references.html" title="Links to a list of references that appear in the course">References</a></li>
-	                            </ul>
-                            </div>
-
+***glosrefblock*** 
                             <div id="nav"></div>
                         </div><!-- class="center" -->
                     </div><!-- id="main" -->
@@ -100,7 +91,7 @@
                               -->
                         </script>
                         <noscript>2007</noscript>
-                        <a target="_blank" href="http://www.manchester.ac.uk/">University of Manchester</a>
+                        <a target="_blank" href="http://www.manchester.ac.uk/">University of Manchester</a>, version: ***version***
                     </li>
                     <li><a href="ape.html">About APEcs</a></li>
                     <li><a href="privacy.html">Privacy and Cookies Policy</a></li>
