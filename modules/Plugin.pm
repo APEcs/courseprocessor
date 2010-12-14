@@ -162,7 +162,7 @@ sub makedir {
     # If the directory exists, we're okayish...
     if(-d $name) {
         $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Dir $name exists, the contents will be overwritten.")
-            unless($quiet || $no_warn_exists);
+            unless($self -> {"quiet"} || $no_warn_exists);
         return 1;
 
     # It's not a directory, is it something... else?
