@@ -319,18 +319,18 @@ my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template,
 
 # If the user has requested a list of plugins, dump them here and exit
 if($config -> {"Processor"} -> {"listhandlers"}) {
-    print "Available inputhandlers are:\n";
+    print "Available input handlers are:\n";
     foreach my $plugin (sort(keys(%{$plugins -> {"input"}}))) {
         print "\t",$plugin,"\n";
     }
-    print "Available outputhandlers are:\n";
+    print "Available output handlers are:\n";
     foreach my $plugin (sort(keys(%{$plugins -> {"output"}}))) {
         print "\t",$plugin,"\n";
     }
-    print "Available reference are:\n";
-    foreach my $plugin (sort(keys(%{$plugins -> {"ref"}}))) {
-        print "\t",$plugin,"\n";
-    }
+#    print "Available reference handlers are:\n";
+#    foreach my $plugin (sort(keys(%{$plugins -> {"ref"}}))) {
+#        print "\t",$plugin,"\n";
+#    }
     exit;
 }
 
