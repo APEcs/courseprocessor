@@ -219,6 +219,7 @@ sub process {
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing course index files.");
     $self -> write_course_index();
     $self -> write_course_textindex();
+    $self -> write_course_frontpage();
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merging template framework.");
     $self -> framework_merge();
@@ -561,7 +562,7 @@ sub build_glossary_indexbar {
 #
 # @param filename The name of the file to write the page to.
 # @param title    The title of the page.
-# @param letter   The letter that all terms on the page should start with (either a 
+# @param letter   The letter that all terms on the page should start with, either a 
 #                 lowercase alphabetic character, 'digit', or 'symb'.
 # @param charmap  A reference to a hash of character to term lists.
 sub write_glossary_file {
@@ -950,15 +951,15 @@ sub write_course_textindex {
 
     # dump the index.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
-              load_complex_template("courseindex.tem",
-                                    {"***body***"         => $body,
-                                     "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
+              $self -> {"template"} -> load_template("courseindex.tem",
+                                                     {"***body***"         => $body,
+                                                      "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
 
-                                     # Standard stuff
-                                     "***glosrefblock***"  => $self -> build_glossary_references("course"),
-                                     "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
-                                     "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
-                                    }));
+                                                      # Standard stuff
+                                                      "***glosrefblock***"  => $self -> build_glossary_references("course"),
+                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                     }));
 }
 
 
@@ -1053,9 +1054,43 @@ sub write_course_index {
 
     # dump the index.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
-              load_complex_template("coursemap.tem",
-                                    {"***body***"         => $body,
-                                     "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
+              $self -> {"template"} -> load_template("coursemap.tem",
+                                                     {"***body***"         => $body,
+                                                      "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
+
+                                                      # Standard stuff
+                                                      "***glosrefblock***"  => $self -> build_glossary_references("course"),
+                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                     }));
+}
+
+
+## @method void write_course_frontpage()
+# Write out the course front page file. This will generate a page containing any
+# message set in the course metadata, and a graphic (animation or image) beside it.
+# Note that the media used on front page does not need to be listed in the course
+# forced media list.
+sub write_course_frontpage {
+    my $self = shift;
+
+    # create the graphic element(s)
+    my $graphic = $self -> {"template"} -> load_template("frontpage-".$self -> {"mdata"} -> {"course"} -> {"type"}.".tem", 
+                                                         {"***mediadir***" => $self -> {"config"} -> {"Processor"} -> {"mediadir"},
+                                                          "***filename***" => $self -> {"mdata"} -> {"course"} -> {"splash"},
+                                                          "***width***"    => $self -> {"mdata"} -> {"course"} -> {"width"},
+                                                          "***height***"   => $self -> {"mdata"} -> {"course"} -> {"height"},
+                                                          "***title***"    => $self -> {"mdata"} -> {"course"} -> {"title"}});
+
+    # store the filename so it doesn't get cleaned up
+    $self -> {"used_media"} -> {$self -> {"mdata"} -> {"course"} -> {"splash"}} = 1;
+
+    # dump the page.
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "frontpage.html"),
+              load_complex_template("frontpage.tem",
+                                    {"***bodytext***"      => $self -> {"mdata"} -> {"course"} -> {"message"},
+                                     "***graphic***"       => $graphic,
+                                     "***title***"         => $self -> {"mdata"} -> {"course"} -> {"title"},
 
                                      # Standard stuff
                                      "***glosrefblock***"  => $self -> build_glossary_references("course"),
@@ -1110,8 +1145,8 @@ sub is_related {
 # theme level dropdown, while $self -> {"dropdowns"} -> {"theme_stepview"} stores 
 # the equivalent step dropdown.
 # 
-# @note This will die if any theme is missing its indexorder (although the metadata
-#       validation should have failed if it does not!)
+# @note This will die if any theme is missing its indexorder, although the metadata
+#       validation should have failed if it does not!
 # @return A reference to an array of theme names, sorted by index order.
 sub build_theme_dropdowns {
     my $self = shift;
@@ -1196,8 +1231,8 @@ sub build_step_dropdowns {
 # Generate the completed module dropdowns for each module in the specified theme, and
 # the partially processed dropdowns for the steps in each module. 
 #
-# @note This will die if any module is missing its indexorder (although this should
-#       not happen if the metadata was validated during loading)
+# @note This will die if any module is missing its indexorder, although this should
+#       not happen if the metadata was validated during loading.
 #
 # @param theme The name of the theme to generate the module dropdown for.
 sub build_module_dropdowns {
@@ -1502,12 +1537,12 @@ sub framework_merge {
 # many steps there are in the whole course for progress updates later.
 #
 # @note The preprocess almost completely ignores filtering, and it will store metadata,
-#       glossary definitions (but not references) and reference definitions (but not 
-#       references to them) even if a theme, module, or step they occur in is filtered
-#       out of the final course. This is necessary because the definition of a term may
-#       only be present in a resource that will be filtered out, but references to it
-#       may exist elsewhere in the course. It should be noted that link anchors *will not*
-#       be stored if the resource will be excluded.
+#       glossary definitions and reference definitions (but not references to them) 
+#       even if a theme, module, or step they occur in is filtered out of the final 
+#       course. This is necessary because the definition of a term may only be present 
+#       in a resource that will be filtered out, but references to it may exist 
+#       elsewhere in the course. It should be noted that link anchors *will not* be 
+#       stored if the resource will be excluded.
 sub preprocess {
     my $self = shift;
 
