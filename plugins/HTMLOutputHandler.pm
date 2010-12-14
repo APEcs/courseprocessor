@@ -135,7 +135,7 @@ sub process {
     $self -> {"template"} -> set_template_dir($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     # preprocess to get the anchors and terms recorded
-    $self -> preprocess($srcdir);
+    $self -> preprocess();
 
     # Write out the glossary, and possibly reference, pages at this point.
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary and reference files.");
@@ -320,9 +320,11 @@ sub get_maximum_stepid {
 sub set_anchor_point {
     my ($self, $name, $theme, $module, $stepid) = @_;
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting anchor $name in $theme/$module/$step");
+    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting anchor $name in $theme/$module/$stepid");
 
-    die "FATAL: Redefinition of target $name in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]\n"
+    die "FATAL: Redefinition of target $name in $theme/$module/$stepid, last set in ".$self -> {"anchors"} -> {$name} -> {"theme"}."/".
+                                                                                      $self -> {"anchors"} -> {$name} -> {"module"}."/".
+                                                                                      $self -> {"anchors"} -> {$name} -> {"stepid"}."\n"
         if($self -> {"anchors"} && $self -> {"anchors"} -> {$name});
 
     # Record the location
@@ -350,7 +352,7 @@ sub convert_link {
 
     my $targ = $self -> {"anchors"} -> {$anchor};
     if(!$targ) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unable to locate anchor $anchor. Link text is '$text' in $module step $stepid");
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unable to locate anchor $anchor. Link text is '$text'.");
         return '<span class="error">'.$text.' (Unable to locate anchor '.$anchor.')</span>';
     }
 
@@ -605,16 +607,17 @@ sub write_glossary_file {
     } # foreach my $term (@{$charmap -> {$letter}})
 
     # Save the page out.
-    save_file(path_join($outdir, $filename), $self -> {"template"} -> load_template("glossary/entrypage.tem",
-                                                                                    {"***title***"        => $title,
-                                                                                     "***glosrefblock***" => $self -> build_glossary_references("glossary"),
-                                                                                     "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
-                                                                                     "***index***"        => $self -> build_glossary_indexbar($letter, $charmap),
-                                                                                     "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-content.tem",
-                                                                                                                                                 {"***letter***" => $letter }),
-                                                                                     "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
-                                                                                     "***entries***"      => $entries,
-                                                                                    }));
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $filename), 
+              $self -> {"template"} -> load_template("glossary/entrypage.tem",
+                                                     {"***title***"        => $title,
+                                                      "***glosrefblock***" => $self -> build_glossary_references("glossary"),
+                                                      "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***index***"        => $self -> build_glossary_indexbar($letter, $charmap),
+                                                      "***breadcrumb***"   => $self -> {"template"} -> load_template("glossary/breadcrumb-content.tem",
+                                                                                                                     {"***letter***" => $letter }),
+                                                      "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                      "***entries***"      => $entries,
+                                                     }));
 }
 
 
@@ -626,7 +629,7 @@ sub write_glossary_pages {
     my $self   = shift;
 
     # Only do anything if we have any terms defined.
-    if(!$terms) {
+    if(!$self -> {"terms"}) {
         $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "No glossary terms to write");
         return;
     }
@@ -642,7 +645,7 @@ sub write_glossary_pages {
     }   
     
     # get a list of all the terms
-    my @termlist = sort(keys(%$self -> {"terms"}));
+    my @termlist = sort(keys(%{$self -> {"terms"}}));
 
     # calculate which characters are missing and which are available
     my $charmap = {};
@@ -684,7 +687,7 @@ sub write_glossary_pages {
                                                                                        {"***glosrefblock***" => $self -> build_glossary_references("glossary"),
                                                                                         "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
                                                                                         "***index***"        => $self -> build_glossary_indexbar("", $charmap),
-                                                                                        "***breadcrumb***"   => $self -> {"template"} load_template("glossary/breadcrumb-indexonly.tem"),
+                                                                                        "***breadcrumb***"   => $self -> {"template"} -> load_template("glossary/breadcrumb-indexonly.tem"),
                                                                                         "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                                                        }));
 
@@ -810,7 +813,7 @@ sub build_index_modules {
         # skip modules that won't be included in the course
         next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"});
 
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing index entry for module ".$metadata -> {"module"} -> {$module} -> {"title"});
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing index entry for module ".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"});
 
         # Build the list of steps in the module.
         my $steps = "";
@@ -849,7 +852,7 @@ sub write_theme_textindex {
     my $theme = shift;
 
     # Write the index.
-    save_file(path_join($themedir, "themeindex.html"),
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme, "themeindex.html"),
               $self -> {"template"} -> load_template("theme/themeindex.tem",
                                                      {# Basic content
                                                       "***data***"         => $self -> build_index_modules($theme, "theme"),
@@ -866,7 +869,7 @@ sub write_theme_textindex {
 }
 
 
-## @method void write_theme_index($themedir, $theme, $metadata, $headerinclude)
+## @method void write_theme_index($theme)
 # Write out the contents of the specified theme's 'index.html' file. This will 
 # generate the theme-level text index page using the data in the theme's includes
 # or, if no includes are set, an auto-generate theme map.
@@ -875,11 +878,9 @@ sub write_theme_textindex {
 #       not done, and themes must include the appropriate includes and resources
 #       in their metadata.
 #
-# @param themedir The directory containing the theme data.
 # @param theme    The theme name as specified in the metadata name element.
 sub write_theme_index {
     my $self     = shift;
-    my $themedir = shift;
     my $theme    = shift;
     my $body;
 
@@ -900,10 +901,10 @@ sub write_theme_index {
     }
 
     # FIXME: Replace this with a call to the automatic map generator in 3.8!
-    $mapbody = '<p class="error">No body content specified for this theme. Add an <includes> section to the metadata!</p>' if(!$mapbody);
+    $body = '<p class="error">No body content specified for this theme. Add an <includes> section to the metadata!</p>' if(!$body);
 
     # Write the index.
-    save_file(path_join($themedir, "index.html"),
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme, "index.html"),
               $self -> {"template"} -> load_template("theme/index.tem",
                                                      {# Basic content
                                                       "***body***"         => $body,
@@ -1162,20 +1163,20 @@ sub build_theme_dropdowns {
                             
                             return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"};
                           }
-                          keys(%$self -> {"mdata"} -> {"themes"});
+                          keys(%{$self -> {"mdata"} -> {"themes"}});
 
     # Build the ordered list of themes for both levels.
-    foreach $theme (@themenames) {
+    foreach my $theme (@themenames) {
         # skip themes that won't be included in the course
         next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"});
 
         $themedrop_theme  .= $self -> {"template"} -> load_template("theme/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
-                                                                      "***title***" => $layout -> {$theme} -> {"theme"} -> {"title"}});
+                                                                      "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}});
 
         $themedrop_module .= $self -> {"template"} -> load_template("theme/module/themedrop-entry.tem",
                                                                     { "***name***"  => $theme,
-                                                                      "***title***" => $layout -> {$theme} -> {"theme"} -> {"title"}});
+                                                                      "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}});
     }
 
     # Put the accumulated dropdowns into containers and store for later.
@@ -1295,7 +1296,7 @@ sub build_dropdowns {
     my $themenames = $self -> build_theme_dropdowns();
     
     # Now build up the step level module and step menus
-    foreach $theme (@$themenames) {
+    foreach my $theme (@$themenames) {
         $self -> build_module_dropdowns($theme);
     }
 }
@@ -1564,7 +1565,7 @@ sub preprocess {
 
                         my $outstep = 0;
                         foreach my $step (@sortedsteps) {
-                            my ($stepid) = $step =~ /$node0?(\d+).html/;
+                            my ($stepid) = $step =~ /^node0?(\d+).html/;
 
                             # If we have a step entry in the metadata, check whether this step will be excluded
                             # (it will be excluded if the module is, or the step is listed in the metadata and
@@ -1852,7 +1853,7 @@ sub convert_local {
 
     return $self -> load_template("theme/module/popup.tem",
                                   {"***title***" => $title,
-                                   "***body***"  => encode_base64($data),
+                                   "***body***"  => encode_base64($body),
                                   });
 }
 
@@ -1952,7 +1953,7 @@ sub process_step {
     my $navhash = $self -> build_navlinks($stepid, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
     
     # Save the step out as a templated step...
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".get_step_name($filename));
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".get_step_name($stepid));
     save_file(get_step_name($stepid), 
               $self -> {"template"} -> load_template("theme/module/step.tem",
                                                      {# Basic content
@@ -1965,8 +1966,8 @@ sub process_step {
 
                                                       # Header <link> elements
                                                       "***startlink***"     => $navhash -> {"link"} -> {"first"},
-                                                      "***prevlink***"      => $prevlink,
-                                                      "***nextlink***"      => $nextlink,
+                                                      "***prevlink***"      => $navhash -> {"link"} -> {"previous"},
+                                                      "***nextlink***"      => $navhash -> {"link"} -> {"next"},
                                                       "***lastlink***"      => $navhash -> {"link"} -> {"last"},
 
                                                       # Module complexity (difficulty is uc(level) for readability)
