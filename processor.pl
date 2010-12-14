@@ -129,8 +129,7 @@ sub load_plugins {
     my $plugins;
 
     no strict 'refs'; # can't have strict refs on during plugin loading.
-    my $plugin;
-    while($plugin = glob(path_join($plugindir, "*.pm"))) {
+    while(my $plugin = glob(path_join($plugindir, "*.pm"))) {
         $logger -> print($logger -> DEBUG, "Detected plugin $plugin, attempting to load...");
 
         # load the plugin
@@ -146,6 +145,8 @@ sub load_plugins {
                                   metadata => $metadata,
                                   template => $template,
                                   filter   => $filter);
+
+        die "FATAL: Unable to initialise $plugin! new() returned nothing.\n" if(!$obj);
 
         # Obtain the handler type (should be input, output, or reference)
         my $htype = $obj -> get_type();
