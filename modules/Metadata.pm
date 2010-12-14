@@ -73,6 +73,10 @@ sub validate_metadata_course {
     # And a message must be provided.
     die "FATAL: No front page message specified in course metadata" if(!$xml -> {"course"} -> {"message"});
 
+    # And width and height provided.
+    die "FATAL: No splash image width specified in course metadata" if(!$xml -> {"course"} -> {"width"});
+    die "FATAL: No splash image height specified in course metadata" if(!$xml -> {"course"} -> {"height"});
+
     return 1;
 }
 
