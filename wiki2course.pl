@@ -773,7 +773,12 @@ sub wiki_export_module {
                                 $body = process_entities_html($wikih, $module, $body, $mediahash);
                             }
 
-                            save_file($stepname, "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n<title>".$title."</title>\n</head><body><div id=\"content\">\n".$body."\n</div><!-- id=\"content\" -->\n</body>\n</html>\n");
+                            save_file($stepname, 
+                                      "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n<title>".
+                                      $title.
+                                      "</title>\n</head><body><div id=\"content\">\n".
+                                      $body.
+                                      "\n</div><!-- id=\"content\" -->\n</body>\n</html>\n");
                            
                             # Locate and record any markers
                             my @marklist = $body =~ /(.{0,16}\?\s*\?\s*\??.{0,56})/go;
