@@ -297,6 +297,41 @@ sub get_maximum_stepid {
 }
 
 
+## @method $ get_extrahead($level)
+# Obtain the extra header block set for the course, with any {COURSE_BASE} markers
+# replaced with an appropriate path back to the base of the course.
+#
+# @param level The level at which the page this should be inserted at will be. Must
+#              be one of "step", "theme", "glossary", "references", "course".
+# @return The extra header string to include in the page head element.
+sub get_extrahead {
+    my $self  = shift;
+    my $level = shift;
+
+    my $extra = $self -> {"mdata"} -> {"course"} -> {"extrahead"} || "";
+
+    # don't bother doing anything if we have nothing set
+    return $extra if(!$extra);
+
+    # work out any prefix we need.
+    my $backup;
+    if($level eq "step") {
+        $backup = "../../" 
+    } elsif ($level eq "theme" || $level eq "glossary" || $level eq "resources") {
+        $backup = "../"; 
+    } elsif($level eq "course") {
+        $backup = "";
+    } else {
+        die "FATAL Illegal level $level specified in get_extrahead. This should not happen.\n";
+    }
+
+    # Replace the base marker as needed
+    $extra =~ s|\{COURSE_BASE\}/|$backup|g;
+
+    return $extra;
+}
+
+
 # ============================================================================
 #  Interlink handling
 #  
@@ -611,7 +646,7 @@ sub write_glossary_file {
               $self -> {"template"} -> load_template("glossary/entrypage.tem",
                                                      {"***title***"        => $title,
                                                       "***glosrefblock***" => $self -> build_glossary_references("glossary"),
-                                                      "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***include***"      => $self -> get_extrahead("glossary"),
                                                       "***index***"        => $self -> build_glossary_indexbar($letter, $charmap),
                                                       "***breadcrumb***"   => $self -> {"template"} -> load_template("glossary/breadcrumb-content.tem",
                                                                                                                      {"***letter***" => $letter }),
@@ -685,7 +720,7 @@ sub write_glossary_pages {
     # Create the content of the page
     save_file(path_join($outdir, "index.html"), $self -> {"template"} -> load_template("glossary/indexpage.tem",
                                                                                        {"***glosrefblock***" => $self -> build_glossary_references("glossary"),
-                                                                                        "***include***"      => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                                                        "***include***"      => $self -> get_extrahead("glossary"),
                                                                                         "***index***"        => $self -> build_glossary_indexbar("", $charmap),
                                                                                         "***breadcrumb***"   => $self -> {"template"} -> load_template("glossary/breadcrumb-indexonly.tem"),
                                                                                         "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
@@ -863,7 +898,7 @@ sub write_theme_textindex {
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("theme"),
-                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***include***"       => $self -> get_extrahead("theme"),
                                                       "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                      }));
 }
@@ -915,7 +950,7 @@ sub write_theme_index {
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("theme"),
-                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***include***"       => $self -> get_extrahead("theme"),
                                                       "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                      }));
 
@@ -958,7 +993,7 @@ sub write_course_textindex {
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("course"),
-                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***include***"       => $self -> get_extrahead("course"),
                                                       "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                      }));
 }
@@ -1061,7 +1096,7 @@ sub write_course_index {
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("course"),
-                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***include***"       => $self -> get_extrahead("course"),
                                                       "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                      }));
 }
@@ -1095,7 +1130,7 @@ sub write_course_frontpage {
 
                                      # Standard stuff
                                      "***glosrefblock***"  => $self -> build_glossary_references("course"),
-                                     "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                     "***include***"       => $self -> get_extrahead("course"),
                                      "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
                                     }));
 }
@@ -1985,7 +2020,7 @@ sub process_step {
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("module"),
-                                                      "***include***"       => $self -> {"mdata"} -> {"course"} -> {"extrahead"},
+                                                      "***include***"       => $self -> get_extrahead("step"),
                                                       "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                      }))
         or die "FATAL: Unable to write to ".get_step_name($stepid).": $!\n";
