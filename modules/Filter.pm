@@ -120,6 +120,10 @@ sub filter {
         return 0 if($self -> {"filters"} -> {lc($exclude)});
     }
 
+    # If we get here, either the resource has no excludes, or none of them match filters
+    # set by the user. If there are no includes, we should include the resource
+    return 1 if(!$resource -> {"filters"} -> {"include"});
+
     # None of the excludes match (or we have no excludes), so do any of the includes match?
     foreach my $include (@{$resource -> {"filters"} -> {"include"}}) {
         next if(ref($include)); # again, this may not be a string, so skip it if it's a reference
@@ -164,43 +168,49 @@ sub exclude_resource {
 
 ## @method $ includes_filter($resource)
 # A special filtering function needed to support filtering of resources in theme
-# include blocks. This function will attempt to match the filters set by the user
-# against the filters set for the specified resource and only indicate that the 
-# resource should be included if all filters set by the user match those on the 
-# resource exactly.
-#
-# @note This function will include resources iff the filters set by the user 
-#       match those on the resource. This behaviour differs from normal filtering
-#       in that it does not follow the normal include/exclude options. Please see
-#       the documentation for more details.
+# include blocks. This performs the same include/exclude calculation as filter(),
+# except that it assumes the filters will be specified as comma separated values
+# stored in 'include' and 'exclude' keys in the provided resource hash.
 #
 # @param resource A reference to the hash containing the include resource metadata.
 # @return true if the resource should be included, false otherwise.
 sub includes_filter {
-    my $self = shift;
+    my $self     = shift;
     my $resource = shift;
 
-    # First off, if there are no filters on the resource we return true if the user
-    # has set no filters, otherwise false...
-    return (scalar(keys(%{$self -> {"filters"}})) == 0) if(!defined($resource -> {"filters"}) || !$resource -> {"filters"});
+    # If we have no include or exclude set on the resource, it is always included
+    return 1 if(!$resource -> {"include"} && !$resource -> {"exclude"});
 
-    # Okay, we have some filters on the resource, split them 
-    my @resfilters = split(/,/, $resource -> {"filters"});
+    # if we have no filters set in the config, include the resource as long as
+    # it has no include elements.
+    return 1 if(keys(%{$self -> {"filters"}}) == 0 && !$resource -> {"include"});
 
-    # We can immediately fall over here if the count of user-set and resource-set filters differ
-    return 0 if(scalar(@resfilters) != scalar(keys(%{$self -> {"filters"}})));
+    # Do we have any exclude filters set? If so, check whether one matches the
+    # filters set by the user.
+    if($resource -> {"exclude"}) {
+        # split the excludes up
+        my @excludes = split(/,/, $resource -> {"exclude"});
 
-    # Okay, now we know the number of filters match, but they could be different filter names,
-    # so we need to go through the filters on the resource, check that they match the user-set
-    # ones, and store them in a checked hash to make sure that we don't check the same filter 
-    # twice.
-    my $checked;
-    foreach my $filter (@resfilters) {
-        $checked -> {$filter} = 1 if($self -> {"filters"} -> {$filter});
+        # Check whether the excludes have been set by the user
+        foreach my $exclude (@excludes) {
+            return 0 if($self -> {"filters"} -> {lc($exclude)});
+        }
     }
 
-    # now, if the size of the checked hash matches the filters hash, we have complete match
-    return scalar(keys(%$checked)) == scalar(keys(%{$self -> {"filters"}}));
+    # If we get here, either the resource has no excludes, or none of them match filters
+    # set by the user. If there are no includes, we should include the resource
+    return 1 if(!$resource -> {"include"});
+
+    # no excludes have been set, or at least none match, and we have includes so process them.
+    my @includes = split(/,/, $resource -> {"include"});
+
+    # do any includes match?
+    foreach my $include (@includes) {
+        return 1 if($self -> {"filters"} -> {lc($include)});
+    }
+    
+    # Get here and we have one or more includes but none of them match, so we don't include
+    return 0;
 }
 
 1;
