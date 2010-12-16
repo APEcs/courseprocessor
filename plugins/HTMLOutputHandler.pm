@@ -46,7 +46,7 @@ use Utils qw(check_directory resolve_path load_file save_file lead_zero path_joi
 use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
 
 # The commandline arguments to pass to htmltidy when cleaning up output.
-use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no";
+use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no --merge-spans no";
 
 # Should backups be made before steps are tidied?
 use constant DEFAULT_BACKUP       => 0;
@@ -147,6 +147,12 @@ sub process {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing themes.");
 
+    # Display progress if needed...
+    $self -> {"progress"} = ProgressBar -> new(maxvalue => $self -> {"stepcount"},
+                                               message  => "HTMLOutputHandler processing html files...")
+        if(!$self -> {"config"} -> {"Processor"} -> {"quiet"} && $self -> {"config"} -> {"Processor"} -> {"verbosity"} == 0);
+    my $processed = 0;
+
     # Go through each theme defined in the metadata, processing its contents into 
     # the output format.
     foreach my $theme (keys(%{$self -> {"mdata"} -> {"themes"}})) {
@@ -195,6 +201,9 @@ sub process {
                         }
 
                         $self -> process_step($theme, $module, $stepid, $maxstep);
+
+                        # Update the progress bar if needed
+                        $self -> {"progress"} -> update(++$processed) if($self -> {"progress"});
                     }
                     chdir($cwd);
 
@@ -218,6 +227,9 @@ sub process {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $theme.");
     } # foreach my $theme (@themes) 
 
+    # We need a newline after the progress bar if it is enabled.
+    print "\n" if($self -> {"progress"});
+
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing course index files.");
     $self -> write_course_index();
     $self -> write_course_textindex();
@@ -228,6 +240,9 @@ sub process {
 
     # Last stage is to remove all unnecessary media from the media directory.
     $self -> cleanup_media();
+
+    # show any tidy output messages
+    print "Tidy output messages follow:\n".$self -> {"tidyout"} if($self -> {"tidyout"});
 
     # All done...
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "HTMLOutputhandler processing complete");
@@ -441,7 +456,8 @@ sub build_glossary_references {
     my $level      = shift;
     
     $level = "" if($level eq "course");
-    $level = "theme/module" if($level eq "module");
+    $level = "theme/" if($level eq "theme");
+    $level = "theme/module/" if($level eq "module");
 
     # construct the filename for the subtemplates
     my $glossary   = ($self -> {"terms"} && scalar(keys(%{$self -> {"terms"}}))) ? "glossary_en" : "glossary_dis";
@@ -449,8 +465,8 @@ sub build_glossary_references {
     my $name = $glossary."_".$references.".tem";
 
     # And construct the block
-    return $self -> {"template"} -> load_template("$level/glossary_references_block.tem",
-                                                  { "***entries***" => $self -> {"template"} -> load_template("$level/$name") });
+    return $self -> {"template"} -> load_template($level."glossary_references_block.tem",
+                                                  { "***entries***" => $self -> {"template"} -> load_template($level."$name") });
 }  
 
 
@@ -814,14 +830,14 @@ sub build_dependencies {
             # Skip targets that are not included
             next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"exclude_resource"});
             
-            $entries .= $self -> {"template"} -> load_template($level."index_dependency_delimit.tem") if($entries);
-            $entries .= $self -> {"template"} -> load_template($level."index_dependency.tem",
+            $entries .= $self -> {"template"} -> load_template("index_dependency_delimit.tem") if($entries);
+            $entries .= $self -> {"template"} -> load_template("index_dependency.tem",
                                                                {"***url***"   => "#$entry",
                                                                 "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"title"}});
         }         
     }
 
-    return $self -> {"template"} -> load_template($level."index_entry_".$mode.".tem", {"***entries***" => $entries});
+    return $self -> {"template"} -> load_template("index_entry_".$mode.".tem", {"***entries***" => $entries});
 }
 
 
@@ -897,7 +913,7 @@ sub write_theme_textindex {
               $self -> {"template"} -> load_template("theme/themeindex.tem",
                                                      {# Basic content
                                                       "***data***"         => $self -> build_index_modules($theme, "theme"),
-                                                      "***title***"        => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"title"},
+                                                      "***title***"        => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"},
 
                                                       # Dropdown in the menu bar
                                                       "***themedrop***"    => $self -> get_theme_dropdown($theme, "theme"),
@@ -949,7 +965,7 @@ sub write_theme_index {
               $self -> {"template"} -> load_template("theme/index.tem",
                                                      {# Basic content
                                                       "***body***"         => $body,
-                                                      "***title***"        => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"title"},
+                                                      "***title***"        => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"},
 
                                                       # Dropdown in the menu bar
                                                       "***themedrop***"    => $self -> get_theme_dropdown($theme, "theme"),
@@ -1059,10 +1075,10 @@ sub write_course_index {
             # the span has to be handled later, as at this point we can't assume that
             # scalar(@themenames) is the number of themes that will end up generated.
             push(@outlist, $self -> {"template"} -> load_template("map_cell.tem",
-                                                                  {"***name***"    => $theme,
-                                                                   "***mediadir**" => $relpath,
-                                                                   "***button***"  => "cmap_".$theme."_off.png",
-                                                                   "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}}));
+                                                                  {"***name***"     => $theme,
+                                                                   "***mediadir***" => $relpath,
+                                                                   "***button***"   => "cmap_".$theme,
+                                                                   "***title***"    => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}}));
         }
 
         # Need to store the table somewhere.
@@ -1082,11 +1098,8 @@ sub write_course_index {
             # Otherwise, we want to pull out two cells at a time
             } else {
                 $tablebody .= $self -> {"template"} -> load_template("map_row.tem", 
-                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], 
-                                                                                                                                 {"***span***" => ''})});
-                $tablebody .= $self -> {"template"} -> load_template("map_row.tem", 
-                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], 
-                                                                                                                                 {"***span***" => ''})});
+                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], {"***span***" => ''}).
+                                                                                       $self -> {"template"} -> process_template($outlist[$cell++], {"***span***" => ''})});
             }
         }
 
@@ -1095,7 +1108,7 @@ sub write_course_index {
     }
 
     # dump the index.
-    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "coursemap.html"),
               $self -> {"template"} -> load_template("coursemap.tem",
                                                      {"***body***"         => $body,
                                                       "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
@@ -1727,11 +1740,11 @@ sub cleanup_media {
         }
     }
 
-    my $mediadir = path_join($self -> {"config"} -> {"Process"} -> {"outputdir"}, $self -> {"config"} -> {"Processor"} -> {"mediadir"});
+    my $mediadir = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $self -> {"config"} -> {"Processor"} -> {"mediadir"});
 
     # Get a list of filenames in the media directory
     opendir(MEDIA, $mediadir)
-        or die "FATAL: Unable to open media directory for reading: $!\n";
+        or die "FATAL: Unable to open media directory ($mediadir) for reading: $!\n";
     my @names = readdir(MEDIA);
     closedir(MEDIA);
 
@@ -1889,7 +1902,7 @@ sub convert_local {
     my $body  = shift;
 
     # Pull out the title from the arguments
-    my ($title) = $args =~ /title="([^"]+)"/si;
+    my ($title) = $args =~ /text="([^"]+)"/si;
 
     # Other arguments are discarded in this version as they no longer have any real meaning.
 
@@ -2053,7 +2066,7 @@ sub process_step {
         my $out = `$cmd 2>&1`;
 
         # Echo the output if needed so that debugging of tidy is doable.
-        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Tidy output: $out") if(!$out);
+        $self -> {"tidyout"} .= "=== Tidy warnings for $theme/$module/$title:\n$out" if($out && $out !~ /^\s*$/);
     }
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Scanning step for media file use.");
