@@ -102,7 +102,7 @@
         <div class="top-left"><div class="top-right"><div class="top-center"></div></div></div>
         <div class="middle-left"><div class="middle-right"><div class="middle-center">
 
-            <h1 class="main">Theme Title</h1>
+            <h1 class="main">***title***</h1>
             <div id="content">
             ***data***
             </div><!-- id="content" -->
