@@ -548,12 +548,12 @@ sub build_glossary_indexentry {
     my $active  = shift;
 
     if($active) {
-        return $self -> load_template("glossary/index-active.tem"    , { "***letter***" => uc($letter) });
+        return $self -> {"template"} -> load_template("glossary/index-active.tem"    , { "***letter***" => uc($letter) });
     } elsif($entries && (scalar(@$entries) > 0)) {
-        return $self -> load_template("glossary/index-indexed.tem"   , { "***letter***" => uc($letter),
-                                                                         "***link***"   => $link});        
+        return $self -> {"template"} -> load_template("glossary/index-indexed.tem"   , { "***letter***" => uc($letter),
+                                                                                         "***link***"   => $link});
     } else {
-        return $self -> load_template("glossary/index-notindexed.tem", { "***letter***" => uc($letter) });            
+        return $self -> {"template"} -> load_template("glossary/index-notindexed.tem", { "***letter***" => uc($letter) });
     }
 
 }
@@ -1298,9 +1298,9 @@ sub build_module_dropdowns {
             # first determine whether buildmod is a prerequisite, leadsto or the current module
             if($buildmod eq $module) {
                 $relationship = "-current";
-            } elsif(is_related($theme, $module, "prerequisites", $buildmod)) {
+            } elsif($self -> is_related($theme, $module, "prerequisites", $buildmod)) {
                 $relationship = "-prereq";
-            } elsif(is_related($theme, $module, "leadsto", $buildmod)) {
+            } elsif($self -> is_related($theme, $module, "leadsto", $buildmod)) {
                 $relationship = "-leadsto";
             } 
 
@@ -1665,12 +1665,13 @@ sub preprocess {
                     closedir(SUBDIR);
                 } # if(-d $fullmodule)
             } # foreach my $module (@modules) 
-            closedir(MODDIR);
+
         } # if(-d $fulltheme)
     } # foreach my $theme (@themes)
 
     closedir(SRCDIR);
-    
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Complete metadata tree is:\n".Data::Dumper -> Dump([$self -> {"mdata"}]));
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Building navigation menus.");
     $self -> build_dropdowns();
 
@@ -1803,13 +1804,13 @@ sub convert_image {
     $imgstyle .= " width: $attrs{width};"   if($attrs{"width"});
     $imgstyle .= " height: $attrs{height};" if($attrs{"height"});
 
-    return $self -> load_template("theme/module/image.tem",
-                                  {"***name***"     => $attrs{"name"},
-                                   "***mediadir***" => $self -> {"config"} -> {"Processor"} -> {"mediadir"},
-                                   "***divclass***" => $divclass,
-                                   "***imgstyle***" => $imgstyle,
-                                   "***alt***"      => $attrs{"alt"} || "image",
-                                   "***title***"    => $attrs{"title"} || "image"});
+    return $self -> {"template"} -> load_template("theme/module/image.tem",
+                                                  {"***name***"     => $attrs{"name"},
+                                                   "***mediadir***" => $self -> {"config"} -> {"Processor"} -> {"mediadir"},
+                                                   "***divclass***" => $divclass,
+                                                   "***imgstyle***" => $imgstyle,
+                                                   "***alt***"      => $attrs{"alt"} || "image",
+                                                   "***title***"    => $attrs{"title"} || "image"});
 }
 
 
@@ -1886,10 +1887,10 @@ sub convert_local {
 
     # Other arguments are discarded in this version as they no longer have any real meaning.
 
-    return $self -> load_template("theme/module/popup.tem",
-                                  {"***title***" => $title,
-                                   "***body***"  => encode_base64($body),
-                                  });
+    return $self -> {"template"} -> load_template("theme/module/popup.tem",
+                                                  {"***title***" => $title,
+                                                   "***body***"  => encode_base64($body),
+                                                  });
 }
 
 
