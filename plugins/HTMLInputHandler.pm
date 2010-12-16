@@ -203,7 +203,7 @@ sub process {
 
     # Attempt to load the latex header from the course metadata. Fall back on the predefined
     # latex header if the header is not specified in the metadata.
-    my $course = $self -> {"metadata"} -> load_metadata(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "metadata.xml"), 1);
+    my $course = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "course", 1);
     if(ref($course) && $course -> {"course"} -> {"latexintro"}) {
         $self -> {"latexintro"} = $course -> {"course"} -> {"latexintro"};
     } else {
@@ -274,7 +274,7 @@ sub process {
                 } # if(-d $module) {
             } # foreach my $module (@modentries) {
 
-            closedir(MODDIR);
+            closedir(THEMEDIR);
 
         } # if(-d $theme) {
     } # foreach my $theme (@srcentries) {

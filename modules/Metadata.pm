@@ -227,6 +227,7 @@ sub validate_metadata {
 # are met.
 #
 # @param srcdir    The directory to load metdata from.
+# @param name      The human-readable name of the directory the metadata is being read from.
 # @param validate  If true, the metadata is validated to ensure it contains 
 #                  required sections
 # @return 1 if the metadata file does not exist, 0 if the metadata exists but
@@ -235,13 +236,16 @@ sub validate_metadata {
 sub load_metadata {
     my $self     = shift;
     my $srcdir   = shift;
+    my $name     = shift;
     my $validate = shift;
 
     my $data;
 
     # If the xml file exists, attempt to load it
     if(-e "$srcdir/metadata.xml") {
-        $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file' ]);
+        eval { $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file' ]); };
+
+        die "FATAL: Unable to parse $name metadata.xml file. Errors were:\n$@\n" if($@);
 
         # If we need to validate the metadata, go ahead and do so.
         if($validate) {

@@ -1542,7 +1542,7 @@ sub preprocess {
     $self -> {"stepcount"} = 0;
 
     # Load the course metadata here. We don't need it, but it'll be useful later.
-    $self -> {"mdata"} = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, 1);
+    $self -> {"mdata"} = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "course", 1);
     die "FATAL: Unable to load course metadata.\n"
         if(!defined($self -> {"mdata"} -> {"course"}) || ref($self -> {"mdata"} -> {"course"}) ne "HASH");
     
@@ -1558,7 +1558,7 @@ sub preprocess {
         # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
         if(-d $fulltheme) {
             # load the metadata if possible
-            my $metadata = $self -> {"metadata"} -> load_metadata($fulltheme, 1);
+            my $metadata = $self -> {"metadata"} -> load_metadata($fulltheme, "theme '$theme'", 1);
 
             # skip directories without metadata, or non-theme metadata
             next if($metadata == 1 || !$metadata -> {"theme"});
