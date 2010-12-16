@@ -66,6 +66,7 @@ sub validate_metadata_course {
     die "FATAL: course metadata.xml is missing course version."     if(!$xml -> {"course"} -> {"version"});
     die "FATAL: course metadata.xml is missing course splash."      if(!$xml -> {"course"} -> {"splash"});
     die "FATAL: course metadata.xml is missing course splash type." if(!$xml -> {"course"} -> {"type"});
+    die "FATAL: course metadata.xml is missing course title."       if(!$xml -> {"course"} -> {"title"});
 
     # The type must be valid.
     die "FATAL: illegal splash type specified in course metadata."  if(!($xml -> {"course"} -> {"type"} eq "image" ||
