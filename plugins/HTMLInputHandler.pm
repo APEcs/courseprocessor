@@ -222,7 +222,7 @@ sub process {
 
     # Display progress if needed...
     $self -> {"progress"} = ProgressBar -> new(maxvalue => $self -> {"filecount"},
-                                               message  => "Processing html files...")
+                                               message  => "HTMLInputHandler processing html files...")
         if(!$self -> {"config"} -> {"Processor"} -> {"quiet"} && $self -> {"config"} -> {"Processor"} -> {"verbosity"} == 0);
     my $processed = 0;
 
