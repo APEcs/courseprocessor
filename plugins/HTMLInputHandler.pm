@@ -281,6 +281,9 @@ sub process {
 
     closedir(SRCDIR);
 
+    # We need a newline after the progress bar if it is enabled.
+    print "\n" if($self -> {"progress"});
+
     return 1;
 }
 
