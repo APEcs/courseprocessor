@@ -1190,7 +1190,7 @@ wiki2course - generate a course data directory from a wiki namespace.
 
 =head1 SYNOPSIS
 
-backuplj [options]
+wiki2course [options]
 
  Options:
     -c, --convert=MODE       convert mediawiki markup to html (default: on)
