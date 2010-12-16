@@ -182,7 +182,6 @@ sub validate_metadata_theme {
 
     # If we have an includes section, we must have at least one resource section
     if($xml -> {"theme"} -> {"includes"}) {
-        print "Got includes for $themedir\n";
         die "FATAL: Error in metadata: $shortname/metadata.xml contains an includes element with no valid resources\n" if(ref($xml -> {"theme"} -> {"includes"}) ne "HASH" ||
                                                                                                                           !$xml -> {"theme"} -> {"includes"} -> {"resource"} ||
                                                                                                                           !scalar($xml -> {"theme"} -> {"includes"} -> {"resource"}));
