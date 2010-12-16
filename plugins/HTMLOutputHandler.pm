@@ -1648,7 +1648,7 @@ sub preprocess {
 
                             # record the step details for later generation steps, if necessary
                             if(!$exclude_step) {
-                                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step as $theme -> $module -> steps -> $step");
+                                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step $stepid as $theme -> $module -> steps -> $step");
                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}     = $title;
                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}  = $step;
                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"} = lead_zero(++$outstep);

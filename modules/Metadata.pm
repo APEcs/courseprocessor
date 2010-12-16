@@ -150,12 +150,6 @@ sub validate_metadata_theme {
             }
         }
 
-        # If we have an includes section, we must have at least one resource section
-        if($xml -> {"theme"} -> {"includes"}) {
-            die "FATAL: metadata_validate: $shortname/metadata.xml contains an includes element with no resources\n" if(!$xml -> {"theme"} -> {"includes"} -> {"resource"} ||
-                                                                                                                        !scalar($xml -> {"theme"} -> {"includes"} -> {"resource"}));
-        }
-
         # Do the input handler(s) think the module is valid?
         my $valid = 0;
         my @errors = ();
@@ -184,6 +178,15 @@ sub validate_metadata_theme {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$module in $shortname/metadata.xml appears to be valid");
         }
     }
+
+    # If we have an includes section, we must have at least one resource section
+    if($xml -> {"theme"} -> {"includes"}) {
+        print "Got includes for $themedir\n";
+        die "FATAL: Error in metadata: $shortname/metadata.xml contains an includes element with no valid resources\n" if(ref($xml -> {"theme"} -> {"includes"}) ne "HASH" ||
+                                                                                                                          !$xml -> {"theme"} -> {"includes"} -> {"resource"} ||
+                                                                                                                          !scalar($xml -> {"theme"} -> {"includes"} -> {"resource"}));
+    }
+
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$shortname/metadata.xml is valid");
 
