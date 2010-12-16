@@ -72,7 +72,7 @@ my %default_config = ( course_page   => "Course",
     );
 
 # various globals set via the arguments
-my ($quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile) = ('', '', '', '', '', WIKIURL, '', '', 0, 'media', '');
+my ($retainold, $quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile) = ('', '', '', '', '', '', WIKIURL, '', '', 0, 'media', '');
 my $man = 0;
 my $help = 0;
 
@@ -920,7 +920,11 @@ sub wiki_export_theme {
     $logger -> print($logger -> NOTICE, "Parsing metadata information to determine directory structure...") unless($quiet);
     
     # Parse the metadata into a useful format
-    my $mdxml = XMLin($metadata);
+    my $mdxml;
+    eval { $mdxml = XMLin($metadata); };
+
+    # Fall over if we have an error.
+    die "FATAL: Unable to parse metadata for $theme. Error was:\n$@\n" if($@);
     
     # Did the parse work?
     if($mdxml) {
@@ -1114,7 +1118,8 @@ GetOptions('outputdir|o=s' => \$basedir,
            'convert|c=s'   => \$convert,
            'config|g=s'    => \$configfile,
            'verbose|v+'    => \$verbose,
-           'quiet|q=s'     => \$quiet,
+           'quiet|q!'      => \$quiet,
+           'retainold|r!'  => \$retainold,
            'help|?|h'      => \$help, 
            'man'           => \$man) or pod2usage(2);
 if(!$help && !$man) {
@@ -1141,6 +1146,12 @@ if($convert eq '') {
 
 # If we don't have a password, prompt for it
 $password = get_password() if(!$password);
+
+# Remove any old coursedata directory, unless it doesn't exist or we don't need to
+if(-e $basedir && !$retainold) {
+    $logger -> print($logger -> DEBUG, "Removing old output directory.") unless($quiet);
+    `rm -rf $basedir`;
+}
 
 # Now we need to process the output directory. Does it exist?
 if(makedir($basedir)) {
@@ -1203,6 +1214,7 @@ wiki2course [options]
     -p, --password=PASSWORD  password to provide when logging in. If this is
                              not provided, it will be requested at runtime.
     -q, --quiet              suppress all normal status output.
+    -r, --retainold          do not delete the output directory if it exists.
     -u, --username=NAME      the name to log into the wiki as.
     -v, --verbose            if specified, produce more progress output.
     -w, --wiki=APIURL        the url of the mediawiki API to use.
@@ -1269,6 +1281,12 @@ saved in your shell history, including the password).
 Suppresses all non-fatal output. If quiet is set, the script will not print
 any status, warning, or debugging information to stdout regardless of the
 verbosity setting. Fatal errors will still be printed to stderr as normal.
+
+=item B<-r, --retainold>
+
+Normally the wiki2course script will remove the output directory if it already
+exists. If you want to suppress this operation for some reason, include this 
+flag.
 
 =item B<-u, --username>
 
