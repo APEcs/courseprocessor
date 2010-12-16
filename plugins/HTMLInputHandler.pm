@@ -47,7 +47,7 @@ use base qw(Plugin); # This class extends Plugin
 
 use Cwd qw(getcwd chdir);
 use Digest::MD5 qw(md5_hex);
-use File::Path;
+use File::Path qw(make_path);
 use ProgressBar;
 use Utils qw(path_join load_file);
 
@@ -270,7 +270,7 @@ sub process {
                         chdir($cwd);
                     } # if(scalar(@subfiles)) {
 
-                    closedir(SUBDIR);
+                    closedir(STEPS);
                 } # if(-d $module) {
             } # foreach my $module (@modentries) {
 

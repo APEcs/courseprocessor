@@ -35,11 +35,11 @@ use strict;
 use base qw(Plugin); # This class extends Plugin
 
 use Cwd qw(getcwd chdir);
-use File::Path;
+use File::Path qw(make_path);
 use ImageTools;
 use MIME::Base64;
 use URI::Encode qw(uri_encode);
-use Utils qw(check_directory resolve_path load_file save_file lead_zero);
+use Utils qw(check_directory resolve_path load_file save_file lead_zero path_join);
 
 
 # The location of htmltidy, this must be absolute as we can not rely on path being set.
@@ -100,7 +100,7 @@ sub use_plugin {
     die "FATAL: HTMLOutputHandler has no template selected.\n" if(!$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     # prepend the processor template directory if the template is not absolute
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = path_join($self -> {"config"} -> {"path"},"templates",$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}) 
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = path_join($self -> {"path"},"templates",$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}) 
         if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
 
     # Force the path to be absolute in all situations
