@@ -179,7 +179,7 @@ sub includes_filter {
     my $resource = shift;
 
     # If we have no include or exclude set on the resource, it is always included
-    return 1 if(!$resource -> {"include"} && !$resource -> {"exclude"});
+    return 1 if(ref($resource) ne "HASH" || (!$resource -> {"include"} && !$resource -> {"exclude"}));
 
     # if we have no filters set in the config, include the resource as long as
     # it has no include elements.
