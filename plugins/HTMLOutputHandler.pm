@@ -84,6 +84,8 @@ sub new {
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"} = DEFAULT_BACKUP       if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"}));
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}       = DEFAULT_TIDY         if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}));
 
+    $self -> {"imagetools"} = new ImageTools(template => $self -> {"template"});
+
     return $self;
 }
 
@@ -158,7 +160,7 @@ sub process {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing theme $theme.");
 
         # Confirm that the theme is a directory, and check inside for subdirs ($theme is a theme, subdirs are modules)
-        my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outdir"}, $theme);
+        my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme);
         if(-d $fulltheme) {
 
             # Now we need to get a list of modules inside the theme. This looks at the list of modules 
@@ -203,8 +205,8 @@ sub process {
             } # foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}}))
 
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing theme index files.");
-            $self -> write_theme_index($fulltheme, $theme);
-            $self -> write_theme_textindex($fulltheme, $theme);
+            $self -> write_theme_index($theme);
+            $self -> write_theme_textindex($theme);
 
         } else { # if(-d $fulltheme) 
             # Seriously, this should never happen, unless the filesystem has been changed under the processor -
@@ -642,7 +644,7 @@ sub write_glossary_file {
     } # foreach my $term (@{$charmap -> {$letter}})
 
     # Save the page out.
-    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $filename), 
+    save_file($filename, 
               $self -> {"template"} -> load_template("glossary/entrypage.tem",
                                                      {"***title***"        => $title,
                                                       "***glosrefblock***" => $self -> build_glossary_references("glossary"),
@@ -805,15 +807,19 @@ sub build_dependencies {
     my $entries = "";
     my $prefix  = ($level eq "course" ? "" : "theme/");
 
-    foreach my $entry (sort @{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"}}) {
-        # Skip targets that are not included
-        next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"exclude_resource"});
-
-        $entries .= $self -> {"template"} -> load_template($level."index_dependency_delimit.tem") if($entries);
-        $entries .= $self -> {"template"} -> load_template($level."index_dependency.tem",
-                                                           {"***url***"   => "#$entry",
-                                                            "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"title"}});
-    }         
+    # Ensure that we have a hash for the specified mode, and it has targets.
+    if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} &&
+       $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"}) {
+        foreach my $entry (sort @{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"}}) {
+            # Skip targets that are not included
+            next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"exclude_resource"});
+            
+            $entries .= $self -> {"template"} -> load_template($level."index_dependency_delimit.tem") if($entries);
+            $entries .= $self -> {"template"} -> load_template($level."index_dependency.tem",
+                                                               {"***url***"   => "#$entry",
+                                                                "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"title"}});
+        }         
+    }
 
     return $self -> {"template"} -> load_template($level."index_entry_".$mode.".tem", {"***entries***" => $entries});
 }
@@ -1040,12 +1046,12 @@ sub write_course_index {
             next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"});
 
             # Buttons first...
-            my $errors = $self -> {"ImageTools"} -> load_render_xml("theme_button_off.xml", 
+            my $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_off.xml", 
                                                                     {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
                                                                     path_join($imgpath, "cmap_".$theme."_off.png"));
             die "FATAL: Unable to generate $theme off image: $errors\n" if($errors);
 
-            $errors = $self -> {"ImageTools"} -> load_render_xml("theme_button_on.xml", 
+            $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_on.xml", 
                                                                  {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
                                                                  path_join($imgpath, "cmap_".$theme."_on.png"));
             die "FATAL: Unable to generate $theme off image: $errors\n" if($errors);
@@ -1123,16 +1129,16 @@ sub write_course_frontpage {
 
     # dump the page.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "frontpage.html"),
-              load_complex_template("frontpage.tem",
-                                    {"***bodytext***"      => $self -> {"mdata"} -> {"course"} -> {"message"},
-                                     "***graphic***"       => $graphic,
-                                     "***title***"         => $self -> {"mdata"} -> {"course"} -> {"title"},
-
-                                     # Standard stuff
-                                     "***glosrefblock***"  => $self -> build_glossary_references("course"),
-                                     "***include***"       => $self -> get_extrahead("course"),
-                                     "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
-                                    }));
+              $self -> {"template"} -> load_template("frontpage.tem",
+                                                     {"***bodytext***"      => $self -> {"mdata"} -> {"course"} -> {"message"},
+                                                      "***graphic***"       => $graphic,
+                                                      "***title***"         => $self -> {"mdata"} -> {"course"} -> {"title"},
+                                                      
+                                                      # Standard stuff
+                                                      "***glosrefblock***"  => $self -> build_glossary_references("course"),
+                                                      "***include***"       => $self -> get_extrahead("course"),
+                                                      "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                     }));
 }
 
 
@@ -2023,8 +2029,7 @@ sub process_step {
                                                       "***glosrefblock***"  => $self -> build_glossary_references("module"),
                                                       "***include***"       => $self -> get_extrahead("step"),
                                                       "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
-                                                     }))
-        or die "FATAL: Unable to write to ".get_step_name($stepid).": $!\n";
+                                                     }));
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete.");
 
@@ -2033,7 +2038,7 @@ sub process_step {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidying ".get_step_name($stepid));
 
         die "FATAL: Unable to run htmltidy: tidy does not exist at ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}."\n"
-            if(-e $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"});
+            if(!-e $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"});
 
         my $name = get_step_name($stepid);
 
@@ -2048,11 +2053,11 @@ sub process_step {
         my $out = `$cmd 2>&1`;
 
         # Echo the output if needed so that debugging of tidy is doable.
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidy output: $out");
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Tidy output: $out") if(!$out);
     }
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Scanning step for media file use.");
-    scan_step_media($body);
+    $self -> scan_step_media($body);
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Step processing complete");
 }
