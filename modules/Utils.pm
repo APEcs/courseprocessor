@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -225,6 +225,27 @@ sub lead_zero {
 
     return "0$value" if($value < 10 && $value !~ /^0/);
     return $value;
+}
+
+
+## @fn $ string_in_array($arrayref, $value)
+# Determine whether the specified value exists in an array. This does a simple
+# interative serach over the array to determine whether value is present in the
+# array.
+#
+# @param arrayref A reference to the array to search.
+# @param value    The value to search for in the array.
+# @return The index of the value on success, undef if the value is not in the array.
+sub string_in_array {
+    my $arrayref = shift;
+    my $value    = shift;
+
+    my $size = scalar(@{$arrayref});
+    for(my $pos = 0; $pos < $size; ++$pos) {
+        return $pos if($arrayref -> [$pos] eq $value);
+    }
+
+    return undef;
 }
 
 1;
