@@ -240,6 +240,9 @@ sub string_in_array {
     my $arrayref = shift;
     my $value    = shift;
 
+    # can't be in an undefined list by definition.
+    return undef if(!$arrayref);
+
     my $size = scalar(@{$arrayref});
     for(my $pos = 0; $pos < $size; ++$pos) {
         return $pos if($arrayref -> [$pos] eq $value);
