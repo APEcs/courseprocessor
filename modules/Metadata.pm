@@ -2,6 +2,7 @@ package Metadata;
 
 use XML::Simple;
 use Data::Dumper;
+use Utils qw(string_in_array);
 use strict;
 
 my $VERSION;
@@ -105,7 +106,7 @@ sub validate_metadata_theme {
     die "FATAL: metadata_validate: $shortname/metadata.xml missing theme title." if(!$xml -> {"theme"} -> {"title"});
     die "FATAL: metadata_validate: $shortname/metadata.xml missing theme name."  if(!$xml -> {"theme"} -> {"name"});
     die "FATAL: metadata_validate: $shortname/metadata.xml missing theme index order."  if(!$xml -> {"theme"} -> {"indexorder"});
-    
+
     # Check modules
     foreach my $module (keys(%{$xml -> {"theme"} -> {"module"}})) {
         next if($module eq "dummy"); # don't bother validating the dummy module
@@ -122,15 +123,23 @@ sub validate_metadata_theme {
             # (we could work around it, but the user should be giving us valid xml, damnit)
             die "FATAL: Error in metadata: please check that each module has at most one <prerequisites> element.\n" if(ref($xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"}) ne "HASH");
 
-            # The target should either be a single name, or a reference to an array of names
+            # The target should be a reference to an array of names, even when there's only one
             my $targets = $xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"};
-            die "FATAL: Error in metadata: malformed prerequisite list for module $module.\n" if(!$targets || !ref($targets) || ref($targets) ne "ARRAY");
+            die "FATAL: Error in metadata: malformed prerequisite list for module $module.\n" if(!ref($targets) || ref($targets) ne "ARRAY");
             
-            # turn the targets into an arrayref if it is not one
-            $targets = [ $targets ] if(!ref($targets));
+            # Check the target exists...
             foreach my $target (@$targets) {
                 die "FATAL: $shortname/metadata.xml contains unknown prerequisite '$target' for '$module'.\n" 
                     if(!$xml -> {"theme"} -> {"module"} -> {$target});
+
+                # Does the target list this module as a leadsto?
+                if(!$xml -> {"theme"} -> {"module"} -> {$target} -> {"leadsto"} ||
+                   !$xml -> {"theme"} -> {"module"} -> {$target} -> {"leadsto"} -> {"target"} ||
+                   !defined(string_in_array($xml -> {"theme"} -> {"module"} -> {$target} -> {"leadsto"} -> {"target"}, $module))) {
+
+                    # this module is not the target's leadsto, so make it so.
+                    push(@{$xml -> {"theme"} -> {"module"} -> {$target} -> {"leadsto"} -> {"target"}}, $module);
+                }                    
             }
         }
         
@@ -139,15 +148,23 @@ sub validate_metadata_theme {
             # As above, if we have leadstos, we need a reference to a hash (essentially just the target element)
             die "FATAL: Error in metadata: please check that each module has at most one <leadsto> element.\n" if(ref($xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"}) ne "HASH");
 
-            # The target should either be a single name, or a reference to an array of names
+            # The target should be a reference to an array of names, even when there's only one
             my $targets = $xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"};
-            die "FATAL: Error in metadata: malformed leadsto list for module $module.\n" if(!$targets || !ref($targets) || ref($targets) ne "ARRAY");
+            die "FATAL: Error in metadata: malformed leadsto list for module $module.\n" if(!ref($targets) || ref($targets) ne "ARRAY");
             
-            # turn the targets into an arrayref if it is not one
-            $targets = [ $targets ] if(!ref($targets));
+            # Check the target exists
             foreach my $target (@$targets) {
                 die "FATAL: $shortname/metadata.xml contains unknown prerequisite '$target' for '$module'.\n" 
                     if(!$xml -> {"theme"} -> {"module"} -> {$target});
+
+                # Does the target list this module as a prerequisite?
+                if(!$xml -> {"theme"} -> {"module"} -> {$target} -> {"prerequisites"} ||
+                   !$xml -> {"theme"} -> {"module"} -> {$target} -> {"prerequisites"} -> {"target"} ||
+                   !defined(string_in_array($xml -> {"theme"} -> {"module"} -> {$target} -> {"prerequisites"} -> {"target"}, $module))) {
+
+                    # this module is not the target's prerequisite, so make it so.
+                    push(@{$xml -> {"theme"} -> {"module"} -> {$target} -> {"prerequisites"} -> {"target"}}, $module);
+                }
             }
         }
 
