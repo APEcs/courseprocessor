@@ -19,8 +19,8 @@ Bug fixes:
     material and attempt to address it.
 
 Additions:
-  - [bug 1] Page transclusion using {{Template}} syntax supported. Limited 
-    support does not include full template variable processing.
+  - [bug 1] Page transclusion using {{Template}} syntax supported. Full 
+    support for all template operations available.
     
   - [bug 2] Media files (images, animations, etc) are now listed on a single 
     Media page.
