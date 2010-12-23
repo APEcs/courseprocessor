@@ -97,7 +97,7 @@ sub merge_commandline {
     my $config = shift;
 
     foreach my $arg (keys(%$args)) {
-        $config -> {"Processor"} -> {$arg} = $args -> {$arg};
+        $config -> {"Processor"} -> {$arg} = $args -> {$arg} if(defined($args -> {$arg}));
     }
 
     # Explicitly set the verbosity and media directorues if they have not been set yet
