@@ -669,6 +669,8 @@ sub metadata_find_module {
     my $metadata = shift;
     my $title    = shift;
 
+    print Data::Dumper -> Dump([$metadata]);
+
     foreach my $name (keys(%{$metadata -> {"module"}})) {
         if($metadata -> {"module"} -> {$name} -> {"title"} eq $title) {
             # Check that the name does not contain spaces...
@@ -921,7 +923,7 @@ sub wiki_export_theme {
     
     # Parse the metadata into a useful format
     my $mdxml;
-    eval { $mdxml = XMLin($metadata); };
+    eval { $mdxml = XMLin($metadata, ForceArray => ['module'] ); };
 
     # Fall over if we have an error.
     die "FATAL: Unable to parse metadata for $theme. Error was:\n$@\n" if($@);
