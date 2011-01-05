@@ -854,8 +854,9 @@ sub build_index_modules {
     my $theme = shift;
     my $level = shift;
 
-    my $prefix  = ($level eq "course" ? "" : "theme/");
-    
+    my $prefix      = ($level eq "course" ? "" : "theme/");
+    my $themeprefix = ($level eq "course" ? $theme : ""); 
+
     # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
                                if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
@@ -879,13 +880,14 @@ sub build_index_modules {
             next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"});
 
             $steps .= $self -> {"template"} -> load_template($prefix."index_step.tem",
-                                                             {"***url***"   => "$module/".get_step_name($stepid),
+                                                             {"***url***"   => path_join($themeprefix, $module, get_step_name($stepid)),
                                                               "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}});
         }
 
         # Generate the entry for the module.
         $body .= $self -> {"template"} -> load_template($prefix."index_entry.tem",
                                                         {"***name***"       => $module,
+                                                         "***stepurl***"    => path_join($themeprefix, $module, get_step_name(1)),
                                                          "***title***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
                                                          "***level***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
                                                          "***difficulty***" => ucfirst($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}),
