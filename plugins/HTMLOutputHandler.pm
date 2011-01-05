@@ -1019,6 +1019,9 @@ sub write_course_textindex {
                                                          "***modules***" => $self -> build_index_modules($theme, "course")});
     } # foreach $theme (@themenames)
 
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Scanning index for media file use.");
+    $self -> scan_step_media($body);
+
     # dump the index.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
               $self -> {"template"} -> load_template("courseindex.tem",
