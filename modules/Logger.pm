@@ -50,6 +50,8 @@ use constant MAX_VERBOSITY => 2;
 # fatalblargh - If set to true, any calls to the blargh function kill the 
 #               script immediately, otherwise blarghs produce warning messages.
 #               Defaults to false.
+# logname     - If set, messages sent to warn_log and die_log will be appended
+#               to the specified log file. See start_log below for more details.
 #
 # @param args A hash of key, value pairs with which to initialise the object.
 # @return A new Logging object.
@@ -64,7 +66,10 @@ sub new {
         @_,
     };
 
-    return bless $self, $class;
+    my $obj = bless $self, $class;
+
+    $obj -> start_log($self -> {"logname"}) if($self -> {"logname"});
+    return $obj;
 }
 
 
@@ -81,6 +86,58 @@ sub set_verbosity {
     $newlevel = MAX_VERBOSITY if(!defined($newlevel) || $newlevel < 0 || $newlevel > MAX_VERBOSITY);
 
     $self -> {"verbosity"} = $newlevel;
+}
+
+
+## @method void start_log($filename, $progname)
+# Start logging warnings and errors to a file. If logging is already enabled,
+# this will close the currently open log before opening the new one. The log
+# file is appended to rather than truncated.
+#
+# @warning THIS SHOULD NOT BE CALLED IN PRODUCTION! This function should be used
+#          for testing only, otherwise you may run into <i>all kinds of fun</i>
+#          with attempts to concurrently append to the log file. If you decide
+#          to ignore this, don't complain to me when things blow up in your face.
+#
+# @param filename The name of the file to log to.
+# @param progname A optional program name to show in the log. Defaults to $0
+sub start_log {
+    my $self     = shift;
+    my $filename = shift;
+    my $progname = shift || $0;
+
+    # Close the logfile if it has been opened already
+    $self -> end_log($progname) if($self -> {"logfile"});
+
+    # Open in append mode
+    open($self -> {"logfile"}, ">> $filename")
+        or die "Unable to open log file $filename: $!";
+
+    my $tm = scalar localtime;
+    print $logfile "\n----------= Starting $progname [pid: $$] at $tm =----------\n";
+    $self -> {"logtime"} = time();
+}
+
+
+## @method void end_log($progname)
+# Stop logging warnings and errors to a file. This will write an indicator 
+# that logging is stopping to the file and then close it.
+#
+# @param progname A optional program name to show in the log. Defaults to $0
+sub end_log {
+    my $self     = shift;
+    my $progname = shift || $0;
+
+    if($self -> {"logfile"}) {
+        my $tm = scalar localtime;
+        my $elapsed = time() - $self -> {"logtime"};
+
+        print $self -> {"logfile"} "----------= Completed $progname [pid: $$] at $tm, execution time $elapsed seconds =----------\n";
+        close($self -> {"logfile"});
+
+        # Make sure this is undefed so that we don't try to repeat close it.
+        $self -> {"logfile"} = undef;
+    }
 }
 
 
@@ -148,5 +205,52 @@ sub blargh {
         $self -> print(WARNING, $message); 
     } 
 }
+
+
+## @method void warn_log($ip, $message)
+# Write a warning message to STDERR and to a log file if it is opened. Warnings
+# are prepended with the process ID and an optional IP address, and entries
+# written to the log file are timestamped.
+#
+# @note This method completely ignores all verbosity controls (unlike print()),
+#       it is not intended for use in situations where the user has control over
+#       verbosity levels.
+#
+# @param ip      The IP address to log with the message. Defaults to 'unknown'
+# @param message The message to write to the log
+sub warn_log {
+    my $self    = shift;
+    my $ip      = shift || "unknown";
+    my $message = shift;
+
+    print $self -> {"logfile"} scalar(localtime)," [$$:$ip]: $message\n"
+        if($self -> {"logfile"});
+
+    warn "[$$:$ip]: $message\n";
+}
+
+
+## @method void die_log($ip, $message)
+# Write an error message a log file if it is opened, and then die. Errors
+# are prepended with the process ID and an optional IP address, and entries
+# written to the log file are timestamped.
+#
+# @note This method completely ignores all verbosity controls (unlike print()),
+#       it is not intended for use in situations where the user has control over
+#       verbosity levels.
+#
+# @param ip      The IP address to log with the message. Defaults to 'unknown'
+# @param message The message to write to the log
+sub die_log {
+    my $self    = shift;
+    my $ip      = shift || "unknown";
+    my $message = shift;
+
+    print $self -> {"logfile"} scalar(localtime)," [$$:$ip]: $message\n"
+        if($self -> {"logfile"});
+
+    die "[$$:$ip]: $message\n";
+}
+
 
 1;
