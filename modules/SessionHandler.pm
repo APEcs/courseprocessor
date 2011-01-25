@@ -249,6 +249,66 @@ sub session_cookies {
 }
 
 
+## @method $ set_session_data($key, $value)
+# Set the value of a data element for the current session. This will store the 
+# sepecified key with the associated value in the session data table so that it
+# may be used over multiple requests as needed.
+#
+# @param key   The name of the data to store.
+# @param value The value to store.
+# @return true on success, undef if an error was encountered.
+sub set_session_data {
+    my $self  = shift;
+    my $key   = shift;
+    my $value = shift;
+
+    my $sessdata = $self -> get_session($self -> {"sessid"})
+        or return set_error("Unable to locate session data for current session.");
+
+    # Delete any existing data, as it is no longer needed
+    my $nukedata = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                               " WHERE id = ? AND key = ?");
+    $nukedata -> execute($sessdata -> {"id"}, $key)
+        or return set_error("Unable to remove old data for session data '$key'\nError was: ".$self -> {"dbh"} -> errstr);
+        
+    # Now insert the new data
+    my $newdata = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                              " VALUES(?, ?, ?)");
+    $newdata -> execute($sessdata -> {"id"}, $key, $value)
+        or return set_error("Unable to store data for session data '$key'\nError was: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
+}
+
+
+## @method $ get_session_data($key)
+# Get the value of a data element for the current session. This will retrieve
+# the value for the sepecified key in the session data table.
+#
+# @param key   The name of the data to retrieve.
+# @return The value stored for the key, or undef if the key is not set.
+sub set_session_data {
+    my $self  = shift;
+    my $key   = shift;
+
+    my $sessdata = $self -> get_session($self -> {"sessid"})
+        or return set_error("Unable to locate session data for current session.");
+
+    my $data = $self -> {"dbh"} -> prepare("SELECT value FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                           " WHERE id = ? AND key = ?");
+    $data -> execute($sessdata -> {"id"}, $key)
+        or return set_error("Unable to obtain session data for '$key'\nError was: ".$self -> {"dbh"} -> errstr);
+        
+    # Return the data if we have it...
+    my $datarow = $data -> fetchrow_arrayref();
+    return $datarow -> [0] if($datarow);
+
+    # Return nothing if we don't...
+    return set_error("");
+}
+    
+
+
 # ==============================================================================
 # Theoretically internal stuff
 
