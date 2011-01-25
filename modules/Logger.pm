@@ -41,7 +41,7 @@ use constant MAX_VERBOSITY => 2;
 
 ## @cmethod $ new(%args)
 # Create a new Logging object for use around the system. This creates an object
-# that provides functions for printing or storing log information durin script
+# that provides functions for printing or storing log information during script
 # execution. Meaningful options for this are:
 #
 # verbosity   - One of the verbosity level constants, any messages over this will
