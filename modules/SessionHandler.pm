@@ -154,7 +154,7 @@ sub create_session {
 
     # create a new session
     my $sessh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"sessions"}.
-                                            " VALUES(?, ?, ?, ?, 0)");
+                                            " VALUES(NULL, ?, ?, ?, ?, 0)");
     $sessh -> execute($self -> {"sessid"},
                       $now,
                       $now,
