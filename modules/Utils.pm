@@ -27,14 +27,14 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
 # Take an array of path fragments and concatenate them together. This will 
 # concatenate the list of path fragments provided using '/' as the path 
-# delimiter (this is not as platform specific as might be imagined: windows
-# will accept / delimited paths). The resuling string is trimmed so that it
+# delimiter. this is not as platform specific as might be imagined: windows
+# will accept / delimited paths. The resuling string is trimmed so that it
 # <b>does not</b> end in /, but nothing is done to ensure that the string
 # returned actually contains a valid path.
 #
@@ -251,4 +251,45 @@ sub string_in_array {
     return undef;
 }
 
+
+## @fn $ is_defined_numeric($cgi, $param)
+# Determine whether the specified cgi parameter is purely numeric and return it
+# if it is. If the named parameter is not entirely numeric, this returns undef.
+#
+# @param cgi   The cgi handle to check the parameter through.
+# @param param The name of the cgi parameter to check.
+# @return The numeric value in the parameter, or undef if it is not purely numeric.
+sub is_defined_numeric {
+    my ($cgi, $param) = @_;
+
+    if(defined($cgi -> param($param)) && $cgi -> param($param) !~ /\D/) {
+        return $cgi -> param($param);
+    }
+
+    return undef;
+}
+
+
+## @fn $ get_proc_size()
+# Determine how much memory the current process is using. This examines the process'
+# entry in proc, it's not portable, but frankly I don't care less about that.
+#
+# @return The process virtual size, in bytes, or -1 if it can not be determined.
+sub get_proc_size {
+
+    # We don't need no steenking newlines
+    my $nl = $/;
+    undef $/;
+
+    # Try to open and read the process' stat file
+    open(STAT, "/proc/$$/stat")
+        or die "Unable to read stat file for current process ($$)\n";
+    my $stat = <STAT>;
+    close(STAT);
+
+    # Now we need to pull out the vsize field
+    my ($vsize) = $stat =~ /^[-\d]+ \(.*?\) \w+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ ([-\d]+)/;
+
+    return $vsize || -1;
+}
 1;
