@@ -1,0 +1,534 @@
+@charset "utf-8";
+body  {
+    font: 100% Verdana, Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    color: #000000;
+    background-color: #FFFFFF;
+    font-size: 13px;
+}
+
+.excel2table #container {
+    margin: 0 auto;
+    text-align: left; /* this overrides the text-align: center on the body element. */
+    padding: 10px 20px 10px 20px;
+    min-width: 1024px;
+} 
+
+.excel2table #header {
+    padding: 0px; 
+    /*background-image: url(images/forge_title_mid.jpg);
+    background-repeat: repeat-x;*/
+    text-align: left;
+} 
+
+.excel2table #header h1 {
+    margin: 0;
+    padding: 10px 0;
+}
+
+.excel2table #mainContent {
+    padding: 10px;
+}
+
+.excel2table #centrebox {
+    color: #000000;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.excel2table #footer {
+    padding: 0 10px;
+} 
+
+.excel2table #footer p {
+    margin: 0;
+    padding: 10px 0;
+}
+
+.excel2table #sidebox {
+    width: 120px;
+    padding: 0px;
+    margin: 0px;
+    font-size: 13px;
+    padding-bottom: 10px;
+}
+
+.clearfloat {
+    clear:both;
+    height:0;
+    font-size: 1px;
+    line-height: 0px;
+}
+
+.fltrt {
+    float: right;
+    margin-left: 8px;
+}
+
+.fltlft {
+    float: left;
+    margin-right: 8px;
+}
+
+.error {
+    color: red;
+}
+
+.warn {
+    color: yellow;
+    font-weight: bold;
+}
+
+.small {
+    font-size: x-small;
+}
+
+.center {
+    text-align: center;
+}
+
+.left {
+    text-align: left;
+}
+
+.right {
+    text-align: right;
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+.noborder {
+    border: 0px;
+}
+
+.padover {
+    padding-top: 1em;
+}
+
+.note {
+    color: #888888;
+    font-size: x-small;
+}
+
+.botborder {
+    border-bottom: 1px solid black;
+}
+
+.leftborder {
+    border-left: 1px solid black;
+}
+
+.cattitle {
+    font-size: large;
+    font-weight: bold;
+    line-height: 105%;
+}
+
+.catdesc {
+    font-size: smaller;
+}
+
+.ghost {
+    background-color: #AAA !important;
+    color: #333 !important;
+}
+
+img.inl {
+    width: 16px;
+    height: 16px;
+    vertical-align: top;
+}
+
+img.timg {
+    border: 0px;
+    padding: 0px;
+    display: block;
+}
+
+img.pathimg {
+    border: 0px;
+    padding: 0px;
+}
+
+img.linkimg {
+    border: 0px;
+    padding: 0px;
+    display: block;
+}
+
+table {
+    border-collapse: collapse;
+    border: 0px;
+    padding: 0px;
+    margin: 0px 0px 1em 0px ;
+}
+
+table.formtable {
+    width: 100%;
+    margin: 0px auto;
+    text-align: left;
+}
+
+table.catlist {
+    text-align: left;
+}
+
+table.mtable {
+    width: 100%;
+    margin: 0px auto;
+}
+
+table.gtable {
+    width: 100%;
+    margin: 0px auto;
+}
+
+table.gdetailtable {
+    font-size: smaller;
+}
+
+table.etable {
+    font-size: smaller;
+}
+
+tr.catentry {
+    padding-bottom: 5px;
+}
+
+td {
+    border: 0px;
+    margin: 0px;
+    vertical-align: top;
+    text-align: left;
+}
+
+th {
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+    vertical-align: top;
+    text-align: center;
+    font-weight: bold;
+}
+
+td.topfill {
+    background-image: url(images/dec_top.png);
+    background-repeat: repeat-x;
+    vertical-align: bottom;
+    text-align: right;
+    width: 100%;
+    height: 36px;
+}
+
+td.sidefill {
+    background-image: url(images/dec_left.png);
+    background-repeat: repeat-y;
+    vertical-align: bottom;
+    text-align: left;
+}
+
+td.titlebox {
+    font-size: 20px;
+    font-weight: bold;
+    padding-bottom: 10px;
+    vertical-align: bottom;
+    text-align: left;
+    color: #000288;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+td.formname {
+    border: none;
+    white-space: nowrap;
+    text-align: right;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+th.formhead {
+    border-bottom: 1px solid #555;
+    text-align: left;
+    font-weight: bold;
+}
+
+td.formcent {
+    padding: 0px;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+}
+
+td.formfield {
+    border: none;
+    /*width: 50%;*/
+    text-align: left;
+}
+
+td.gfield {
+    padding: 0px;
+    border: none;
+    text-align: right;
+    font-weight: bold;
+    padding-right: 0.5em;
+    white-space: nowrap;
+}
+
+td.gvalue {
+    padding: 0px;
+    border: none;
+    text-align: left;
+}
+
+td.efield {
+    padding: 0px;
+    border: none;
+    text-align: right;
+    font-weight: bold;
+    padding-left: 1em;
+    padding-right: 0.5em;
+}
+
+
+td.nextbox {
+    padding: 0;
+    padding-top: 5px;
+    border: none;
+    width: 100%;
+    text-align: right;
+}
+
+td.micon {
+    padding: 5px;
+    border: none;
+    width: 48px;
+    vertical-align: top;
+}
+
+td.gicon {
+    padding: 5px;
+    border: none;
+    width: 48px;
+    vertical-align: top;
+}
+
+td.gtext {
+    padding: 0;
+    border: none;
+    text-align: left;
+}
+
+td.gbuy {
+    padding: 0;
+    border: none;
+    text-align: right;
+}
+
+td.mtext {
+    padding: 0;
+    border: none;
+    text-align: center;
+}
+
+td.mpath {
+    padding: 5px;
+    border: none;
+    text-align: center;
+}
+
+
+div.menuimage {
+    background-repeat: no-repeat;
+}
+
+div.message {
+    width: 100%;
+    margin: 10px auto;
+    text-align: center;
+}
+
+div.mcore {
+    width: 100%;
+    margin: 10px auto;
+    border: 1px solid #000258;
+    background-color: white;
+    text-align: center;
+}
+
+div.mbody {
+    padding: 3px;
+}
+
+div.mheader {
+	background: #000258;
+	color: #FFFFFF;
+	font: bold 11px verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
+    white-space: nowrap;
+    padding: 0.5em;
+}
+
+div.menuimage {
+    background-repeat: no-repeat;
+}
+
+div.giftentry {
+    width: 100%;
+    margin: 10px auto;
+    text-align: left;
+}
+
+div.giftcore {
+    width: 100%;
+    margin: 10px auto;
+    border: 1px solid #000258;
+    background-color: white;
+}
+
+div.giftbody {
+    padding: 3px;
+}
+
+div.giftheader {
+	background: #000258;
+	color: #FFFFFF;
+	font: bold 11px verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
+    white-space: nowrap;
+    padding: 0.5em;
+    text-align: left;
+}
+
+div.sortbar {
+    font-size: smaller;
+}
+
+span.catfield {
+    font-size: x-small;
+    font-weight: bold;
+    color: #000258;
+}
+
+span.catvalue {
+    font-size: x-small;
+}
+
+span.inl {
+    vertical-align: top;
+}
+
+li.bbcli {
+    list-style-image: url('images/lis_up.png');
+    list-style-position: inside;
+    padding-bottom: 0.75em;
+}
+
+form.popup {
+    margin-bottom: 0px;
+}
+
+a:link, body_alink
+{
+	color: #5054f8;
+	text-decoration: none;
+}
+a:visited, body_avisited
+{
+	color: #0000b8;
+	text-decoration: none;
+}
+a:hover, a:active, body_ahover
+{
+	color: #5054f8;
+	text-decoration: underline;
+}
+
+hr {
+    border: none;
+    border-bottom: 1px solid #0002AA;
+    width: 50%;
+}
+
+/* -----------------------------------------------------------------------------
+ *  Table preview and setup
+ */
+
+#preview td {
+    border: 1px dotted #777;
+}
+
+#preview td.headhot {
+    border: none;
+    padding: 3px;
+    vertical-align: middle;
+}
+
+#preview td.pophot {
+    border: none;
+    padding: 3px;
+    vertical-align: middle;
+    text-align: center;
+    white-space: nowrap;
+}
+
+#preview td.markpos {
+    border: 1px solid #FF0000 !important;
+}
+
+#preview td.ishead {
+    background-color: #d4d4ff;
+}
+
+#preview td.isanchor {
+    background-color: #f7f7ff;
+}
+
+#preview td.isbody {
+    background-color: #d5fcdc;
+}
+
+
+
+/* -----------------------------------------------------------------------------
+ *  Zebra table stuff
+ */
+
+.alt1 {
+    background: #f7f7ff;
+    color: #000000;
+    vertical-align: middle;
+}
+
+.alt2 {
+    color: #000000;
+    background-color: #ffffff;
+    vertical-align: middle;
+}
+
+.alth {
+    color: #000000;
+    background-color: #d4d4ff;
+    vertical-align: middle;
+}
+
+.hover {
+    color: #000000;
+    background-color: #d5fcdc;
+    vertical-align: middle;
+}
+
+td.zebra {
+    border: 1px solid #ADB9CC;
+    padding: 0.25em 0.5em;
+}
+
+th.zebra {
+    border: 1px solid #ADB9CC;
+    padding: 0.25em 0.5em;
+    vertical-align: middle;
+}
+
+table.zebra {
+    border-collapse: collapse;
+}

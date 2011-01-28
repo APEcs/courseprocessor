@@ -1,0 +1,14 @@
+<div class="message">
+    <div class="mcore">
+        <div class="mheader">***title***</div>
+        <div class="mbody">
+            <table cellpadding="3" cellspacing="1" class="mtable">
+                <tr><td class="micon" rowspan="2"><img src="templates/default/images/messages/***icon***.png" width="48" height="48" alt="***icon***"/></td>
+                    <td class="mpath">***path***</td>
+                </tr>
+                <tr><td class="mtext" colspan="2">***longdesc***</td></tr>
+            </table>
+            ***additional***
+        </div>
+    </div>
+</div>
