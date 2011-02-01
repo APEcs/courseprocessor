@@ -1,0 +1,4 @@
+<select name="wiki" id="wikiselect" size="1">
+<option value="">{L_SELECT_WIKI}</option>
+***entries***
+</select>
