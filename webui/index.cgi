@@ -399,7 +399,8 @@ my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {
     or die_log($out -> remote_host(), "Unable to create template handling object: ".$Template::errstr);
 
 # Create or continue a session
-my $session = SessionHandler -> new(cgi      => $out, 
+my $session = SessionHandler -> new(logger   => $logger,
+                                    cgi      => $out, 
                                     dbh      => $dbh,
                                     template => $template,
                                     settings => $settings)

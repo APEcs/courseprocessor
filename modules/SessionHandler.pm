@@ -43,9 +43,6 @@ use String::Urandom;
 
 use Data::Dumper;
 
-# Custom module imports
-use Logging qw(die_log);
-
 # Globals...
 use vars qw{$VERSION $errstr};
 
@@ -430,7 +427,7 @@ sub touch_session {
                                                  " SET session_time = ?
                                                    WHERE id = ?");
         $finger -> execute($self -> {"session_time"}, $session -> {"id"})
-            or die_log($self -> {"cgi"} -> remote_host(), "Unable to touch session. Error was: ".$self -> {"dbh"} -> errstr);
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to touch session. Error was: ".$self -> {"dbh"} -> errstr);
     }
 }
 
