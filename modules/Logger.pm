@@ -114,7 +114,7 @@ sub start_log {
         or die "Unable to open log file $filename: $!";
 
     my $tm = scalar localtime;
-    print $logfile "\n----------= Starting $progname [pid: $$] at $tm =----------\n";
+    print $self -> {"logfile"} "\n----------= Starting $progname [pid: $$] at $tm =----------\n";
     $self -> {"logtime"} = time();
 }
 
@@ -223,7 +223,7 @@ sub warn_log {
     my $ip      = shift || "unknown";
     my $message = shift;
 
-    print $self -> {"logfile"} scalar(localtime)," [$$:$ip]: $message\n"
+    print $self -> {"logfile"} scalar(localtime)." [$$:$ip]: $message\n"
         if($self -> {"logfile"});
 
     warn "[$$:$ip]: $message\n";
