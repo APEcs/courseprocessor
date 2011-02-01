@@ -109,12 +109,15 @@ sub start_log {
     # Close the logfile if it has been opened already
     $self -> end_log($progname) if($self -> {"logfile"});
 
+    my $logfile;
+
     # Open in append mode
-    open($self -> {"logfile"}, ">> $filename")
+    open($logfile, ">> $filename")
         or die "Unable to open log file $filename: $!";
 
     my $tm = scalar localtime;
-    print $self -> {"logfile"} "\n----------= Starting $progname [pid: $$] at $tm =----------\n";
+    print $logfile "\n----------= Starting $progname [pid: $$] at $tm =----------\n";
+    $self -> {"logfile"} = $logfile;
     $self -> {"logtime"} = time();
 }
 
@@ -129,11 +132,13 @@ sub end_log {
     my $progname = shift || $0;
 
     if($self -> {"logfile"}) {
+        my $logfile = $self -> {"logfile"};
+
         my $tm = scalar localtime;
         my $elapsed = time() - $self -> {"logtime"};
 
-        print $self -> {"logfile"} "----------= Completed $progname [pid: $$] at $tm, execution time $elapsed seconds =----------\n";
-        close($self -> {"logfile"});
+        print $logfile "----------= Completed $progname [pid: $$] at $tm, execution time $elapsed seconds =----------\n";
+        close($logfile);
 
         # Make sure this is undefed so that we don't try to repeat close it.
         $self -> {"logfile"} = undef;
@@ -223,8 +228,10 @@ sub warn_log {
     my $ip      = shift || "unknown";
     my $message = shift;
 
-    print $self -> {"logfile"} scalar(localtime)." [$$:$ip]: $message\n"
-        if($self -> {"logfile"});
+    my $logfile = $self -> {"logfile"};
+
+    print $logfile scalar(localtime)," [$$:$ip]: $message\n"
+        if($logfile);
 
     warn "[$$:$ip]: $message\n";
 }
@@ -246,8 +253,10 @@ sub die_log {
     my $ip      = shift || "unknown";
     my $message = shift;
 
-    print $self -> {"logfile"} scalar(localtime)," [$$:$ip]: $message\n"
-        if($self -> {"logfile"});
+    my $logfile = $self -> {"logfile"};
+
+    print $logfile scalar(localtime)," [$$:$ip]: $message\n"
+        if($logfile);
 
     die "[$$:$ip]: $message\n";
 }
