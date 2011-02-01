@@ -62,7 +62,7 @@ BEGIN {
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = {
+    my $obj     = {
         cgi          => undef,
         dbh          => undef,
         template     => undef,
@@ -72,13 +72,13 @@ sub new {
     };
 
     # Ensure that we have objects that we need
-    return set_error("cgi object not set") unless($self -> {"cgi"});
-    return set_error("dbh object not set") unless($self -> {"dbh"});
-    return set_error("template object not set") unless($self -> {"template"});
-    return set_error("settings object not set") unless($self -> {"settings"});
+    return set_error("cgi object not set") unless($obj -> {"cgi"});
+    return set_error("dbh object not set") unless($obj -> {"dbh"});
+    return set_error("template object not set") unless($obj -> {"template"});
+    return set_error("settings object not set") unless($obj -> {"settings"});
 
     # Bless class so we canuse it properly
-    $self = bless $self, $class;
+    my $self = bless $obj, $class;
 
     # cleanup if necessary
     return undef
