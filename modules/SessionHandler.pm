@@ -284,7 +284,7 @@ sub set_session_data {
 #
 # @param key   The name of the data to retrieve.
 # @return The value stored for the key, or undef if the key is not set.
-sub set_session_data {
+sub get_session_data {
     my $self  = shift;
     my $key   = shift;
 

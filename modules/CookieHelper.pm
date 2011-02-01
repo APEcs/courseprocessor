@@ -77,7 +77,7 @@ sub set_cookies {
 # @param table  The name of the session data table.
 # @param sessid The id of the session to obtain cookies from.
 # @return A cookie jar containing the session's stored cookies. 
-sub set_cookies {
+sub get_cookies {
     my ($dbh, $table, $sessid) = @_;
 
     # First, the fetch query...
