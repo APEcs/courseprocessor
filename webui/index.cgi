@@ -16,6 +16,7 @@ use MIME::Base64;
 use Time::HiRes qw(time);
 
 # Custom modules
+use CookieHelper qw(get_cookies set_cookies);
 use ConfigMicro;
 use Logger;
 use SessionHandler;
@@ -100,6 +101,235 @@ my $stages = [ { "active"   => "templates/default/images/stage/login_active.png"
                  "icon"     => "finish",
                  "hasback"  => 0,
                  "func"     => \&build_stage4_finish } ];
+
+
+# =============================================================================
+#  Database interaction
+
+## @fn $ clear_wiki_login($sysvars)
+# Clear the marker indicating that the current session has logged into the wiki
+# successfully, and remove the wiki selection.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @return undef on success, otherwise an error message.
+sub clear_wiki_login {
+    my $sysvars = shift;
+
+    # Obtain the session record
+    my $session = $self -> get_session($sysvars -> {"session"} -> {"sessid"});
+
+    # simple query, really...
+    my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
+                                                  " WHERE id = ? AND key = ?");
+    $nukedata -> execute($session -> {"id"}, "logged_in")
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session login flag: ".$sysvars -> {"dbh"} -> errstr);
+
+    $nukedata -> execute($session -> {"id"}, "wiki_config")
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session wiki setup: ".$sysvars -> {"dbh"} -> errstr);
+
+    return undef;
+}
+
+
+## @fn $ set_wiki_login($sysvars, $wiki_config)
+# Mark the user for this session as logged in, and store the wiki config that
+# they have selected. Note that this <i>does not</i> store any user login info:
+# the only time the user's own login info is present is during the step to 
+# validate that the user is allowed to use the wiki. Once that is checked,
+# this is called to say that the user has logged in successfully, at that point
+# the bot user specified in the wiki config takes over the export process. This
+# is a means to avoid having to store the user's password in plain text for
+# later invocations of wiki2course.pl and processor.pl, instead a special 
+# read-only user is used once a user has proved they have access.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param wiki_config The name of the wiki the user has selected and logged into.
+# @return undef on success, otherwise an error message.
+sub set_wiki_login {
+    my $sysvars     = shift;
+    my $wiki_config = shift;
+
+    # Make sure we have no existing data
+    clear_wiki_login($sysvars);
+
+    # Obtain the session record
+    my $session = $self -> get_session($sysvars -> {"session"} -> {"sessid"});
+
+    # Only one query needed for both operations
+    my $setdata = $sysvars -> {"dbh"} -> prepare("INSET INTO ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
+                                                 "VALUES(?, ?, ?)");
+
+    $setdata -> execute($session -> {"id"}, "logged_in", "1")
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session login flag: ".$sysvars -> {"dbh"} -> errstr);
+
+    $setdata -> execute($session -> {"id"}, "wiki_config", $wiki_config)
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session wiki setup: ".$sysvars -> {"dbh"} -> errstr);
+
+    return undef;
+}
+
+
+# =============================================================================
+#  Configuration interaction
+
+## @fn $ get_wikiconfig_hash($sysvars)
+# Obtain a hash containing the processor configurations for the wikis the web ui
+# knows how to talk to. The hash is keyed off the configuration filename, while
+# the value of each is a ConfigMicro object.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @return A hash of configurations.
+sub get_wikiconfig_hash {
+    my $sysvars    = shift;
+    my $confighash = {};
+
+    # open the wiki configuration directory...
+    opendir(CONFDIR, $sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"})
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to open wiki configuration dir: ".$sysvars -> {"dbh"} -> errstr);
+
+    while(my $entry = readdir(CONFDIR)) {
+        # Skip anything that is obviously not config-like
+        next unless($entry =~ /.config$/);
+
+        # Try to load the config. This may well fail, but it's not fatal if it does...
+        my $config = ConfigMicro -> new(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $entry))
+            or $sysvars -> {"logger"} -> warn_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to open wiki configuration: ".$ConfigMicro::errstr);
+
+        # If we actually have a config, store it
+        $confighash -> {$entry} = $config if($config);
+    }
+
+    closedir(CONFDIR);
+
+    return $confighash;
+}
+
+
+## @fn $ get_wikiconfig_select($sysvars, $wikihash, $default)
+# Create a select box using the contents of the wiki hash provided. This will create
+# a list of wikis the user may select from, with an optional default selection.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @param wikihash A reference to a hash containing the wiki configurations
+# @param default  The name of the initially selected wiki, or undef.
+# @return A string containing the select box to show to the user.
+sub make_wikiconfig_select {
+    my $sysvars  = shift;
+    my $wikihash = shift;
+    my $default  = shift;
+
+    my $options = "";
+    foreach my $wiki (sort(keys(%{$wikihash}))) {
+        $options .= "<option value=\"$wiki\"";
+        $options .= ' selected="selected"' if($default && $wiki eq $default);
+        $options .= ">".$wikihash -> {"wiki"} -> {"WebUI"} -> {"name"}."</option>\n";
+    }
+
+    return $sysvars -> {"template"} -> load_template("webui/select_wiki.tem", {"***entries***" => $options});
+}
+
+
+# =============================================================================
+#  Stages...
+
+## @fn @ build_stage0_login($sysvars, $error)
+# Generate the form through which the user can provide their login details and select
+# the wiki that they want to export courses from. This will optionally display an error
+# message before the form if the second parameter is set. Note that this stage does no
+# processing of the login, it simply generates the login form.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @param error    An optional error message string to show in the form.
+# @return An array of two values: the title of the page, and the messagebox to show on the page.
+sub build_stage0_login {
+    my $sysvars = shift;
+    my $error   = shift;
+
+    # First, remove the 'logged in' marker
+    clear_wiki_login($sysvars);
+
+    # Get a hash of wikis we know how to talk to
+    my $wikis = get_wikiconfig_hash($sysvars);
+
+    # And has the user selected one?
+    my $setwiki = $sysvars -> {"cgi"} -> param("wiki");
+
+    # Convert the hash to a select...
+    my $wikiselect = make_wikiconfig_select($sysvars, $wikis, $setwiki);
+
+    # Do we have a username, and is it valid?
+    my $username = $sysvars -> {"cgi"} -> param("username");
+    $username = "" if($username !~ /^\w+$/);
+
+    # If we have an error, encapsulate it
+    $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
+        if($error);
+
+    # Now generate the title, message.
+    my $title    = $sysvars -> {"template"} -> replace_langvar("LOGIN_TITLE");
+    my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("LOGIN_TITLE"),
+                                                          $error ? "warn" : $stages -> [0] -> {"icon"},
+                                                          $stages, 0,
+                                                          $sysvars -> {"template"} -> replace_langvar("LOGIN_LONGDESC"),
+                                                          $sysvars -> {"template"} -> load_template("webui/stage0form.tem", {"***error***"    => $error,
+                                                                                                                             "***wikis***"    => $wikiselect,
+                                                                                                                             "***username***" => $username}));
+    return ($title, $message);
+}
+
+
+sub do_stage0_login {
+    my $sysvars = shift;
+
+    # Get the wiki the user selected, if they did
+    my $setwiki = $sysvars -> {"cgi"} -> param("wiki");
+    
+    # Yes - do we have a wiki selected?
+    if($setwiki) {
+        # Get a hash of wikis we know how to talk to
+        my $wikis = get_wikiconfig_hash($sysvars);
+        
+        # Is the wiki valid?
+        if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki}) {
+            # Do we have login details? If so, try to validate them...
+            if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password")) {
+                if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password"))) {
+                    set_wiki_login($sysvars, $setwiki);
+                    return undef;
+
+                } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
+                        # User login failed
+                    return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADLOGIN"));
+                }
+            } else { # if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password"))
+                # No user details entered.
+                return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_NOLOGIN"));
+            }
+        } else { # if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki})  
+            # Wiki selection is not valid
+            return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADWIKI"));
+        }
+    } else { # if($setwiki)
+        # User has not selected a wiki
+        return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_NOWIKI"));
+    }
+}
+
+
+sub build_stage1_course {
+    my $sysvars = shift;
+    my $error   = shift;
+
+    # did the user submit from login?
+    if($sysvars -> {"cgi"} -> param("dologin")) {
+        # Yes, attempt to process the login. Also, why can't perl have a 'returnif' so this could be 
+        # returnif do_stage0_login($sysvars);, damnit.
+        my $result = do_stage0_login($sysvars);
+        return $result if($result);
+    }
+
+    # 
+}
 
 
 # =============================================================================
@@ -196,3 +426,4 @@ my $debug = $template -> load_template("debug.tem", {"***secs***"   => sprintf("
                                                      
 print Encode::encode_utf8($template -> process_template($content, {"***debug***" => $debug}));
 $template -> set_module_obj(undef);
+
