@@ -2,7 +2,7 @@
 
 use strict;
 use lib qw(../modules);
-use utf8;
+#use utf8;
 
 # System modules
 use CGI::Compress::Gzip qw/:standard -utf8/;   # Enabling utf8 here is kinda risky, with the file uploads, but eeegh
@@ -116,7 +116,7 @@ sub clear_wiki_login {
     my $sysvars = shift;
 
     # Obtain the session record
-    my $session = $self -> get_session($sysvars -> {"session"} -> {"sessid"});
+    my $session = $sysvars -> get_session($sysvars -> {"session"} -> {"sessid"});
 
     # simple query, really...
     my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
@@ -153,7 +153,7 @@ sub set_wiki_login {
     clear_wiki_login($sysvars);
 
     # Obtain the session record
-    my $session = $self -> get_session($sysvars -> {"session"} -> {"sessid"});
+    my $session = $sysvars -> get_session($sysvars -> {"session"} -> {"sessid"});
 
     # Only one query needed for both operations
     my $setdata = $sysvars -> {"dbh"} -> prepare("INSET INTO ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
@@ -299,19 +299,19 @@ sub do_stage0_login {
 
                 } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
                         # User login failed
-                    return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADLOGIN"));
+                    return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADLOGIN"));
                 }
             } else { # if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password"))
                 # No user details entered.
-                return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_NOLOGIN"));
+                return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOLOGIN"));
             }
         } else { # if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki})  
             # Wiki selection is not valid
-            return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADWIKI"));
+            return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADWIKI"));
         }
     } else { # if($setwiki)
         # User has not selected a wiki
-        return build_stage0_login($sysvars, $self -> {"template"} -> replace_langvar("LOGIN_ERR_NOWIKI"));
+        return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOWIKI"));
     }
 }
 
@@ -396,7 +396,7 @@ $logger -> start_log($settings -> {"config"} -> {"logfile"}) if($settings -> {"c
 
 # Create the template handler object
 my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {"base"}, "templates"))
-    or die_log($out -> remote_host(), "Unable to create template handling object: ".$Template::errstr);
+    or $logger -> die_log($out -> remote_host(), "Unable to create template handling object: ".$Template::errstr);
 
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
@@ -404,7 +404,7 @@ my $session = SessionHandler -> new(logger   => $logger,
                                     dbh      => $dbh,
                                     template => $template,
                                     settings => $settings)
-    or die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
+    or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # Generate the page based on the current step
 my $content = page_display({"logger"   => $logger,
