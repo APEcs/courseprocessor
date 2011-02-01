@@ -151,7 +151,7 @@ sub create_session {
 
     # create a new session
     my $sessh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"sessions"}.
-                                            " VALUES(NULL, ?, ?, ?, ?, 0)");
+                                            " VALUES(NULL, ?, ?, ?, ?)");
     $sessh -> execute($self -> {"sessid"},
                       $now,
                       $now,
@@ -348,7 +348,7 @@ sub session_cleanup {
     my $self = shift;
 
     my $now = time();
-    my $timelimit = $now - $self -> {"config"} -> {"config"} -> {"session_length"};
+    my $timelimit = $now - $self -> {"settings"} -> {"config"} -> {"session_length"};
 
     # We only want to run the garbage collect occasionally
     if($self -> {"settings"} -> {"config"} -> {"lastgc"} < $now - $self -> {"settings"} -> {"config"} -> {"session_gc"}) {
