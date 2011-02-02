@@ -222,7 +222,7 @@ sub make_wikiconfig_select {
     foreach my $wiki (sort(keys(%{$wikihash}))) {
         $options .= "<option value=\"$wiki\"";
         $options .= ' selected="selected"' if($default && $wiki eq $default);
-        $options .= ">".$wikihash -> {"wiki"} -> {"WebUI"} -> {"name"}."</option>\n";
+        $options .= ">".$wikihash -> {$wiki} -> {"WebUI"} -> {"name"}."</option>\n";
     }
 
     return $sysvars -> {"template"} -> load_template("webui/wiki_select.tem", {"***entries***" => $options});
