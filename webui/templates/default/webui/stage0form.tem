@@ -1,0 +1,13 @@
+<div class="left" style="margin: auto">
+***error***
+<form action="index.cgi" method="post">
+<table class="formtable" cellpadding="3" cellspacing="1">
+    <tr>
+        <td class="nextbox">
+            <input type="hidden" name="stage"  value="1" />
+            <input type="submit" name="dosubmit" accesskey="n" value="{L_NEXT}" />
+        </td>
+    </tr>
+</table>
+</form>
+</div>
