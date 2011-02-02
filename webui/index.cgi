@@ -119,8 +119,8 @@ sub clear_wiki_login {
     my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
 
     # simple query, really...
-    my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
-                                                  " WHERE `id` = ? AND `key` LIKE ?");
+    my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+        " WHERE `id` = ? AND `key` LIKE ?");
     $nukedata -> execute($session -> {"id"}, "logged_in")
         or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session login flag: ".$sysvars -> {"dbh"} -> errstr);
 
@@ -156,7 +156,7 @@ sub set_wiki_login {
     my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
 
     # Only one query needed for both operations
-    my $setdata = $sysvars -> {"dbh"} -> prepare("INSET INTO ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
+    my $setdata = $sysvars -> {"dbh"} -> prepare("INSET INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
                                                  "VALUES(?, ?, ?)");
 
     $setdata -> execute($session -> {"id"}, "logged_in", "1")
