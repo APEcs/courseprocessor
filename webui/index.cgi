@@ -120,7 +120,7 @@ sub clear_wiki_login {
 
     # simple query, really...
     my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
-                                                  " WHERE id = ? AND key = ?");
+                                                  " WHERE `id` = ? AND `key` LIKE ?");
     $nukedata -> execute($session -> {"id"}, "logged_in")
         or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session login flag: ".$sysvars -> {"dbh"} -> errstr);
 
