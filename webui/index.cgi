@@ -353,8 +353,8 @@ sub build_stage2_course {
     if($sysvars -> {"cgi"} -> param("dologin")) {
         # Yes, attempt to process the login. Also, why can't perl have a 'returnif' so this could be 
         # returnif do_stage0_login($sysvars);, damnit.
-        my $result = do_stage1_login($sysvars);
-        return $result if($result);
+        my @result = do_stage1_login($sysvars);
+        return @result if(@result);
     }
 
     # 
