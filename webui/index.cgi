@@ -317,7 +317,7 @@ sub do_stage1_login {
     if($setwiki) {
         # Get a hash of wikis we know how to talk to
         my $wikis = get_wikiconfig_hash($sysvars);
-        
+
         # Is the wiki valid?
         if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki}) {
             # Do we have login details? If so, try to validate them...
