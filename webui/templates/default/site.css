@@ -9,45 +9,45 @@ body  {
     font-size: 13px;
 }
 
-.excel2table #container {
+.cpwebui #container {
     margin: 0 auto;
     text-align: left; /* this overrides the text-align: center on the body element. */
     padding: 10px 20px 10px 20px;
     min-width: 1024px;
 } 
 
-.excel2table #header {
+.cpwebui #header {
     padding: 0px; 
     /*background-image: url(images/forge_title_mid.jpg);
     background-repeat: repeat-x;*/
     text-align: left;
 } 
 
-.excel2table #header h1 {
+.cpwebui #header h1 {
     margin: 0;
     padding: 10px 0;
 }
 
-.excel2table #mainContent {
+.cpwebui #mainContent {
     padding: 10px;
 }
 
-.excel2table #centrebox {
+.cpwebui #centrebox {
     color: #000000;
     margin-bottom: 10px;
     width: 100%;
 }
 
-.excel2table #footer {
+.cpwebui #footer {
     padding: 0 10px;
 } 
 
-.excel2table #footer p {
+.cpwebui #footer p {
     margin: 0;
     padding: 10px 0;
 }
 
-.excel2table #sidebox {
+.cpwebui #sidebox {
     width: 120px;
     padding: 0px;
     margin: 0px;
