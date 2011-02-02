@@ -49,22 +49,31 @@ END {
 }
 
 # IDs of the stages
-use constant STAGE_LOGIN   => 0;
-use constant STAGE_COURSE  => 1;
-use constant STAGE_EXPORT  => 2;
-use constant STAGE_PROCESS => 3;
-use constant STAGE_FINISH  => 4;
+use constant STAGE_WELCOME => 0;
+use constant STAGE_LOGIN   => 1;
+use constant STAGE_COURSE  => 2;
+use constant STAGE_EXPORT  => 3;
+use constant STAGE_PROCESS => 4;
+use constant STAGE_FINISH  => 5;
 
 
 # Stages in the process
-my $stages = [ { "active"   => "templates/default/images/stages/login_active.png",
+my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.png",
+                 "inactive" => "templates/default/images/stages/welcome_inactive.png",
+                 "passed"   => "templates/default/images/stages/welcome_passed.png",
+                 "width"    => 80,
+                 "height"   => 40,
+                 "alt"      => "Welcome",
+                 "icon"     => "welcome",
+                 "func"     => \&build_stage0_welcome },
+               { "active"   => "templates/default/images/stages/login_active.png",
                  "inactive" => "templates/default/images/stages/login_inactive.png",
                  "passed"   => "templates/default/images/stages/login_passed.png",
                  "width"    => 80,
                  "height"   => 40,
                  "alt"      => "Log in",
                  "icon"     => "login",
-                 "func"     => \&build_stage0_login },
+                 "func"     => \&build_stage1_login },
                { "active"   => "templates/default/images/stages/course_active.png",
                  "inactive" => "templates/default/images/stages/course_inactive.png",
                  "passed"   => "templates/default/images/stages/course_passed.png",
@@ -73,7 +82,7 @@ my $stages = [ { "active"   => "templates/default/images/stages/login_active.png
                  "alt"      => "Choose course",
                  "icon"     => "course",
                  "hasback"  => 1,
-                 "func"     => \&build_stage1_course },
+                 "func"     => \&build_stage2_course },
                { "active"   => "templates/default/images/stages/export_active.png",
                  "inactive" => "templates/default/images/stages/export_inactive.png",
                  "passed"   => "templates/default/images/stages/export_passed.png",
@@ -82,7 +91,7 @@ my $stages = [ { "active"   => "templates/default/images/stages/login_active.png
                  "alt"      => "Export course",
                  "icon"     => "export",
                  "hasback"  => 1,
-                 "func"     => \&build_stage2_export },
+                 "func"     => \&build_stage3_export },
                { "active"   => "templates/default/images/stages/process_active.png",
                  "inactive" => "templates/default/images/stages/process_inactive.png",
                  "passed"   => "templates/default/images/stages/process_passed.png",
@@ -91,7 +100,7 @@ my $stages = [ { "active"   => "templates/default/images/stages/login_active.png
                  "alt"      => "Process course",
                  "icon"     => "process",
                  "hasback"  => 0,
-                 "func"     => \&build_stage3_process },
+                 "func"     => \&build_stage4_process },
                { "active"   => "templates/default/images/stages/finish_active.png",
                  "inactive" => "templates/default/images/stages/finish_inactive.png",
                  "passed"   => "templates/default/images/stages/finish_passed.png",
@@ -100,7 +109,7 @@ my $stages = [ { "active"   => "templates/default/images/stages/login_active.png
                  "alt"      => "Finish",
                  "icon"     => "finish",
                  "hasback"  => 0,
-                 "func"     => \&build_stage4_finish } ];
+                 "func"     => \&build_stage5_finish } ];
 
 
 # =============================================================================
@@ -232,7 +241,7 @@ sub make_wikiconfig_select {
 # =============================================================================
 #  Stages...
 
-## @fn @ build_stage0_login($sysvars, $error)
+## @fn @ build_stage1_login($sysvars, $error)
 # Generate the form through which the user can provide their login details and select
 # the wiki that they want to export courses from. This will optionally display an error
 # message before the form if the second parameter is set. Note that this stage does no
@@ -241,7 +250,7 @@ sub make_wikiconfig_select {
 # @param sysvars  A reference to a hash containing database, session, and settings objects.
 # @param error    An optional error message string to show in the form.
 # @return An array of two values: the title of the page, and the messagebox to show on the page.
-sub build_stage0_login {
+sub build_stage1_login {
     my $sysvars = shift;
     my $error   = shift;
 
@@ -278,7 +287,7 @@ sub build_stage0_login {
 }
 
 
-sub do_stage0_login {
+sub do_stage1_login {
     my $sysvars = shift;
 
     # Get the wiki the user selected, if they did
@@ -316,7 +325,7 @@ sub do_stage0_login {
 }
 
 
-sub build_stage1_course {
+sub build_stage2_course {
     my $sysvars = shift;
     my $error   = shift;
 
@@ -324,7 +333,7 @@ sub build_stage1_course {
     if($sysvars -> {"cgi"} -> param("dologin")) {
         # Yes, attempt to process the login. Also, why can't perl have a 'returnif' so this could be 
         # returnif do_stage0_login($sysvars);, damnit.
-        my $result = do_stage0_login($sysvars);
+        my $result = do_stage1_login($sysvars);
         return $result if($result);
     }
 
