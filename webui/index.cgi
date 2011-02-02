@@ -241,6 +241,26 @@ sub make_wikiconfig_select {
 # =============================================================================
 #  Stages...
 
+## @fn @ build_stage0_welcome($sysvars)
+# Generate the first stage of the wizard - a simple page describing the application
+# and the process.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @return An array of two values: the title of the page, and the messagebox to show on the page.
+sub build_stage0_welcome {
+    my $sysvars = shift;
+
+    # All we need to do here is generate the title and message...
+    my $title    = $sysvars -> {"template"} -> replace_langvar("WELCOME_TITLE");
+    my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("WELCOME_TITLE"),
+                                                          $stages -> [STAGE_WELCOME] -> {"icon"},
+                                                          $stages, STAGE_WELCOME,
+                                                          $sysvars -> {"template"} -> replace_langvar("WELCOME_LONGDESC"),
+                                                          $sysvars -> {"template"} -> load_template("webui/stage0form.tem"));
+    return ($title, $message);
+}
+
+
 ## @fn @ build_stage1_login($sysvars, $error)
 # Generate the form through which the user can provide their login details and select
 # the wiki that they want to export courses from. This will optionally display an error
@@ -277,10 +297,10 @@ sub build_stage1_login {
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("LOGIN_TITLE");
     my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("LOGIN_TITLE"),
-                                                          $error ? "warn" : $stages -> [0] -> {"icon"},
-                                                          $stages, 0,
+                                                          $error ? "warn" : $stages -> [STAGE_LOGIN] -> {"icon"},
+                                                          $stages, STAGE_LOGIN,
                                                           $sysvars -> {"template"} -> replace_langvar("LOGIN_LONGDESC"),
-                                                          $sysvars -> {"template"} -> load_template("webui/stage0form.tem", {"***error***"    => $error,
+                                                          $sysvars -> {"template"} -> load_template("webui/stage1form.tem", {"***error***"    => $error,
                                                                                                                              "***wikis***"    => $wikiselect,
                                                                                                                              "***username***" => $username}));
     return ($title, $message);
@@ -308,19 +328,19 @@ sub do_stage1_login {
 
                 } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
                         # User login failed
-                    return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADLOGIN"));
+                    return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADLOGIN"));
                 }
             } else { # if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password"))
                 # No user details entered.
-                return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOLOGIN"));
+                return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOLOGIN"));
             }
         } else { # if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki})  
             # Wiki selection is not valid
-            return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADWIKI"));
+            return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADWIKI"));
         }
     } else { # if($setwiki)
         # User has not selected a wiki
-        return build_stage0_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOWIKI"));
+        return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOWIKI"));
     }
 }
 
