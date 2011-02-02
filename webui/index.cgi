@@ -116,7 +116,7 @@ sub clear_wiki_login {
     my $sysvars = shift;
 
     # Obtain the session record
-    my $session = $sysvars -> get_session($sysvars -> {"session"} -> {"sessid"});
+    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
 
     # simple query, really...
     my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
@@ -153,7 +153,7 @@ sub set_wiki_login {
     clear_wiki_login($sysvars);
 
     # Obtain the session record
-    my $session = $sysvars -> get_session($sysvars -> {"session"} -> {"sessid"});
+    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
 
     # Only one query needed for both operations
     my $setdata = $sysvars -> {"dbh"} -> prepare("INSET INTO ".$sysvars -> {"config"} -> {"database"} -> {"session_data"}.
