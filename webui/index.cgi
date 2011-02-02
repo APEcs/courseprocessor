@@ -288,7 +288,7 @@ sub build_stage1_login {
 
     # Do we have a username, and is it valid?
     my $username = $sysvars -> {"cgi"} -> param("username");
-    $username = "" if($username !~ /^\w+$/);
+    $username = "" if(!$username || $username !~ /^\w+$/);
 
     # If we have an error, encapsulate it
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
