@@ -1,5 +1,4 @@
 <div class="left" style="margin: auto">
-***error***
 <form action="index.cgi" method="post">
 <table class="formtable" cellpadding="3" cellspacing="1">
     <tr>
