@@ -57,44 +57,44 @@ use constant STAGE_FINISH  => 4;
 
 
 # Stages in the process
-my $stages = [ { "active"   => "templates/default/images/stage/login_active.png",
-                 "inactive" => "templates/default/images/stage/login_inactive.png",
-                 "passed"   => "templates/default/images/stage/login_passed.png",
+my $stages = [ { "active"   => "templates/default/images/stages/login_active.png",
+                 "inactive" => "templates/default/images/stages/login_inactive.png",
+                 "passed"   => "templates/default/images/stages/login_passed.png",
                  "width"    => 80,
                  "height"   => 40,
                  "alt"      => "Log in",
                  "icon"     => "login",
                  "func"     => \&build_stage0_login },
-               { "active"   => "templates/default/images/stage/options_active.png",
-                 "inactive" => "templates/default/images/stage/options_inactive.png",
-                 "passed"   => "templates/default/images/stage/options_passed.png",
+               { "active"   => "templates/default/images/stages/options_active.png",
+                 "inactive" => "templates/default/images/stages/options_inactive.png",
+                 "passed"   => "templates/default/images/stages/options_passed.png",
                  "width"    => 80,
                  "height"   => 40,
                  "alt"      => "Choose course",
                  "icon"     => "course",
                  "hasback"  => 1,
                  "func"     => \&build_stage1_course },
-               { "active"   => "templates/default/images/stage/export_active.png",
-                 "inactive" => "templates/default/images/stage/export_inactive.png",
-                 "passed"   => "templates/default/images/stage/export_passed.png",
+               { "active"   => "templates/default/images/stages/export_active.png",
+                 "inactive" => "templates/default/images/stages/export_inactive.png",
+                 "passed"   => "templates/default/images/stages/export_passed.png",
                  "width"    => 80,
                  "height"   => 40,
                  "alt"      => "Export course",
                  "icon"     => "export",
                  "hasback"  => 1,
                  "func"     => \&build_stage2_export },
-               { "active"   => "templates/default/images/stage/process_active.png",
-                 "inactive" => "templates/default/images/stage/process_inactive.png",
-                 "passed"   => "templates/default/images/stage/process_passed.png",
+               { "active"   => "templates/default/images/stages/process_active.png",
+                 "inactive" => "templates/default/images/stages/process_inactive.png",
+                 "passed"   => "templates/default/images/stages/process_passed.png",
                  "width"    => 80,
                  "height"   => 40,
                  "alt"      => "Process course",
                  "icon"     => "process",
                  "hasback"  => 0,
                  "func"     => \&build_stage3_process },
-               { "active"   => "templates/default/images/stage/finish_active.png",
-                 "inactive" => "templates/default/images/stage/finish_inactive.png",
-                 "passed"   => "templates/default/images/stage/finish_passed.png",
+               { "active"   => "templates/default/images/stages/finish_active.png",
+                 "inactive" => "templates/default/images/stages/finish_inactive.png",
+                 "passed"   => "templates/default/images/stages/finish_passed.png",
                  "width"    => 80,
                  "height"   => 40,
                  "alt"      => "Finish",
@@ -225,7 +225,7 @@ sub make_wikiconfig_select {
         $options .= ">".$wikihash -> {"wiki"} -> {"WebUI"} -> {"name"}."</option>\n";
     }
 
-    return $sysvars -> {"template"} -> load_template("webui/select_wiki.tem", {"***entries***" => $options});
+    return $sysvars -> {"template"} -> load_template("webui/wiki_select.tem", {"***entries***" => $options});
 }
 
 
