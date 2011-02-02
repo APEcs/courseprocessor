@@ -319,7 +319,7 @@ sub do_stage1_login {
         my $wikis = get_wikiconfig_hash($sysvars);
 
         # Is the wiki valid?
-        if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki}) {
+        if($setwiki =~ /^\w+\.config$/ && $wikis -> {$setwiki}) {
             # Do we have login details? If so, try to validate them...
             if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password")) {
                 if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password"))) {
