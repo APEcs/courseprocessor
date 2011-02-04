@@ -8,7 +8,7 @@
         </tr>
         <tr>
             <td class="formname">{L_LOGIN_NAME}:</td>
-            <td class="formfield"><input type="text" name="username" size="60" maxlength="255"/></td>
+            <td class="formfield"><input type="text" name="username" size="60" maxlength="255" value="***username***"/></td>
         </tr>
         <tr>
             <td class="formname">{L_LOGIN_PASS}:</td>
