@@ -12,6 +12,7 @@ use Digest;
 use Encode;
 use File::Copy;
 use HTML::Entities;
+use MediaWiki::API;
 use MIME::Base64;
 use Time::HiRes qw(time);
 
