@@ -179,6 +179,41 @@ sub set_wiki_login {
 
 
 # =============================================================================
+#  Wiki interaction
+
+## @fn $ check_wiki_login($username, $password, $wikiconfig)
+# Check whether the specified user credentials correspond to a valid login
+# for the selected wiki. This will attempt to log into the wiki using the
+# username and password provided and, if the login is successful, return true.
+# If the login fail for any reason, this will return false.
+#
+# @param username   The username to log into the wiki using.
+# @param password   The password to provide when logging into the wiki.
+# @param wikiconfig The configuration data corresponding to the wiki to log into.
+# @return true if the user details allow them to log into the wiki, false if
+# the user's details do not work (wrong username/password/no account/etc)
+sub check_wiki_login {
+    my $username   = shift;
+    my $password   = shift;
+    my $wikiconfig = shift;
+
+    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
+        or die "FATAL: Unable to create new MediaWiki API object.";
+
+    my $status = $mw -> login( { lgname => $username, lgpassword => $password });
+
+    # If we have a login, log out again and return true.
+    if($status) {
+        $mw -> logout();
+        return 1;
+    }
+
+    # No login, give up
+    return 0;
+}
+
+
+# =============================================================================
 #  Configuration interaction
 
 ## @fn $ get_wikiconfig_hash($sysvars)
@@ -322,12 +357,14 @@ sub do_stage1_login {
         if($setwiki =~ /^\w+\.config$/ && $wikis -> {$setwiki}) {
             # Do we have login details? If so, try to validate them...
             if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password")) {
-                if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password"))) {
+                if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), 
+                                    $sysvars -> {"cgi"} -> param("password"),
+                                    $wikis -> {$setwiki})) {
                     set_wiki_login($sysvars, $setwiki);
                     return undef;
 
                 } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
-                        # User login failed
+                    # User login failed
                     return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADLOGIN"));
                 }
             } else { # if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password"))
