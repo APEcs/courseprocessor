@@ -266,7 +266,7 @@ sub get_wiki_courses {
     # Log in using the 'internal' export user.
     $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"}, 
                     lgpassword => $wikiconfig -> {"WebUI"} -> {"password"}})
-        or die "FATAL: Unable to log into wiki. This is possibly a serious configuration error.";
+        or die "FATAL: Unable to log into wiki. This is possibly a serious configuration error.\nAPI reported: ".$mw -> {"error"} -> {"code"}.': '. $mw -> {"error"} -> {"details"};
 
     # The contents of the course list page should now be accessible...
     my $coursepage = $mw->get_page( { title => $wikiconfig -> {"WebUI"} -> {"course_list"} } );
