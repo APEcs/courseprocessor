@@ -574,6 +574,7 @@ sub build_stage2_course {
                                                           $sysvars -> {"template"} -> load_template("webui/stage2form.tem", {"***error***"   => $error,
                                                                                                                              "***courses***" => $courselist,
                                                                                                                              "***course***"  => $subcourse -> {"***course***"}}));
+    return ($title, $message);
 }
 
 
