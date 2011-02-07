@@ -7,7 +7,7 @@ FOOTER_CONTACT     = Contact <a href="mailto:apesupport@cs.man.ac.uk">apesupport
 WELCOME_TITLE      = Welcome
 WELCOME_LONGDESC   = <p>This website allows you to export and process content from a supported wiki, avoiding the need to use the APEcs course processor tools directly.</p><p>Before you continue, you will need to know which wiki you want to export content from, and you will need a login for that wiki before you can export and process any content.</p><p>Each stage of the process will explain any actions you need to take. Once you have followed any instructions for a stage, click the 'Next' button to go to the next stage. Some stages will give you a 'Back' button to return to a previous stage if you want to make changes to the options you set.</p>
 
-LOGIN_TITLE        = Log in
+LOGIN_TITLE        = Log in.
 LOGIN_LONGDESC     = Please select the wiki you want to export material from below, and enter your login for that wiki. If you do not have a login for the wiki you want to export material from, contact <a href="apesupport@cs.man.ac.uk">apesupport@cs.man.ac.uk</a>.
 LOGIN_WIKI         = Wiki
 LOGIN_NAME         = Username
@@ -17,3 +17,7 @@ LOGIN_ERR_BADLOGIN = Unable to log into the selected wiki with the provided user
 LOGIN_ERR_NOLOGIN  = You did not enter a value for either the username or password. Please enter your login details in full.
 LOGIN_ERR_BADWIKI  = The selected wiki does not appear to be supported by this webapp.
 LOGIN_ERR_NOWIKI   = You have not selected a wiki to use. Please ensure that you select the wiki you want to export a course from in the dropdown below.
+
+COURSE_TITLE       = Select the ***lccourse*** to process.
+COURSE_LONGDESC    = You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process. Please select the ***lccourse*** to export and process from the list below, and then click Next.
+COURSE_COURSE      = ***course***

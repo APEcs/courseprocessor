@@ -130,7 +130,7 @@ sub clear_wiki_login {
 
     # simple query, really...
     my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-        " WHERE `id` = ? AND `key` LIKE ?");
+                                                  " WHERE `id` = ? AND `key` LIKE ?");
     $nukedata -> execute($session -> {"id"}, "logged_in")
         or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session login flag: ".$sysvars -> {"dbh"} -> errstr);
 
@@ -167,7 +167,7 @@ sub set_wiki_login {
 
     # Only one query needed for both operations
     my $setdata = $sysvars -> {"dbh"} -> prepare("INSET INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                 "VALUES(?, ?, ?)");
+                                                 " VALUES(?, ?, ?)");
 
     $setdata -> execute($session -> {"id"}, "logged_in", "1")
         or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session login flag: ".$sysvars -> {"dbh"} -> errstr);
@@ -175,6 +175,42 @@ sub set_wiki_login {
     $setdata -> execute($session -> {"id"}, "wiki_config", $wiki_config)
         or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session wiki setup: ".$sysvars -> {"dbh"} -> errstr);
 
+    return undef;
+}
+
+
+## @fn $ get_wiki_login($sysvars)
+# Obtain the user's wiki login status, and the name of the wiki they logged into if
+# they have done so.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @return The name of the wiki config for the wiki the user has logged into, or undef
+#         if the user has not logged in yet.
+sub get_wiki_login {
+    my $sysvars = shift;
+
+    # Obtain the session record
+    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
+
+    # Ask the database for the user's settings
+    my $getdata = $sysvars -> {"dbh"} -> prepare("SELECT value FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                 " WHERE `id` = ? AND `key` LIKE ?");
+
+    # First, have we logged in? If not, return undef
+    $getdata -> execute($session -> {"id"}, "logged_in")
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session login variable: ".$sysvars -> {"dbh"} -> errstr);
+    
+    my $data = $getdata -> fetchrow_arrayref();
+    return 0 unless($data && $data -> [0]);
+
+    # We're logged in, get the wiki config name!
+    $getdata -> execute($session -> {"id"}, "wiki_config")
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session wiki variable: ".$sysvars -> {"dbh"} -> errstr);
+
+    $data = $getdata -> fetchrow_arrayref();
+    return $data -> [0] if($data && $data -> [0]);
+
+    # Get here and we have no wiki config selected, fall over. This should not happen!
     return undef;
 }
 
@@ -214,6 +250,52 @@ sub check_wiki_login {
 }
 
 
+## @fn $ get_wiki_courses($wikiconfig)
+# Obtain a list of courses in the specified wiki. This will log into the wiki and
+# attempt to retrieve and parse the courses page stored on the wiki.
+#
+# @param wikiconfig A reference to the wiki's configuration object.
+# @return A reference to a hash of course namespaces to titles..
+sub get_wiki_courses {
+    my $wikiconfig = shift;
+
+    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
+        or die "FATAL: Unable to create new MediaWiki API object.";
+
+    # Log in using the 'internal' export user.
+    $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"}, 
+                    lgpassword => $wikiconfig -> {"WebUI"} -> {"password"}})
+        or die "FATAL: Unable to log into wiki. This is possibly a serious configuration error.";
+
+    # The contents of the course list page should now be accessible...
+    my $coursepage = $mw->get_page( { title => $wikiconfig -> {"WebUI"} -> {"course_list"} } );
+
+    # Do we have it?
+    die "FATAL: Wiki configuration file specifies a course list page with no content."
+        if($coursepage -> {"missing"} || !$coursepage -> {"*"});
+
+    # We have something, so we want to parse out the contents
+    my @courselist = $coursepage -> {"*"} =~ /\[\[(.*?)\]\]/;
+
+    my $coursehash;
+    # Process each course into the hash, using the namespace as the key
+    foreach my $course (@courselist) {
+        my ($ns, $title) = $course =~ /^(\w+):.*?\|(.*)$/;
+        
+        # Skip image/media just in case the user has an image on the page
+        next if($ns eq "Image" || $ns eq "Media");
+
+        # shove the results into the hash
+        $coursehash -> {$ns} = $title;
+    }
+    
+    # Probably not needed, but meh...
+    $mw -> logout();
+
+    return $coursehash;
+}
+
+
 # =============================================================================
 #  Configuration interaction
 
@@ -250,7 +332,29 @@ sub get_wikiconfig_hash {
 }
 
 
-## @fn $ get_wikiconfig_select($sysvars, $wikihash, $default)
+## @fn $ get_wiki_config($sysvars, $config_name)
+# Load the configuration file for the specified wiki. This will load the config
+# from the wiki configuration directory and return a reference to it.
+#
+# @param sysvars     A reference to a hash containing database, session, and settings objects.
+# @param config_name The name of the wiki config to load. Should not contain any path!
+# @return A reference to the wiki config object, or undef on failure.
+sub get_wiki_config {
+    my $sysvars     = shift;
+    my $config_name = shift;
+
+    # Try to load the config. 
+    my $config = ConfigMicro -> new(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name))
+        or $sysvars -> {"logger"} -> warn_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to open wiki configuration $config_name: ".$ConfigMicro::errstr);
+
+    return $config;
+}
+
+
+# =============================================================================
+#  Form list/dropdown creation
+
+## @fn $ make_wikiconfig_select($sysvars, $wikihash, $default)
 # Create a select box using the contents of the wiki hash provided. This will create
 # a list of wikis the user may select from, with an optional default selection.
 #
@@ -271,6 +375,31 @@ sub make_wikiconfig_select {
     }
 
     return $sysvars -> {"template"} -> load_template("webui/wiki_select.tem", {"***entries***" => $options});
+}
+
+
+## @fn $ make_course_select($sysvars, $coursehash, $default)
+# Generate a select box using the contents of the course hash provided. This will
+# create a list of courses the user may select from, with an optional default
+# selection.
+#
+# @param sysvars    A reference to a hash containing database, session, and settings objects.
+# @param coursehash A reference to a hash containing the courses.
+# @param default    The name of the initially selected course, or undef.
+# @return A string containing the select box to show to the user.
+sub make_course_select {
+    my $sysvars    = shift;
+    my $coursehash = shift;
+    my $default    = shift;
+
+    my $options = "";
+    foreach my $ns (sort {$coursehash -> {$a} cmp $coursehash -> {$b}} (keys(%{$coursehash}))) {
+        $options .= "<option value=\"$ns\"";
+        $options .= ' selected="selected"' if($default && $ns eq $default);
+        $options .= ">".$coursehash -> {$ns}."</option>\n";
+    }
+
+    return $sysvars -> {"template"} -> load_template("webui/course_select.tem", {"***entries***" => $options});
 }
 
 
@@ -343,6 +472,16 @@ sub build_stage1_login {
 }
 
 
+## @fn @ do_stage1_login($sysvars)
+# Process the values submitted by the user on the login form. This will attempt to log
+# the user into the wiki they have selected using their supplied credentials, and if
+# it succeeds this will return undef. If the login fails, either because no wiki has
+# been selected, or the login details are missing or invalid, it will return the
+# title and message box to show on the page.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @return undef on success, otherwise an array of two elements: the page title, and the
+#         message box to show to the user.
 sub do_stage1_login {
     my $sysvars = shift;
 
@@ -383,6 +522,16 @@ sub do_stage1_login {
 }
 
 
+## @fn @ build_stage2_course($sysvars, $error)
+# Generate the form through which the user can select the course to export and process.
+# This will query the wiki the user selected in stage 1 for a list of courses, and it
+# will generate a list from which the user can select a course. It can also optionally
+# display an error message if the second parameter is set. As with stage1, no processing
+# of the selection is done here.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @param error    An optional error message string to show in the form.
+# @return An array of two values: the title of the page, and the messagebox to show on the page.
 sub build_stage2_course {
     my $sysvars = shift;
     my $error   = shift;
@@ -395,7 +544,36 @@ sub build_stage2_course {
         return @result if(@result);
     }
 
-    # 
+    # If the user has logged in successfully, obtain a list of courses from the wiki.
+    my $config_name = get_wiki_login($sysvars)
+        or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
+
+    # Obtain the wiki's configuration
+    my $wiki = get_wiki_config($sysvars, $config_name);
+
+    # Get the list of courses
+    my $courses = get_wiki_courses($sysvars, $wiki);
+    
+    # And convert to a select box
+    my $courselist = make_course_select($sysvars, $courses, $sysvars -> {"cgi"} -> param("course"));
+    
+    # If we have an error, encapsulate it
+    $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
+        if($error);
+
+    # Precalculate some variables to use in templating
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2config"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wiki -> {"wiki2config"} -> {"course_page"} || "Course")}
+
+    # Now generate the title, message.
+    my $title    = $sysvars -> {"template"} -> replace_langvar("COURSE_TITLE", $subcourse);
+    my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("COURSE_TITLE", $subcourse),
+                                                          $error ? "warn" : $stages -> [STAGE_COURSE] -> {"icon"},
+                                                          $stages, STAGE_COURSE,
+                                                          $sysvars -> {"template"} -> replace_langvar("COURSE_LONGDESC", $subcourse),
+                                                          $sysvars -> {"template"} -> load_template("webui/stage2form.tem", {"***error***"   => $error,
+                                                                                                                             "***courses***" => $courselist,
+                                                                                                                             "***course***"  => $subcourse -> {"***course***"}}));
 }
 
 
