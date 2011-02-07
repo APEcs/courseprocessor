@@ -253,6 +253,14 @@ td.formname {
     vertical-align: middle;
 }
 
+td.formname {
+    border: none;
+    white-space: nowrap;
+    text-align: right;
+    font-weight: bold;
+    vertical-align: top;
+}
+
 th.formhead {
     border-bottom: 1px solid #555;
     text-align: left;

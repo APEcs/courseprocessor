@@ -3,7 +3,7 @@
 <form action="index.cgi" method="post">
     <table class="formtable" cellpadding="3" cellspacing="1">
         <tr>
-            <td class="formname top">{L_COURSE_COURSE}:</td>
+            <td class="formnamet">{L_COURSE_COURSE}:</td>
             <td class="formfield">***courses***</td>
         </tr>
     </table>
