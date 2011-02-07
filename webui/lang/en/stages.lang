@@ -19,5 +19,5 @@ LOGIN_ERR_BADWIKI  = The selected wiki does not appear to be supported by this w
 LOGIN_ERR_NOWIKI   = You have not selected a wiki to use. Please ensure that you select the wiki you want to export a course from in the dropdown below.
 
 COURSE_TITLE       = Select the ***lccourse*** to process.
-COURSE_LONGDESC    = You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process. Please select the ***lccourse*** to export and process from the list below, and then click Next.
-COURSE_COURSE      = ***course***
+COURSE_LONGDESC    = <p>You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process.</p><p>Please select the ***lccourse*** to export and process from the list below, and then click Next.</p>
+COURSE_COURSE      = Select ***course***

@@ -137,6 +137,10 @@ body  {
     color: #333 !important;
 }
 
+.top {
+    vertical-align: top;
+}
+
 img.inl {
     width: 16px;
     height: 16px;
