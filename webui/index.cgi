@@ -166,7 +166,7 @@ sub set_wiki_login {
     my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
 
     # Only one query needed for both operations
-    my $setdata = $sysvars -> {"dbh"} -> prepare("INSET INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+    my $setdata = $sysvars -> {"dbh"} -> prepare("INSERT INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
                                                  " VALUES(?, ?, ?)");
 
     $setdata -> execute($session -> {"id"}, "logged_in", "1")
