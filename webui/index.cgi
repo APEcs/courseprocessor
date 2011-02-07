@@ -502,7 +502,7 @@ sub do_stage1_login {
                                     $sysvars -> {"cgi"} -> param("password"),
                                     $wikis -> {$setwiki})) {
                     set_wiki_login($sysvars, $setwiki);
-                    return undef;
+                    return (undef, undef);
 
                 } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
                     # User login failed
@@ -544,7 +544,7 @@ sub build_stage2_course {
         # Yes, attempt to process the login. Also, why can't perl have a 'returnif' so this could be 
         # returnif do_stage0_login($sysvars);, damnit.
         my @result = do_stage1_login($sysvars);
-        return @result if(@result);
+        return @result if($result[0] && $result[1]);
     }
 
     # If the user has logged in successfully, obtain a list of courses from the wiki.
