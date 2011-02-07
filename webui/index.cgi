@@ -519,6 +519,8 @@ sub do_stage1_login {
         # User has not selected a wiki
         return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOWIKI"));
     }
+
+    return undef;
 }
 
 
