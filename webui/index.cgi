@@ -5,6 +5,7 @@ use lib qw(../modules);
 #use utf8;
 
 # System modules
+use CGI;
 use CGI::Compress::Gzip qw/:standard -utf8/;   # Enabling utf8 here is kinda risky, with the file uploads, but eeegh
 use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possible and send them to the user as well as stderr
 use DBI;
@@ -619,28 +620,35 @@ sub page_display {
 
 my $starttime = time();
 
-# Create a new CGI object to generate page content through
-my $out = CGI::Compress::Gzip -> new();
-
 # And a logger for... logging stuff
 $logger = Logger -> new();
 
 # Load the system config
 my $settings = ConfigMicro -> new("config/site.cfg")
-    or $logger -> die_log($out -> remote_host(), "index.cgi: Unable to obtain configuration file: ".$ConfigMicro::errstr);
+    or $logger -> die_log("internal", "index.cgi: Unable to obtain configuration file: ".$ConfigMicro::errstr);
 
 # Database initialisation. Errors in this will kill program.
 $dbh = DBI->connect($settings -> {"database"} -> {"database"},
                     $settings -> {"database"} -> {"username"},
                     $settings -> {"database"} -> {"password"},
                     { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
-    or $logger -> die_log($out -> remote_host(), "index.cgi: Unable to connect to database: ".$DBI::errstr);
+    or $logger -> die_log("internal", "index.cgi: Unable to connect to database: ".$DBI::errstr);
 
 # Pull configuration data out of the database into the settings hash
 $settings -> load_db_config($dbh, $settings -> {"database"} -> {"settings"});
 
 # Start doing logging if needed
 $logger -> start_log($settings -> {"config"} -> {"logfile"}) if($settings -> {"config"} -> {"logfile"});
+
+# Create a new CGI object to generate page content through
+my $out;
+if($settings -> {"config"} -> {"compress_output"}) {
+    # If compression is enabled, use the gzip compressed cgi...
+    $out = CGI::Compress::Gzip -> new();
+} else {
+    # Otherwise use bog-standard, perhaps the http(s) stack will compress for us
+    $out = CGI -> new();
+}
 
 # Create the template handler object
 my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {"base"}, "templates"))
