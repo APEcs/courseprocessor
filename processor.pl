@@ -388,7 +388,7 @@ $log -> print($log -> NOTICE, "Running ".$config -> {"Processor"} -> {"output_ha
 $plugins -> {"output"} -> {$config -> {"Processor"} -> {"output_handler"}} -> {"obj"} -> process();
 
 
-$log -> print($log -> DEBUG, "Processing complete");
+print "Processing complete.\n";
 
 # This is needed to prevent circular lists blocking normal destruction
 $metadata -> set_plugins(undef);

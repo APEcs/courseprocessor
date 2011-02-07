@@ -1190,6 +1190,8 @@ if(makedir($basedir)) {
         }
     }
 }
+
+print "Export finished.\n";
  
    
 # THE END!
