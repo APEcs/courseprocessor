@@ -555,7 +555,7 @@ sub build_stage2_course {
     my $wiki = get_wiki_config($sysvars, $config_name);
 
     # Get the list of courses
-    my $courses = get_wiki_courses($sysvars, $wiki);
+    my $courses = get_wiki_courses($wiki);
     
     # And convert to a select box
     my $courselist = make_course_select($sysvars, $courses, $sysvars -> {"cgi"} -> param("course"));
