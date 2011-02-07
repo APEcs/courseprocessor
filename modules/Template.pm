@@ -353,20 +353,20 @@ sub process_template {
     # to make a reference to the text to simplify the code in the loop below.
     my $textref = ref($text) ? $text : \$text;
 
-    # replace all the keys in the text with the appropriate value.
-    my ($key, $value);
-    foreach $key (keys %$varmap) {
-        # pull out the value if it is defined, blank otherwise - avoids "Use of uninitialized value in substitution" problems
-        $value = defined($varmap -> {$key}) ? $varmap -> {$key} : "";
-        $$textref =~ s/\Q$key\E/$value/g;
-    }
-
     # Do any language marker replacements
     $$textref =~ s/{L_(\w+?)}/$self->replace_langvar($1)/ge;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
         $$textref =~ s/{B_\[(\w+?)\]}/$self->replace_blockname($1)/ge;
+    }
+
+    # replace all the keys in the text with the appropriate value.
+    my ($key, $value);
+    foreach $key (keys %$varmap) {
+        # pull out the value if it is defined, blank otherwise - avoids "Use of uninitialized value in substitution" problems
+        $value = defined($varmap -> {$key}) ? $varmap -> {$key} : "";
+        $$textref =~ s/\Q$key\E/$value/g;
     }
 
     # Convert some common utf-8 characters
