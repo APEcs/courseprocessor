@@ -117,13 +117,13 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
 # =============================================================================
 #  Database interaction
 
-## @fn $ clear_wiki_login($sysvars)
+## @fn $ clear_sess_login($sysvars)
 # Clear the marker indicating that the current session has logged into the wiki
 # successfully, and remove the wiki selection.
 #
 # @param sysvars A reference to a hash containing database, session, and settings objects.
 # @return undef on success, otherwise an error message.
-sub clear_wiki_login {
+sub clear_sess_login {
     my $sysvars = shift;
 
     # Obtain the session record
@@ -142,7 +142,7 @@ sub clear_wiki_login {
 }
 
 
-## @fn $ set_wiki_login($sysvars, $wiki_config)
+## @fn $ set_sess_login($sysvars, $wiki_config)
 # Mark the user for this session as logged in, and store the wiki config that
 # they have selected. Note that this <i>does not</i> store any user login info:
 # the only time the user's own login info is present is during the step to 
@@ -156,12 +156,12 @@ sub clear_wiki_login {
 # @param sysvars A reference to a hash containing database, session, and settings objects.
 # @param wiki_config The name of the wiki the user has selected and logged into.
 # @return undef on success, otherwise an error message.
-sub set_wiki_login {
+sub set_sess_login {
     my $sysvars     = shift;
     my $wiki_config = shift;
 
     # Make sure we have no existing data
-    clear_wiki_login($sysvars);
+    clear_sess_login($sysvars);
 
     # Obtain the session record
     my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
@@ -180,14 +180,14 @@ sub set_wiki_login {
 }
 
 
-## @fn $ get_wiki_login($sysvars)
+## @fn $ get_sess_login($sysvars)
 # Obtain the user's wiki login status, and the name of the wiki they logged into if
 # they have done so.
 #
 # @param sysvars A reference to a hash containing database, session, and settings objects.
 # @return The name of the wiki config for the wiki the user has logged into, or undef
 #         if the user has not logged in yet.
-sub get_wiki_login {
+sub get_sess_login {
     my $sysvars = shift;
 
     # Obtain the session record
@@ -212,6 +212,35 @@ sub get_wiki_login {
     return $data -> [0] if($data && $data -> [0]);
 
     # Get here and we have no wiki config selected, fall over. This should not happen!
+    return undef;
+}
+
+
+## @fn $ set_sess_course($sysvars, $course)
+# Set the course the selected by the user in their session data for later use.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param course  The name of the course namespace the user has chosen to export.
+# @return undef on success, otherwise an error message.
+sub set_sess_course {
+    my $sysvars = shift;
+    my $course  = shift;
+
+    # Obtain the session record
+    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
+
+    # delete any existing course selection
+    my $nukecourse = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                    " WHERE `id` = ? AND `key` LIKE 'course'");
+    $nukecourse -> execute($session -> {"id"})
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session course selection: ".$sysvars -> {"dbh"} -> errstr);
+
+    # Insert the new value
+    my $newcourse = $sysvars -> {"dbh"} -> prepare("INSERT INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                   " VALUES(?, 'course', ?)");
+    $newcourse -> execute($session -> {"id"}, $course)
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session course selection: ".$sysvars -> {"dbh"} -> errstr);
+
     return undef;
 }
 
@@ -392,10 +421,14 @@ sub make_course_select {
     my $sysvars    = shift;
     my $coursehash = shift;
     my $default    = shift;
-
+    
     my $options = "";
     foreach my $ns (sort {$coursehash -> {$a} cmp $coursehash -> {$b}} (keys(%{$coursehash}))) {
         $options .= "<option value=\"$ns\"";
+
+        # If we have no default, make one
+        $default = $ns if(!$default);
+
         $options .= ' selected="selected"' if($default && $ns eq $default);
         $options .= ">".$coursehash -> {$ns}."</option>\n";
     }
@@ -441,7 +474,7 @@ sub build_stage1_login {
     my $error   = shift;
 
     # First, remove the 'logged in' marker
-    clear_wiki_login($sysvars);
+    clear_sess_login($sysvars);
 
     # Get a hash of wikis we know how to talk to
     my $wikis = get_wikiconfig_hash($sysvars);
@@ -501,7 +534,7 @@ sub do_stage1_login {
                 if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), 
                                     $sysvars -> {"cgi"} -> param("password"),
                                     $wikis -> {$setwiki})) {
-                    set_wiki_login($sysvars, $setwiki);
+                    set_sess_login($sysvars, $setwiki);
                     return (undef, undef);
 
                 } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
@@ -548,7 +581,7 @@ sub build_stage2_course {
     }
 
     # If the user has logged in successfully, obtain a list of courses from the wiki.
-    my $config_name = get_wiki_login($sysvars)
+    my $config_name = get_sess_login($sysvars)
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -578,6 +611,69 @@ sub build_stage2_course {
                                                                                                                              "***courses***" => $courselist,
                                                                                                                              "***course***"  => $subcourse -> {"***course***"}}));
     return ($title, $message);
+}
+
+
+## @fn @ do_stage2_course($sysvars, $wikiconfig)
+# Determine whether the course selected for stage 2 is valid. If it is not, this returns
+# stage 2 again with an error message, otherwise it returns undefs.
+#
+# @param sysvars    A reference to a hash containing database, session, and settings objects.
+# @param wikiconfig A reference to the wiki's configuration object.
+# @return undef on success, otherwise an array of two elements: the page title, and the
+#         message box to show to the user.
+sub do_stage2_course {
+    my $sysvars    = shift;
+    my $wikiconfig = shift;
+    
+    # Precalculate these to avoid duplication later...
+    my $subcourse = {"***course***"   => ($wikiconfig -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wikiconfig -> {"wiki2course"} -> {"course_page"} || "Course")};
+
+    # Has the user selected a course?
+    my $selected = $sysvars -> {"cgi"} -> param("course");
+    if($selected) {
+        # Get the list of courses...
+        my $courses = get_wiki_courses($wiki);
+        
+        # Is the selected course in the list?
+        if($courses -> {$selected}) {
+            # Course is good, store it and return
+            set_sess_course($sysvars, $selected);
+            return (undef, undef);
+
+        } else { # if($courses -> {$selected}) 
+            # User has selected a non-existent course...
+            return build_stage2_course($sysvars,  $sysvars -> {"template"} -> replace_langvar("COURSE_ERR_BADCOURSE", $subcourse));
+        }
+    } else { # if($selected)
+        # User has not selected a course...
+        return build_stage2_course($sysvars,  $sysvars -> {"template"} -> replace_langvar("COURSE_ERR_NOCOURSE", $subcourse));
+    }
+
+    return undef;
+}
+
+
+sub build_stage3_export {
+    my $sysvars = shift;
+    my $error   = shift;
+
+    # We need to get the wiki's information regardless of anything else, so get the name first...
+    my $config_name = get_sess_login($sysvars)
+        or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
+
+    # Obtain the wiki's configuration
+    my $wiki = get_wiki_config($sysvars, $config_name);
+
+    # did the user submit from course selection?
+    if($sysvars -> {"cgi"} -> param("doexport")) {
+        # Attempt to verify and store the course
+        my @result = do_stage2_course($sysvars, $wiki);
+        return @result if($result[0] && $result[1]);
+    }
+
+
 }
 
 
