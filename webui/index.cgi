@@ -565,8 +565,8 @@ sub build_stage2_course {
         if($error);
 
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($wiki -> {"wiki2config"} -> {"course_page"} || "Course"), 
-                     "***lccourse***" => lc($wiki -> {"wiki2config"} -> {"course_page"} || "Course")};
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("COURSE_TITLE", $subcourse);
