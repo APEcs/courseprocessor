@@ -114,6 +114,14 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
                  "func"     => \&build_stage5_finish } ];
 
 
+sub untaint_path {
+    my $taintedpath = shift;
+
+    my ($untainted) = $taintedpath =~ m|^(/(?:[-\w.]+)(?:/[-\w.]+)*$|;
+
+    return $untainted;
+}
+
 # =============================================================================
 #  Database interaction
 
@@ -477,14 +485,14 @@ sub launch_exporter {
     my $course     = shift;
 
     # Work out some names and paths needed later
-    my $outbase = path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"});
+    my $outbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
     my $logfile = path_join($outbase, "export.log");
     my $outpath = path_join($outbase, "coursedata");
 
     # Make sure the paths exist
     if(!-d $outpath) {
         eval { make_path($outpath); };
-        $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to create temporary output dir: $!") if($@);
+        $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to create temporary output dir $outpath: $!") if($@);
     }
 
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"wiki2course"}." -v".
