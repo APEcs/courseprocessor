@@ -57,7 +57,7 @@ function parseResp(req) {
         }
 
     // Processing not explicitly finished - are there fatal errors, though?
-    } else if(txt.indexOf("FATAL:") {
+    } else if(txt.indexOf("FATAL:")) {
         // Show the fatals error
         $("fatals").style.display = "block";
         $("dosub").style.display = "none";
