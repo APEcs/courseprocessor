@@ -65,7 +65,6 @@ sub new {
     my $obj     = {
         cgi          => undef,
         dbh          => undef,
-        template     => undef,
         settings     => undef,
         session_time => 0,
         @_,
@@ -74,7 +73,6 @@ sub new {
     # Ensure that we have objects that we need
     return set_error("cgi object not set") unless($obj -> {"cgi"});
     return set_error("dbh object not set") unless($obj -> {"dbh"});
-    return set_error("template object not set") unless($obj -> {"template"});
     return set_error("settings object not set") unless($obj -> {"settings"});
 
     # Bless class so we canuse it properly
