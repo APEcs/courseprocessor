@@ -117,7 +117,7 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
 sub untaint_path {
     my $taintedpath = shift;
 
-    my ($untainted) = $taintedpath =~ m|^(/(?:[-\w.]+)(?:/[-\w.]+)*$|;
+    my ($untainted) = $taintedpath =~ m|^(/(?:[-\w.]+)(?:/[-\w.]+)*)$|;
 
     return $untainted;
 }
