@@ -12,13 +12,13 @@ use DBI;
 use Digest;
 use Encode;
 use File::Copy;
+use File::Path qw(make_path);
 use HTML::Entities;
 use MediaWiki::API;
 use MIME::Base64;
 use Time::HiRes qw(time);
 
 # Custom modules
-use CookieHelper qw(get_cookies set_cookies);
 use ConfigMicro;
 use Logger;
 use SessionHandler;
@@ -245,6 +245,30 @@ sub set_sess_course {
 }
 
 
+## @fn $ get_sess_course($sysvars)
+# Obtain the name of the course the user has selected to export.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @return The name of the course selected by the user, or undef if one has not been selected.
+sub get_sess_course {
+    my $sysvars = shift;
+
+    # Obtain the session record
+    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
+
+    # Ask the database for the user's settings
+    my $getdata = $sysvars -> {"dbh"} -> prepare("SELECT value FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                 " WHERE `id` = ? AND `key` LIKE 'course'");
+    $getdata -> execute($session -> {"id"})
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session course variable: ".$sysvars -> {"dbh"} -> errstr);
+
+    my $data = $getdata -> fetchrow_arrayref();
+    return $data -> [0] if($data && $data -> [0]);
+
+    return undef;
+}
+
+
 # =============================================================================
 #  Wiki interaction
 
@@ -434,6 +458,46 @@ sub make_course_select {
     }
 
     return $sysvars -> {"template"} -> load_template("webui/course_select.tem", {"***entries***" => $options});
+}
+
+
+# =============================================================================
+#  Shell interaction
+
+## @fn void launch_exporter($sysvars, $wikiconfig, $course)
+# Start the wiki2course exporter script working in the background to fetch the
+# contents of the specified course from the wiki.
+#
+# @param sysvars    A reference to a hash containing database, session, and settings objects.
+# @param wikiconfig A reference to the wiki configuration object.
+# @param course     The namespace of the course to export.
+sub launch_exporter {
+    my $sysvars    = shift;
+    my $wikiconfig = shift;
+    my $course     = shift;
+
+    # Work out some names and paths needed later
+    my $outbase = path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"});
+    my $logfile = path_join($outbase, "export.log");
+    my $outpath = path_join($outbase, "coursedata");
+
+    # Make sure the paths exist
+    if(!-d $outpath) {
+        eval { make_path($outpath); };
+        $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to create temporary output dir: $!") if($@);
+    }
+
+    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"wiki2course"}." -v".
+              " -u ".$wikiconfig -> {"WebUI"} -> {"username"}.
+              " -p ".$wikiconfig -> {"WebUI"} -> {"password"}.
+              " -n $course".
+              " -o $outpath".
+              " -w ".$wikiconfig -> {"WebUI"} -> {"api_url"}.
+              " > $logfile".
+              ' 2>&1 &';
+
+    # Set the exporter going, hopefully unattached in the background now...
+    `$cmd`;
 }
 
 
@@ -655,9 +719,22 @@ sub do_stage2_course {
 }
 
 
+## @fn $ build_stage3_export($sysvars, $error, $nolaunch)
+# Generate the content for the export stage of the wizard. This will, if needed, check that
+# the user has selected an appropriate course, and then lanuch the wiki2course script in
+# the background to fetch the data from the wiki before sending back the status form to the
+# user.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @param error    An optional error message to display to the user.
+# @param nolaunch If set to true, this will prevent the exporter from being started. This
+#                 should be true if this function is called again while the exporter is 
+#                 still working.
+# @return An array of two values: the title of the page, and the messagebox to show on the page.
 sub build_stage3_export {
-    my $sysvars = shift;
-    my $error   = shift;
+    my $sysvars  = shift;
+    my $error    = shift;
+    my $nolaunch = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
     my $config_name = get_sess_login($sysvars)
@@ -673,7 +750,26 @@ sub build_stage3_export {
         return @result if($result[0] && $result[1]);
     }
 
+    # We have a course selected, so now we need to start the export. First get the 
+    # course name for later...
+    my $course = get_sess_course($sysvars);
 
+    # Invoke the exporter if needed
+    launch_exporter($sysvars, $wiki, $course) unless($nolaunch);
+
+    # Precalculate some variables to use in templating
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
+
+    # Now generate the title, message.
+    my $title    = $sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse);
+    my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse),
+                                                          $error ? "warn" : $stages -> [STAGE_EXPORT] -> {"icon"},
+                                                          $stages, STAGE_COURSE,
+                                                          $sysvars -> {"template"} -> replace_langvar("EXPORT_LONGDESC", $subcourse),
+                                                          $sysvars -> {"template"} -> load_template("webui/stage3form.tem", {"***course***" => $subcourse -> {"***course***"},
+                                                                                                                             "***sessid***" => $session   -> {"session_id"}}));
+    return ($title, $message);    
 }
 
 
@@ -754,7 +850,6 @@ my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {
 my $session = SessionHandler -> new(logger   => $logger,
                                     cgi      => $out, 
                                     dbh      => $dbh,
-                                    template => $template,
                                     settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
