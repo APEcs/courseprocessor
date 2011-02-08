@@ -768,7 +768,7 @@ sub build_stage3_export {
                                                           $stages, STAGE_COURSE,
                                                           $sysvars -> {"template"} -> replace_langvar("EXPORT_LONGDESC", $subcourse),
                                                           $sysvars -> {"template"} -> load_template("webui/stage3form.tem", {"***course***" => $subcourse -> {"***course***"},
-                                                                                                                             "***sessid***" => $session   -> {"session_id"}}));
+                                                                                                                             "***sessid***" => $sysvars -> {"session"} -> {"session_id"}}));
     return ($title, $message);    
 }
 
