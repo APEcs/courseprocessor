@@ -1,0 +1,86 @@
+<!-- javascript needed for ajax work -->
+<script type="text/javascript" src="templates/default/ajax.js"></script>
+<script type="text/javascript" src="templates/default/sprintf.js"></script>
+
+<div class="left" style="margin: auto">
+***error***
+
+<div id="progress">
+     <fieldset>
+         <legend>{L_EXPORT_STATUS}</legend>
+         <div id="progdisplay"></div>
+     </fieldset>
+</div>
+
+<div id="success" style="display: none;">{L_EXPORT_SUCCESS}</div>
+<div id="warnings" style="display: none;">{L_EXPORT_WARNINGS}</div>
+<div id="fatals" style="display: none;">{L_EXPORT_FATALS}</div>
+<form action="index.cgi" method="post">
+<table class="formtable" cellpadding="3" cellspacing="1">
+    <tr>
+        <td class="nextbox">
+            <input type="hidden" name="stage"  value="4" />
+            <input type="submit" id="dosub" name="doprocess" accesskey="n" value="{L_NEXT}" disabled="disabled" />
+        </td>
+    </tr>
+</table>
+</form>
+</div>
+
+<script type="text/javascript">
+// <!--
+// The code to hide the form, show the progress bar, and update the progress bar as
+// the upload proceeds. This is based on code dug up from around the net, as the
+// CGI upload hook documentation lacks in detail what it makes up for in opaqueness.
+// Much is based around http://www.tek-tips.com/viewthread.cfm?qid=1580695&page=1
+
+// a jquery-like function, a shortcut to document.getElementById
+function $(o) {
+    return document.getElementById(o);
+}
+
+function parseResp(req) {
+    var txt = req.responseText;
+
+    $("progdisplay").innerHTML = txt;
+
+    // Determine whether the export has finished...
+    var testfrag = txt.substr(txt.length - 17, 16);
+    if(testfrag == "Export finished.") {
+        $("dosub").disabled = false;
+
+        // do we have any warnings?
+        if(txt.indexOf("WARNING:")) {
+            $("warnings").style.display = "block";
+        } else {
+            $("success").style.display = "block";
+        }
+
+    // Processing not explicitly finished - are there fatal errors, though?
+    } else if(txt.indexOf("FATAL:") {
+        // Show the fatals error
+        $("fatals").style.display = "block";
+        $("dosub").style.display = "none";
+
+    // Processing still going okay...
+    } else { 
+        // queue another request
+        setTimeout("getProgress()", 1000);
+    }
+}
+
+function getProgress() {
+
+    // create ajax request. rand is needed to prevent IE from caching
+    var url = "progress.cgi?mode=export&rand=" + Math.floor(Math.random()*99999);
+    var onErrorFunc = function (status) { alert("AJAX error: "+status); };
+
+    var myAjax = new bsn.Ajax();
+    myAjax.makeRequest( url, "GET", parseResp, onErrorFunc );
+}
+
+// Start the progress updating
+getProgress();
+
+// -->
+</script>
