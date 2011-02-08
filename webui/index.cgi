@@ -698,7 +698,7 @@ sub do_stage2_course {
     my $selected = $sysvars -> {"cgi"} -> param("course");
     if($selected) {
         # Get the list of courses...
-        my $courses = get_wiki_courses($wiki);
+        my $courses = get_wiki_courses($wikiconfig);
         
         # Is the selected course in the list?
         if($courses -> {$selected}) {
