@@ -778,7 +778,8 @@ sub build_stage3_export {
                                                           $error ? "warn" : $stages -> [STAGE_EXPORT] -> {"icon"},
                                                           $stages, STAGE_COURSE,
                                                           $sysvars -> {"template"} -> replace_langvar("EXPORT_LONGDESC", $subcourse),
-                                                          $sysvars -> {"template"} -> load_template("webui/stage3form.tem", {"***course***" => $subcourse -> {"***course***"},
+                                                          $sysvars -> {"template"} -> load_template("webui/stage3form.tem", {"***error***"  => $error,
+                                                                                                                             "***course***" => $subcourse -> {"***course***"},
                                                                                                                              "***sessid***" => $sysvars -> {"session"} -> {"session_id"}}));
     return ($title, $message);    
 }
