@@ -1,8 +1,3 @@
-/* Fancier jump scrolling, in theory.
- */
-new Fx.SmoothScroll({
-	duration: 1000
-},window);
 
 /* Add the rollover for the jump image that appears on most stages.
  */
