@@ -1208,6 +1208,7 @@ wiki2course [options]
  Options:
     -c, --convert=MODE       convert mediawiki markup to html (default: on)
     -f, --fileurl=URL        the location of the wiki.
+    -g, --config=FILE        Use an alternative configuration file.
     -h, -?, --help           brief help message.
     --man                    full documentation.
     -m, --mediadir=DIR       the subdir into which media should be written.
@@ -1236,6 +1237,11 @@ Note that the default is to process markup to html.
 This argument is optional. If provided, the script will use the specified URL
 as the base location for wiki files. This option is unlikely to be of use to 
 users of the APE wikis.
+
+=item B<-f, --config>
+
+Specify an alternative configuration file to use during exporting. If not set,
+the .courseprocessor.cfg file in the user's home directory will be used instead.
 
 =item B<-h, -?, --help>
 
