@@ -476,13 +476,15 @@ sub make_course_select {
 # Start the wiki2course exporter script working in the background to fetch the
 # contents of the specified course from the wiki.
 #
-# @param sysvars    A reference to a hash containing database, session, and settings objects.
-# @param wikiconfig A reference to the wiki configuration object.
-# @param course     The namespace of the course to export.
+# @param sysvars     A reference to a hash containing database, session, and settings objects.
+# @param wikiconfig  A reference to the wiki configuration object.
+# @param config_name The name of the configuration for the wiki.
+# @param course      The namespace of the course to export.
 sub launch_exporter {
-    my $sysvars    = shift;
-    my $wikiconfig = shift;
-    my $course     = shift;
+    my $sysvars     = shift;
+    my $wikiconfig  = shift;
+    my $config_name = shift;
+    my $course      = shift;
 
     # Work out some names and paths needed later
     my $outbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
@@ -764,7 +766,7 @@ sub build_stage3_export {
     my $course = get_sess_course($sysvars);
 
     # Invoke the exporter if needed
-    launch_exporter($sysvars, $wiki, $course) unless($nolaunch);
+    launch_exporter($sysvars, $wiki, $config_name, $course) unless($nolaunch);
 
     # Precalculate some variables to use in templating
     my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
