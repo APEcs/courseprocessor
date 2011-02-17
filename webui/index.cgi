@@ -776,7 +776,7 @@ sub build_stage3_export {
     my $title    = $sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse);
     my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse),
                                                           $error ? "warn" : $stages -> [STAGE_EXPORT] -> {"icon"},
-                                                          $stages, STAGE_COURSE,
+                                                          $stages, STAGE_EXPORT,
                                                           $sysvars -> {"template"} -> replace_langvar("EXPORT_LONGDESC", $subcourse),
                                                           $sysvars -> {"template"} -> load_template("webui/stage3form.tem", {"***error***"  => $error,
                                                                                                                              "***course***" => $subcourse -> {"***course***"},
