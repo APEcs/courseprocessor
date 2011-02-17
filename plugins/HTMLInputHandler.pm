@@ -49,7 +49,7 @@ use Cwd qw(getcwd chdir);
 use Digest::MD5 qw(md5_hex);
 use File::Path qw(make_path);
 use ProgressBar;
-use Utils qw(path_join load_file);
+use Utils qw(path_join load_file find_bin);
 
 
 # The location of the latex processor, must be absolute, as the path may have been nuked.
@@ -98,6 +98,10 @@ sub new {
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexargs"}  = DEFAULT_LATEX_ARGS if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"latexargs"}));
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexintro"} = DEFAULT_LATEX_HEADER if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"latexintro"}));
     $self -> {"config"} -> {"HTMLInputHandler"} -> {"cleanup"}    = DEFAULT_CLEANUP if(!defined($self -> {"config"} -> {"HTMLInputHandler"} -> {"cleanup"}));
+
+    # obtain paths
+    $self -> {"config"} -> {"paths"} -> {"pngtopnm"} = find_bin("pngtopnm")
+        or die "FATAL: Unable to locate 'pngtopnm' in search paths.\n";
 
     return $self;
 }
@@ -603,14 +607,14 @@ sub process_latex {
 
                 # the following line theoretically removes spurious bottom black bars
                 # hopefully this won't screw up real boxing...
-                `pngtopnm $name | pnmcrop -black | pnmtopng -transparent "#B3B3B3" > $dest`;
+                `$self->{config}->{paths}->{pngtopnm} $name | pnmcrop -black | pnmtopng -transparent "#B3B3B3" > $dest`;
             }
 
             # Remove the generated content
-            `rm -rf $tempname`;
+            `$self->{config}->{paths}->{rm} -rf $tempname`;
             
             # remove the source latex file
-            `rm -f $tempname.tex`;
+            `$self->{config}->{paths}->{rm} -f $tempname.tex`;
 
             # store the body in the cache
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Caching processed body for $content, md5 $checksum");

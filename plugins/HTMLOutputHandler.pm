@@ -19,11 +19,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# @todo Fix all `### FIXME for v3.7` functions
-# @todo check all templates and tags use the configuration to determine the media dir
-# @todo front page generation
-# @todo course map generation (create buttons, layout)
 
 ## @class HTMLOutputHandler
 # This plugin takes a hierarchy of files stored in the processor intermediate
@@ -1479,7 +1474,7 @@ sub cleanup_module {
     # do nothing if we have debug mode enabled
     return unless($self -> {"config"} -> {"Processor"} -> {"debug"});
 
-    my $out = `rm -fv $moddir/node*.html`;
+    my $out = `$self->{config}->{paths}->{rm} -fv $moddir/node*.html`;
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Cleanup output:\n$out");
 }
 
@@ -1516,7 +1511,7 @@ sub framework_merge {
         # Unless there is a /blindingly/ good reason, I suggest avoiding changing this setup!)
         if(-d $entryfile) {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying directory $entry and its contents to $outdir...");
-            my $out = `cp -rv $entryfile $outdir`;
+            my $out = `$self->{config}->{paths}->{cp} -rv $entryfile $outdir`;
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is:\n$out");
         
         # convert templates
@@ -1532,7 +1527,7 @@ sub framework_merge {
         # otherwise just straight-copy the file, as we don't know what to do with it
         } else {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying $entry to $outdir...");
-            my $out = `cp -rv $framedir/$entry $outdir`;
+            my $out = `$self->{config}->{paths}->{cp} -rv $framedir/$entry $outdir`;
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is: $out");
         }   
     }
@@ -2086,7 +2081,7 @@ sub process_step {
         my $name = get_step_name($stepid);
 
         # make a backup if we're running in debug mode
-        `cp -f $name $name.orig` if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"});
+        `$self->{config}->{paths}->{cp} -f $name $name.orig` if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"});
 
         # Now invoke tidy
         my $cmd = $self -> {"config"}-> {"HTMLOutputHandler"} -> {"tidycmd"}." ".

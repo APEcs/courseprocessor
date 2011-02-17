@@ -56,6 +56,24 @@ use constant DEFAULT_VERBOSITY => 0;
 use constant DEFAULT_MEDIADIR  => 'media'; 
 
 
+## @fn void find_bins($config)
+# Attempt to locate the external binaries the exporter relies on to operate. This
+# function will store the location of the binaries used by this script inside the
+# 'paths' section of the supplied config.
+#
+# @param config The configuration hash to store the paths in.
+sub find_bins {
+    my $config = shift;
+
+    $config -> {"paths"} -> {"rm"} = find_bin("rm")
+        or die "FATAL: Unable to locate 'rm' in search paths.\n";
+
+    $config -> {"paths"} -> {"cp"} = find_bin("cp")
+        or die "FATAL: Unable to locate 'cp' in search paths.\n";
+
+}
+
+
 ## @fn $ handle_commandline(void)
 # Parse the command line into a hash, and invoke pod2usage if the appropriate
 # options are specified. This will not confirm whether or not required arguments
@@ -369,10 +387,10 @@ check_output_plugin($plugins, $config, $log);
 # remove the old output if it exists and replace it with a copy of the source
 # need to use rm -rf because unlink / rmdir won't help here...
 $log -> print($log -> DEBUG, "Removing old output directory.");
-`rm -rf $config->{Processor}->{outputdir}`;
+`$config->{paths}->{rm} -rf $config->{Processor}->{outputdir}`;
 
 $log -> print($log -> DEBUG, "Copying source data.");
-`cp -r $config->{Processor}->{datasource} $config->{Processor}->{outputdir}`;
+`$config->{paths}->{cp} -r $config->{Processor}->{datasource} $config->{Processor}->{outputdir}`;
 
 # Run the input plugins that say they can be used...
 foreach my $plugin (sort(keys(%{$plugins -> {"input"}}))) {
