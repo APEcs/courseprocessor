@@ -6,15 +6,15 @@
 ***error***
 
 <div id="exporting"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_EXPORT_WORKING}</div>
+<div id="success" style="display: none;">{L_EXPORT_SUCCESS}</div>
+<div id="warnings" style="display: none;">{L_EXPORT_WARNINGS}</div>
+<div id="fatals" style="display: none;">{L_EXPORT_FATALS}</div>
 <div id="progress">
      <fieldset>
          <legend>{L_EXPORT_STATUS}</legend>
          <div id="progdisplay"></div>
      </fieldset>
 </div>
-<div id="success" style="display: none;">{L_EXPORT_SUCCESS}</div>
-<div id="warnings" style="display: none;">{L_EXPORT_WARNINGS}</div>
-<div id="fatals" style="display: none;">{L_EXPORT_FATALS}</div>
 <form action="index.cgi" method="post">
 <table class="formtable" cellpadding="3" cellspacing="1">
     <tr>
