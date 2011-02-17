@@ -50,6 +50,9 @@ function parseResp(req) {
     if(testfrag == "Export finished.") {
         $("dosub").disabled = false;
 
+        // Hide the progress
+        $("exporting").style.display = "none";
+
         // do we have any warnings?
         if(txt.indexOf("WARNING:")) {
             $("warnings").style.display = "block";
@@ -59,6 +62,9 @@ function parseResp(req) {
 
     // Processing not explicitly finished - are there fatal errors, though?
     } else if(txt.indexOf("FATAL:") != -1) {
+        // Hide the progress
+        $("exporting").style.display = "none";
+
         // Show the fatals error
         $("fatals").style.display = "block";
         $("dosub").style.display = "none";
