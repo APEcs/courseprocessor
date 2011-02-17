@@ -77,8 +77,7 @@ body  {
 }
 
 .warn {
-    color: yellow;
-    font-weight: bold;
+    color: #ff7700;
 }
 
 .small {
