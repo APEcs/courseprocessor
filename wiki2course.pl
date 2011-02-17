@@ -52,7 +52,7 @@ use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join);
+use Utils qw(save_file path_join find_bin);
 
 
 # Constants used in various places in the code
@@ -85,6 +85,21 @@ my $config;
 
 # -----------------------------------------------------------------------------
 #  Utility functions
+
+## @fn void find_bins($config)
+# Attempt to locate the external binaries the exporter relies on to operate. This
+# function will store the location of the binaries used by this script inside the
+# 'paths' section of the supplied config.
+#
+# @param config The configuration hash to store the paths in.
+sub find_bins {
+    my $config = shift;
+
+    $config -> {"paths"} -> {"rm"} = find_bin("rm")
+        or die "FATAL: Unable to locate 'rm' in search paths.\n";
+
+}
+
 
 ## @fn $ load_config($configfile)
 # Attempt to load the processor configuration file. This will attempt to load the
@@ -1135,6 +1150,9 @@ print "wiki2course.pl version ",get_version("wiki2course")," started.\n" unless(
 $logger -> set_verbosity($verbose);
 $config = load_config($configfile);
 
+# Locate necessary binaries
+find_bins($config);
+
 # If convert hasn't been explicitly specified, enable it
 if($convert eq '') {
     $convert = 1;
@@ -1150,7 +1168,7 @@ $password = get_password() if(!$password);
 # Remove any old coursedata directory, unless it doesn't exist or we don't need to
 if(-e $basedir && !$retainold) {
     $logger -> print($logger -> DEBUG, "Removing old output directory.") unless($quiet);
-    `rm -rf $basedir`;
+    `$config->{paths}->{rm} -rf $basedir`;
 }
 
 # Now we need to process the output directory. Does it exist?
