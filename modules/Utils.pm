@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -292,4 +292,32 @@ sub get_proc_size {
 
     return $vsize || -1;
 }
+
+
+##@fn $ find_bin($name, $search)
+# Attempt to locate the named binary file on the filesystem. This will search several
+# standard paths for the named binary (much like the shell will search its path,
+# except that this is not subject to environment pollution), and if it is located the
+# full path is returned. 
+#
+# @param name   The name of the binary to locate.
+# @param search An optional reference to an array of locations to look in for the 
+#               binary. Defaults to ['/usr/bin', '/bin', '/opt/bin', '/usr/local/bin']
+#               Paths are searched first to last, and the path of the first matching 
+#               binary user can execute is used.
+# @return A string containing the path of the binary, or undef on error.
+sub find_bin {
+    my $name   = shift;
+    my $search = shift || ['/usr/bin', '/bin', '/opt/bin', '/usr/local/bin'];
+
+    foreach my $path (@{$search}) {
+        my $check = path_join($path, $name);
+
+        return $check if(-f $check && -x $check);
+    }
+
+    return undef;
+}
+
+
 1;
