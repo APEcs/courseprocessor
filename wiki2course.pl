@@ -1057,7 +1057,7 @@ sub wiki_export_files {
         my @entries = $list =~ m{\[\[((?:Image:|File:)[^|\]]+)}goi;
         
         if(scalar(@entries)) {
-            $logger -> print($logger -> NOTICE, "$listpage shows ",scalar(@entries)," files to download. Processing...") unless($quiet);
+            $logger -> print($logger -> NOTICE, "$listpage shows ".scalar(@entries)." files to download. Processing...") unless($quiet);
             
             my $writecount = 0;
             my $file;

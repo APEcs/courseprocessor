@@ -45,8 +45,8 @@ function parseResp(req) {
     $("progdisplay").innerHTML = txt;
 
     // Determine whether the export has finished...
-    var testfrag = txt.substr(txt.length - 17, 16);
-    if(testfrag == "Export finished.") {
+    var testfrag = txt.substr(txt.length - 23, 22);
+    if(testfrag == "Export finished.<br />") {
         $("dosub").disabled = false;
 
         // Hide the progress
