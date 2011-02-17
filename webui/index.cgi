@@ -501,6 +501,7 @@ sub launch_exporter {
               " -n $course".
               " -o $outpath".
               " -w ".$wikiconfig -> {"WebUI"} -> {"api_url"}.
+              " -g ".path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name).
               " > $logfile".
               ' 2>&1 &';
 
