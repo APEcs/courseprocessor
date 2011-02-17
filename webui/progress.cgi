@@ -94,7 +94,8 @@ if(-f $logfile) {
     print $out -> header(-type => 'text/plain');
     my $data;
     while(read(LOGFILE, $data, 4096)) {
-        $data =~ s|\n|<br />\n|g;
+        $data =~ s|\n|<br />\n|g; # explicitly force newlines
+        $data =~ s|$outbase||g;   # remove scary/path exposing output
         print $data;
     }
 
