@@ -416,7 +416,7 @@ div.sortbar {
     font-size: smaller;
 }
 
-div.progdisplay {
+#progdisplay {
     border-style: inset;
     border-width: 1px;
     background-color: #ddd;

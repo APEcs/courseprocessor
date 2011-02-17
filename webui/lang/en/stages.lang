@@ -23,3 +23,11 @@ COURSE_LONGDESC      = <p>You have successfully logged into the wiki, now you ne
 COURSE_COURSE        = Select ***course***
 COURSE_ERR_NOCOURSE  = You did not select a ***course***. Please select a ***course*** from the list before you click on Next.
 COURSE_ERR_BADCOURSE = The selected ***course*** does not exist in the wiki. Please ensure that you only select a ***course*** from the list below.
+
+EXPORT_TITLE         = Exporting from wiki
+EXPORT_LONGDESC      = The selected ***lccourse*** is now being exported from the wiki. This process can take quite some time, especially when there are lots of pages and media to export, so please be patient. Once the export has finished, the Next button will become active and you can proceed to processing.
+EXPORT_STATUS        = Export progress
+EXPORT_SUCCESS       = ***course*** exported successfully! You can proceed to the next stage now to process your ***lccourse*** into a CBT package.
+EXPORT_WARNINGS      = <span class="warn">Your ***lccourse*** has been exported, but one or more warnings were encountered during export. Some warnings are harmless and can be ignored, but some can cause problems during processing, so be sure to check through the status messages to see what caused the warnings before going onto processing.</span>
+EXPORT_FATALS        = <span class="error">A fatal error was encountered while exporting your ***lccourse***. Exporting failed, and you must fix the fatal error shown below before you can try again.</span>
+EXPORT_WORKING       = Exporting...
