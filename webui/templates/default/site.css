@@ -420,12 +420,15 @@ div.sortbar {
     border-style: inset;
     border-width: 1px;
     background-color: #ddd;
-    font: 10px 'courier new', fixed;
+    font: 12px 'courier new', fixed;
     white-space: nowrap;
     width: 120em;
     height: 40em;
     text-align: left;
     padding: 0.5em;
+    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
 }
 
 span.catfield {
