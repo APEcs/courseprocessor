@@ -20,6 +20,7 @@
     <tr>
         <td class="nextbox">
             <input type="hidden" name="stage"  value="4" />
+            <input type="submit" name="back" accesskey="b" value="{L_PREV}" />
             <input type="submit" id="dosub" name="doprocess" accesskey="n" value="{L_NEXT}" disabled="disabled" />
         </td>
     </tr>
