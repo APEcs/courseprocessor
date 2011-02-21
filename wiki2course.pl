@@ -52,7 +52,7 @@ use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin);
+use Utils qw(save_file path_join find_bin write_pid);
 
 
 # Constants used in various places in the code
@@ -72,7 +72,7 @@ my %default_config = ( course_page   => "Course",
     );
 
 # various globals set via the arguments
-my ($retainold, $quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile) = ('', '', '', '', '', '', WIKIURL, '', '', 0, 'media', '');
+my ($retainold, $quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile, $pidfile) = ('', '', '', '', '', '', WIKIURL, '', '', 0, 'media', '', '');
 my $man = 0;
 my $help = 0;
 
@@ -1132,6 +1132,7 @@ GetOptions('outputdir|o=s' => \$basedir,
            'wiki|w=s'      => \$apiurl,
            'convert|c=s'   => \$convert,
            'config|g=s'    => \$configfile,
+           'pid=s'         => \$pidfile,
            'verbose|v+'    => \$verbose,
            'quiet|q!'      => \$quiet,
            'retainold|r!'  => \$retainold,
@@ -1143,6 +1144,9 @@ if(!$help && !$man) {
 }
 pod2usage(-verbose => 2) if($man);
 pod2usage(-verbose => 0) if($help || !$username);
+
+# Before doing any real work, write the PID if needed.
+write_pid($pidfile) if($pidfile);
 
 print "wiki2course.pl version ",get_version("wiki2course")," started.\n" unless($quiet);
 
@@ -1234,6 +1238,7 @@ wiki2course [options]
     -o, --outputdir=DIR      the name of the directory to write to.
     -p, --password=PASSWORD  password to provide when logging in. If this is
                              not provided, it will be requested at runtime.
+    --pid=FILE               write the process id to a file.
     -q, --quiet              suppress all normal status output.
     -r, --retainold          do not delete the output directory if it exists.
     -u, --username=NAME      the name to log into the wiki as.
@@ -1292,7 +1297,7 @@ exist, the script will attempt to create it for you. Note that if the
 directory I<does> exist, the script will simply export the course into the 
 directory, overwriting any files that may be present already!
 
-=item B<--password>
+=item B<-p, --password>
 
 This argument is optional. If provided, the script will attempt to use the 
 specified password when logging into the wiki. Use of this argument is 
@@ -1301,6 +1306,11 @@ export script to be called programmatically, and providing your password this
 way can be a security risk (anyone looking over your shoulder could see the 
 plain text password on the command prompt, and the whole command line will be 
 saved in your shell history, including the password).
+
+=item B<--pid>
+
+If specified, the script will write its process ID to the file provided. This
+is primarily needed to support the web interface.
 
 =item B<-q, --quiet>
 
