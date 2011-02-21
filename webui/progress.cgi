@@ -15,7 +15,7 @@ use File::Path qw(make_path);
 use ConfigMicro;
 use Logger;
 use SessionHandler;
-use Utils qw(path_join is_defined_numeric get_proc_size);
+use Utils qw(path_join load_file);
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
@@ -88,18 +88,13 @@ my $logfile = path_join($outbase, "$mode.log");
 
 # Send the contents of the log file to the user if possible
 if(-f $logfile) {
-    open(LOGFILE, $logfile)
-        or die_log($out -> remote_host(), "progress.cgi: Unable to open log file: $!");
+    my $data = load_file($logfile);
 
     print $out -> header(-type => 'text/plain');
-    my $data;
-    while(read(LOGFILE, $data, 4096)) {
-        $data =~ s|\n|<br />\n|g; # explicitly force newlines
-        $data =~ s|$outbase||g;   # remove scary/path exposing output
-        print $data;
-    }
+    $data =~ s|\n|<br />\n|g; # explicitly force newlines
+    $data =~ s|$outbase||g;   # remove scary/path exposing output
+    print $data;
 
-    close(LOGFILE);
 } else {
     print $out -> header(-type => 'text/plain');
     print "No log file present.";
