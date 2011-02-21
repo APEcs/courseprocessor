@@ -47,7 +47,7 @@ use Logger;
 use Metadata;
 use ProcessorVersion;
 use Template;
-use Utils qw(check_directory resolve_path path_join find_bin);
+use Utils qw(check_directory resolve_path path_join find_bin write_pid);
 
 # In the absence of a user-defined verbosity level, what should we run at?
 use constant DEFAULT_VERBOSITY => 0;
@@ -89,16 +89,20 @@ sub handle_commandline {
                'debug|b+'       => \$args -> {"debug"},
                'coursedata|c=s' => \$args -> {"datasource"},
                'dest|d=s'       => \$args -> {"outputdir"},
-               'config|f:s'     => \$args -> {"configfile"},
-               'mediadir|m:s'   => \$args -> {"mediadir"},
-               'outhandler|o:s' => \$args -> {"output_handler"},
+               'config|f=s'     => \$args -> {"configfile"},
+               'mediadir|m=s'   => \$args -> {"mediadir"},
+               'outhandler|o=s' => \$args -> {"output_handler"},
                'listhandlers|l' => \$args -> {"listhandlers"},
                'filter:s@'      => \$args -> {"filters"},    # filter can be specified once with a comma list, or many times
+               'pid|p=s'        => \$args -> {"pidfile"},
                'help|?|h'       => \$help,
                'man'            => \$man) or pod2usage(2);
 
     pod2usage(-verbose => 2) if($man);
     pod2usage(-verbose => 0) if($help);
+
+    # Before doing any real work, write the PID if needed.
+    write_pid($args -> {"pidfile"}) if($args -> {"pidfile"});
 
     return $args;
 }
@@ -496,6 +500,11 @@ the verbosity level. -v -v -v would enable all levels of output, including debug
 Specify one or more filters to apply during course processing. This option may be
 specified multiple times if you need to apply more than one filter, or you may
 provide it once with a comma separated list of filters.
+
+=item B<-p, --pid>
+
+If specified, the script will write its process ID to the file provided. This
+is primarily needed to support the web interface.
 
 =back
 
