@@ -313,6 +313,9 @@ merge_commandline($args, $config);
 
 $log -> set_verbosity($config -> {"Processor"} -> {"verbosity"});
 
+# Go look for binary files we need
+find_bins($config);
+
 # ------------------------------------------------------------------------------
 #  Plugin initalisation
 #
