@@ -23,7 +23,7 @@ use ConfigMicro;
 use Logger;
 use SessionHandler;
 use Template;
-use Utils qw(path_join is_defined_numeric get_proc_size load_file);
+use Utils qw(path_join is_defined_numeric get_proc_size read_pid);
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
@@ -530,7 +530,7 @@ sub halt_exporter {
     return 0 if(!-f $pidfile);
 
     # It exists, so we need to load it and see if the process is running
-    my $pid = load_file($pidfile);
+    my $pid = read_pid($pidfile);
     my $running = kill 0, $pid;
 
     # Remove the no-longer-needed pid file

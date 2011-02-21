@@ -355,10 +355,12 @@ sub read_pid {
 
     chomp($pid); # should not be needed, but best to be safe.
 
-    die "FATAL: PID file does not appear to contain a valid process id.\n"
-        unless($pid =~ /^\d+$/);
+    my ($realpid) = $pid =~ /^(\d+)$/;
 
-    return $pid;
+    die "FATAL: PID file does not appear to contain a valid process id.\n"
+        unless($realpid);
+
+    return $realpid;
 }
 
 1;
