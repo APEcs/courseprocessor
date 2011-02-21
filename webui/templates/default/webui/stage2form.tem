@@ -11,7 +11,7 @@
     <tr>
         <td class="nextbox">
             <input type="hidden" name="stage"  value="3" />
-            <input type="hidden" name="bstage" value="2" />
+            <input type="hidden" name="bstage" value="1" />
             <input type="submit" name="back" accesskey="b" value="{L_BACK}" />
             <input type="submit" name="doexport" accesskey="n" value="{L_NEXT}" />
         </td>
