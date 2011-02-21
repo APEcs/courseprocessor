@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchmp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -319,5 +319,46 @@ sub find_bin {
     return undef;
 }
 
+
+## @fn void write_pid($filename)
+# Write the process id of the current process to the specified file. This will
+# attempt to open the specified file and write the current processes' ID to
+# it for use by other processes.
+#
+# @param filename The name of the file to write the process ID to.
+sub write_pid {
+    my $filename = shift;
+
+    open(PIDFILE, "> $filename")
+        or die "FATAL: Unable to open PID file for writing: $!\n";
+
+    print PIDFILE $$;
+
+    close(PIDFILE);
+}
+
+
+## @fn $ read_pid($filename)
+# Attempt to read a PID from the specified file. This will read the file, if possible,
+# and verify that the content is a single string of digits.
+#
+# @param filename The name of the file to read the process ID from.
+# @return The process ID. This function will die on error.
+sub read_pid {
+    my $filename = shift;
+
+    open(PIDFILE, "< $filename")
+        or die "FATAL: Unable to open PID file for reading: $!\n";
+
+    my $pid = <PIDFILE>;
+    close(PIDFILE);
+
+    chomp($pid); # should not be needed, but best to be safe.
+
+    die "FATAL: PID file does not appear to contain a valid process id.\n"
+        unless($pid =~ /^\d+$/);
+
+    return $pid;
+}
 
 1;
