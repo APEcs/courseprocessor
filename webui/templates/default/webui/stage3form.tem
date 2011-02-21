@@ -55,7 +55,7 @@ function parseResp(req) {
         $("exporting").style.display = "none";
 
         // do we have any warnings?
-        if(txt.indexOf("WARNING:")) {
+        if(txt.indexOf("WARNING:") != -1) {
             $("warnings").style.display = "block";
         } else {
             $("success").style.display = "block";
