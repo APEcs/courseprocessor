@@ -23,7 +23,7 @@ use ConfigMicro;
 use Logger;
 use SessionHandler;
 use Template;
-use Utils qw(path_join is_defined_numeric get_proc_size);
+use Utils qw(path_join is_defined_numeric get_proc_size load_file);
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
