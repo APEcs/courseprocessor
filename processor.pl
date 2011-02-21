@@ -47,7 +47,7 @@ use Logger;
 use Metadata;
 use ProcessorVersion;
 use Template;
-use Utils qw(check_directory resolve_path path_join);
+use Utils qw(check_directory resolve_path path_join find_bin);
 
 # In the absence of a user-defined verbosity level, what should we run at?
 use constant DEFAULT_VERBOSITY => 0;
