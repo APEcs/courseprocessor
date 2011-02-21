@@ -68,7 +68,6 @@ function parseResp(req) {
 
         // Show the fatals error
         $("fatals").style.display = "block";
-        $("dosub").style.display = "none";
 
     // Processing still going okay...
     } else { 
