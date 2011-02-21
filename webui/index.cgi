@@ -490,6 +490,7 @@ sub launch_exporter {
     my $outbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
     my $logfile = path_join($outbase, "export.log");
     my $outpath = path_join($outbase, "coursedata");
+    my $pidfile = path_join($outbase, "export.pid");
 
     # Make sure the paths exist
     if(!-d $outpath) {
@@ -504,11 +505,45 @@ sub launch_exporter {
               " -o $outpath".
               " -w ".$wikiconfig -> {"WebUI"} -> {"api_url"}.
               " -g ".path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name).
+              " --pid $pidfile".
               " > $logfile".
               ' 2>&1 &';
 
     # Set the exporter going, hopefully unattached in the background now...
     `$cmd`;
+}
+
+
+## @fn $ halt_exporter($sysvars)
+# Determine whether the exporter is still working, and if it is kill it. This will
+# attempt to load the PID file for the exporter, and kill the process specified in
+# it if the process is running, otherwise it will simply delete the file.
+#
+# @param sysvars     A reference to a hash containing database, session, and settings objects.
+# @return true if the exporter was running and has been killed, false otherwise.
+sub halt_exporter {
+    my $sysvars = shift;
+
+    my $pidfile = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "export.pid"));
+
+    # Does the pid file even exist? If not don't bother doing anything
+    return 0 if(!-f $pidfile);
+
+    # It exists, so we need to load it and see if the process is running
+    my $pid = load_file($pidfile);
+    my $running = kill 0, $pid;
+
+    # Remove the no-longer-needed pid file
+    unlink($pidfile);
+
+    # If the process is running, try to kill it
+    if($running) {
+        # We could probably use TERM rather than KILL, but this can't be blocked...
+        return kill 9,$pid;
+    }
+
+
+    return 0;
 }
 
 
@@ -653,6 +688,11 @@ sub build_stage2_course {
         # returnif do_stage0_login($sysvars);, damnit.
         my @result = do_stage1_login($sysvars);
         return @result if($result[0] && $result[1]);
+
+    # did the user click back?
+    } elsif($sysvars -> {"cgi"} -> param("back")) {
+        # Yes, check that the exporter is not running, and kill it if it is.
+        halt_exporter($sysvars);
     }
 
     # If the user has logged in successfully, obtain a list of courses from the wiki.
