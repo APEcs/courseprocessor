@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchmp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
