@@ -21,6 +21,12 @@ LOGIN_ERR_NOWIKI     = You have not selected a wiki to use. Please ensure that y
 COURSE_TITLE         = Select the ***lccourse*** to process.
 COURSE_LONGDESC      = <p>You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process.</p><p>Please select the ***lccourse*** to export and process from the list below, and then click Next. If you have accidentally logged into the wrong wiki, press Prev to return to the login form to log into a different wiki.</p>
 COURSE_COURSE        = Select ***course***
+COURSE_CTITLE        = ***course*** Selection.
+COURSE_OTITLE        = Advanced options.
+COURSE_EXPVERB       = Verbose exporting
+COURSE_PROCVERB      = Verbose processing
+COURSE_EXPVERB_WARN  = <span class="small">(Warning: turning on verbose exporting can generate very large progress logs. Only turn this on if you need the extra information to locate a problem in your material!)</span>
+COURSE_PROCVERB_WARN = <span class="small">(Warning: turning on verbose processing will generate <i>excessively</i> large progress logs. Only turn this on if you <b>need</b> the extra information to locate a problem in your material!)</span>
 COURSE_ERR_NOCOURSE  = You did not select a ***course***. Please select a ***course*** from the list before you click on Next.
 COURSE_ERR_BADCOURSE = The selected ***course*** does not exist in the wiki. Please ensure that you only select a ***course*** from the list below.
 
