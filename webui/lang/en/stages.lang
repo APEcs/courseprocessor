@@ -25,8 +25,7 @@ COURSE_CTITLE        = ***course*** Selection.
 COURSE_OTITLE        = Advanced options.
 COURSE_EXPVERB       = Verbose exporting
 COURSE_PROCVERB      = Verbose processing
-COURSE_EXPVERB_WARN  = <span class="small">(Warning: turning on verbose exporting can generate very large progress logs. Only turn this on if you need the extra information to locate a problem in your material!)</span>
-COURSE_PROCVERB_WARN = <span class="small">(Warning: turning on verbose processing will generate <i>excessively</i> large progress logs. Only turn this on if you <b>need</b> the extra information to locate a problem in your material!)</span>
+COURSE_VERBWARN      = <span class="small">(Warning: turning on verbose exporting or processing will generate <em>very large</em> progress logs. Only turn these options on if you <b>need</b> the extra information to locate a problem in your material, otherwise leave them unticked)</span>
 COURSE_ERR_NOCOURSE  = You did not select a ***course***. Please select a ***course*** from the list before you click on Next.
 COURSE_ERR_BADCOURSE = The selected ***course*** does not exist in the wiki. Please ensure that you only select a ***course*** from the list below.
 
