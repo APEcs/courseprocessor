@@ -812,6 +812,8 @@ sub build_stage3_export {
     my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
+    my $delay = 1000; # Default delay between AJAX requests is 1 second.
+
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse);
     my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse),
@@ -821,7 +823,7 @@ sub build_stage3_export {
                                                           $sysvars -> {"template"} -> load_template("webui/stage3form.tem", {"***error***"    => $error,
                                                                                                                              "***course***"   => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***" => $subcourse -> {"***lccourse***"},
-                                                                                                                             "***sessid***"   => $sysvars -> {"session"} -> {"session_id"}}));
+                                                                                                                             "***delay***"    => $delay}));
     return ($title, $message);    
 }
 

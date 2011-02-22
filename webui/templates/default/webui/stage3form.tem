@@ -72,7 +72,7 @@ function parseResp(req) {
     // Processing still going okay...
     } else { 
         // queue another request
-        setTimeout("getProgress()", 1000);
+        setTimeout("getProgress()", ***delay***);
     }
 }
 
