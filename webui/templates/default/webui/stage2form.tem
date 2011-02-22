@@ -9,10 +9,10 @@
         </tr>
         <tr class="header"><td class="formfield" colspan="2"><b>{L_COURSE_OTITLE}</b></td></tr>
         <tr><td class="formname">&nbsp;</td>
-            <td class="formfield"><input type="checkbox" name="expverb" value="1" /> {L_COURSE_EXPVERB} {L_COURSE_EXPVERB_WARN}</td>
+            <td class="formfield"><input type="checkbox" name="expverb" value="1" /> <b>{L_COURSE_EXPVERB}</b> {L_COURSE_EXPVERB_WARN}</td>
         </tr>
         <tr><td class="formname">&nbsp;</td>
-            <td class="formfield"><input type="checkbox" name="procverb" value="1" /> {L_COURSE_PROCVERB} {L_COURSE_PROCVERB_WARN}</td>
+            <td class="formfield"><input type="checkbox" name="procverb" value="1" /> <b>{L_COURSE_PROCVERB}</b> {L_COURSE_PROCVERB_WARN}</td>
         </tr>
     </table>
 <table class="formtable" cellpadding="3" cellspacing="1">
