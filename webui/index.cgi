@@ -514,24 +514,41 @@ sub launch_exporter {
 }
 
 
-## @fn $ halt_exporter($sysvars)
-# Determine whether the exporter is still working, and if it is kill it. This will
-# attempt to load the PID file for the exporter, and kill the process specified in
-# it if the process is running, otherwise it will simply delete the file.
+## @fn $ check_exporter($sysvars, $pidfile)
+# Determine whether the exporter is currently working. This will determine whether the
+# exporter process is still alive, and return true if it is.
 #
-# @param sysvars     A reference to a hash containing database, session, and settings objects.
-# @return true if the exporter was running and has been killed, false otherwise.
-sub halt_exporter {
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param pidfile Optional PID file to load, if not specified the session default file is used.
+# @return true if the exporter is running, false otherwise.
+sub check_exporter {
     my $sysvars = shift;
-
-    my $pidfile = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "export.pid"));
+    my $pidfile = shift || untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "export.pid"));
 
     # Does the pid file even exist? If not don't bother doing anything
     return 0 if(!-f $pidfile);
 
     # It exists, so we need to load it and see if the process is running
     my $pid = read_pid($pidfile);
-    my $running = kill 0, $pid;
+
+    return kill 0, $pid;
+}
+
+
+## @fn $ halt_exporter($sysvars)
+# Determine whether the exporter is still working, and if it is kill it. This will
+# attempt to load the PID file for the exporter, and kill the process specified in
+# it if the process is running, otherwise it will simply delete the file.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @return true if the exporter was running and has been killed, false otherwise.
+sub halt_exporter {
+    my $sysvars = shift;
+
+    my $pidfile = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "export.pid"));
+
+    # Is the exporter still going?
+    my $running = check_exporter($sysvars, $pidfile);
 
     # Remove the no-longer-needed pid file
     unlink($pidfile);
