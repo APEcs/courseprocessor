@@ -531,7 +531,9 @@ sub check_exporter {
     # It exists, so we need to load it and see if the process is running
     my $pid = read_pid($pidfile);
 
-    return kill 0, $pid;
+    return $pid if(kill 0, $pid);
+
+    return undef;
 }
 
 
@@ -548,17 +550,14 @@ sub halt_exporter {
     my $pidfile = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "export.pid"));
 
     # Is the exporter still going?
-    my $running = check_exporter($sysvars, $pidfile);
+    my $pid = check_exporter($sysvars, $pidfile);
 
     # Remove the no-longer-needed pid file
     unlink($pidfile);
 
     # If the process is running, try to kill it
-    if($running) {
-        # We could probably use TERM rather than KILL, but this can't be blocked...
-        return kill 9,$pid;
-    }
-
+    # We could probably use TERM rather than KILL, but this can't be blocked...
+    return kill 9,$pid if($pid);
 
     return 0;
 }
