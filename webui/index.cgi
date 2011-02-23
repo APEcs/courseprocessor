@@ -638,7 +638,7 @@ sub launch_processor {
     my $logfile    = path_join($outbase, "process.log");
     my $coursedata = path_join($outbase, "coursedata");
     my $pidfile    = path_join($outbase, "process.pid");
-    my $outpath    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"output_path"}, $sysvars -> {"session"} -> {"sessid"}, "output");
+    my $outpath    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"output_path"}, $sysvars -> {"session"} -> {"sessid"}, "output"));
 
     # Make sure the output path exist
     if(!-d $outpath) {
