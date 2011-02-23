@@ -23,7 +23,7 @@ use ConfigMicro;
 use Logger;
 use SessionHandler;
 use Template;
-use Utils qw(path_join is_defined_numeric get_proc_size read_pid);
+use Utils qw(path_join is_defined_numeric get_proc_size read_pid untaint_path);
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
@@ -112,15 +112,6 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
                  "icon"     => "finish",
                  "hasback"  => 0,
                  "func"     => \&build_stage5_finish } ];
-
-
-sub untaint_path {
-    my $taintedpath = shift;
-
-    my ($untainted) = $taintedpath =~ m|^(/(?:[-\w.]+)(?:/[-\w.]+)*)$|;
-
-    return $untainted;
-}
 
 # =============================================================================
 #  Database interaction
@@ -632,6 +623,88 @@ sub halt_exporter {
 }
 
 
+## @fn void launch_processor($sysvars, $config_name)
+# Start the processor script working in the background to convert the fetched course
+# into a CBT package.
+#
+# @param sysvars     A reference to a hash containing database, session, and settings objects.
+# @param config_name The name of the configuration for the wiki.
+sub launch_processor {
+    my $sysvars     = shift;
+    my $config_name = shift;
+
+    # Work out some names and paths needed later
+    my $outbase    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
+    my $logfile    = path_join($outbase, "process.log");
+    my $coursedata = path_join($outbase, "coursedata");
+    my $output     = path_join($outbase, "output");
+    my $pidfile    = path_join($outbase, "process.pid");
+
+    my $extraverb = "";
+    $extraverb = "-v" if(get_sess_verbosity($sysvars, "process"));
+
+    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb".
+              " -c $coursedata".
+              " -d $output".
+              " -f ".path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name).
+              " --pid $pidfile".
+              " > $logfile".
+              ' 2>&1 &';
+
+    # Set the processor going, hopefully unattached in the background now...
+    `$cmd`;
+}
+
+
+## @fn $ check_processor($sysvars, $pidfile)
+# Determine whether the processor is currently working. This will determine whether the
+# processor process is still alive, and return true if it is.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param pidfile Optional PID file to load, if not specified the session default file is used.
+# @return true if the exporter is running, false otherwise.
+sub check_processor {
+    my $sysvars = shift;
+    my $pidfile = shift || untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "process.pid"));
+
+    # Does the pid file even exist? If not don't bother doing anything
+    return 0 if(!-f $pidfile);
+
+    # It exists, so we need to load it and see if the process is running
+    my $pid = read_pid($pidfile);
+
+    return $pid if(kill 0, $pid);
+
+    return undef;
+}
+
+
+## @fn $ halt_processor($sysvars)
+# Determine whether the processor is still working, and if it is kill it. This will
+# attempt to load the PID file for the processor, and kill the process specified in
+# it if the process is running, otherwise it will simply delete the file.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @return true if the exporter was running and has been killed, false otherwise.
+sub halt_processor {
+    my $sysvars = shift;
+
+    my $pidfile = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "process.pid"));
+
+    # Is the processor still going?
+    my $pid = check_processor($sysvars, $pidfile);
+
+    # Remove the no-longer-needed pid file
+    unlink($pidfile);
+
+    # If the process is running, try to kill it
+    # We could probably use TERM rather than KILL, but this can't be blocked...
+    return kill 9,$pid if($pid);
+
+    return 0;
+}
+
+
 # =============================================================================
 #  Stages...
 
@@ -778,6 +851,9 @@ sub build_stage2_course {
     } elsif($sysvars -> {"cgi"} -> param("back")) {
         # Yes, check that the exporter is not running, and kill it if it is.
         halt_exporter($sysvars);
+
+        # We can also get here from processing, so check and halt that if needed
+        halt_processor($sysvars);
     }
 
     # If the user has logged in successfully, obtain a list of courses from the wiki.
@@ -872,14 +948,10 @@ sub do_stage2_course {
 #
 # @param sysvars  A reference to a hash containing database, session, and settings objects.
 # @param error    An optional error message to display to the user.
-# @param nolaunch If set to true, this will prevent the exporter from being started. This
-#                 should be true if this function is called again while the exporter is 
-#                 still working.
 # @return An array of two values: the title of the page, and the messagebox to show on the page.
 sub build_stage3_export {
     my $sysvars  = shift;
     my $error    = shift;
-    my $nolaunch = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
     my $config_name = get_sess_login($sysvars)
@@ -899,14 +971,16 @@ sub build_stage3_export {
     # course name for later...
     my $course = get_sess_course($sysvars);
 
-    # Invoke the exporter if needed
-    launch_exporter($sysvars, $wiki, $config_name, $course) unless($nolaunch);
+    # Invoke the exporter if it isn't already running
+    launch_exporter($sysvars, $wiki, $config_name, $course) unless(check_exporter($sysvars));
 
     # Precalculate some variables to use in templating
     my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
-    my $delay = 1000; # Default delay between AJAX requests is 1 second.
+    # Get the default delay, but override it if verbosity is enabled.
+    my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
+    $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_export_delay"} if(get_sess_verbosity($sysvars, "export"));
 
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse);
@@ -915,6 +989,59 @@ sub build_stage3_export {
                                                           $stages, STAGE_EXPORT,
                                                           $sysvars -> {"template"} -> replace_langvar("EXPORT_LONGDESC", $subcourse),
                                                           $sysvars -> {"template"} -> load_template("webui/stage3form.tem", {"***error***"    => $error,
+                                                                                                                             "***course***"   => $subcourse -> {"***course***"},
+                                                                                                                             "***lccourse***" => $subcourse -> {"***lccourse***"},
+                                                                                                                             "***delay***"    => $delay}));
+    return ($title, $message);    
+}
+
+
+## @fn $ build_stage4_process($sysvars, $error, $nolaunch)
+# Generate the content for the processing stage of the wizard. This will check that the
+# wiki2course script has actually finished, and the course data directory exists, and if
+# both are true it will launch the processor script in the background before sending back 
+# the status form to the user.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @param error    An optional error message to display to the user.
+# @return An array of two values: the title of the page, and the messagebox to show on the page.
+sub build_stage4_process {
+    my $sysvars  = shift;
+    my $error    = shift;
+
+    # We need to get the wiki's information regardless of anything else, so get the name first...
+    my $config_name = get_sess_login($sysvars)
+        or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
+
+    # Obtain the wiki's configuration
+    my $wiki = get_wiki_config($sysvars, $config_name);
+
+    # Is the exporter still running? If so, kick the user back to stage 3
+    return build_stage3_export($sysvars, $sysvars -> {"template"} -> replace_langvar("PROCESS_EXPORTING"))
+        if(check_exporter($sysvars));
+
+    # We have a course selected, so now we need to start the export. First get the 
+    # course name for later...
+    my $course = get_sess_course($sysvars);
+
+    # Invoke the processor if needed
+    launch_processor($sysvars, $config_name) unless(check_processor($sysvars));
+
+    # Precalculate some variables to use in templating
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
+
+    # Get the default delay, but override it if verbosity is enabled.
+    my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
+    $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_process_delay"} if(get_sess_verbosity($sysvars, "process"));
+
+    # Now generate the title, message.
+    my $title    = $sysvars -> {"template"} -> replace_langvar("PROCESS_TITLE", $subcourse);
+    my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("PROCESS_TITLE", $subcourse),
+                                                          $error ? "warn" : $stages -> [STAGE_PROCESS] -> {"icon"},
+                                                          $stages, STAGE_PROCESS,
+                                                          $sysvars -> {"template"} -> replace_langvar("PROCESS_LONGDESC", $subcourse),
+                                                          $sysvars -> {"template"} -> load_template("webui/stage4form.tem", {"***error***"    => $error,
                                                                                                                              "***course***"   => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***" => $subcourse -> {"***lccourse***"},
                                                                                                                              "***delay***"    => $delay}));
