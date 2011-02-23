@@ -1202,7 +1202,7 @@ my $session = SessionHandler -> new(logger   => $logger,
 garbage_collect("logger"   => $logger,
                 "dbh"      => $dbh,
                 "settings" => $settings,
-                "cgi"      => $out})
+                "cgi"      => $out});
 
 # Generate the page based on the current step
 my $content = page_display({"logger"   => $logger,
