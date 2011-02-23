@@ -38,7 +38,7 @@ EXPORT_FATALS        = <span class="error">A fatal error was encountered while e
 EXPORT_WORKING       = Exporting...
 
 PROCESS_TITLE        = Processing material
-PROCESS_LONGDESC     = Your ***lccourse*** has been exported successfully, and is now being processed. This can take some time, so please be patient while the ssytem works. Once the processor has finished, you can either click Next go onto the final stage to preview your ***lccourse*** and download a copy of it, or you can click Prev to return to the Options step.
+PROCESS_LONGDESC     = Your ***lccourse*** has been exported successfully, and is now being processed. This can take some time, so please be patient while the system works. Once the processor has finished, you can either click Next go onto the final stage to preview your ***lccourse*** and download a copy of it, or you can click Prev to return to the Options step.
 PROCESS_STATUS       = Processing progress
 PROCESS_SUCCESS      = ***course*** processed successfully! You can proceed to the next stage now to preview and download your ***lccourse***.
 PROCESS_WARNINGS     = <span class="warn">Your ***lccourse*** has been processed, but one or more warnings were encountered during process. Some warnings are harmless and can be ignored, but some can cause problems in the ***lccourse*** output, so be sure to check through the status messages to see what caused the warnings before proceeding.</span>
