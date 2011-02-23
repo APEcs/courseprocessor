@@ -1199,10 +1199,10 @@ my $session = SessionHandler -> new(logger   => $logger,
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # Clean up any old directories
-garbage_collect("logger"   => $logger,
-                "dbh"      => $dbh,
-                "settings" => $settings,
-                "cgi"      => $out});
+garbage_collect({"logger"   => $logger,
+                 "dbh"      => $dbh,
+                 "settings" => $settings,
+                 "cgi"      => $out});
 
 # Generate the page based on the current step
 my $content = page_display({"logger"   => $logger,
