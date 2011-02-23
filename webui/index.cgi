@@ -637,15 +637,21 @@ sub launch_processor {
     my $outbase    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
     my $logfile    = path_join($outbase, "process.log");
     my $coursedata = path_join($outbase, "coursedata");
-    my $output     = path_join($outbase, "output");
     my $pidfile    = path_join($outbase, "process.pid");
+    my $outpath    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"output_path"}, $sysvars -> {"session"} -> {"sessid"}, "output");
+
+    # Make sure the output path exist
+    if(!-d $outpath) {
+        eval { make_path($outpath); };
+        $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to create output dir $outpath: $!") if($@);
+    }
 
     my $extraverb = "";
     $extraverb = "-v" if(get_sess_verbosity($sysvars, "process"));
 
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb".
               " -c $coursedata".
-              " -d $output".
+              " -d $outpath".
               " -f ".path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name).
               " --pid $pidfile".
               " > $logfile".
