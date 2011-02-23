@@ -93,6 +93,13 @@ if(-f $logfile) {
     print $out -> header(-type => 'text/plain');
     $data =~ s|\n|<br />\n|g; # explicitly force newlines
     $data =~ s|$outbase||g;   # remove scary/path exposing output
+
+    # If we have colourisation enabled, do some
+    if($settings -> {"config"} -> {"colour_progress"}) {
+        $data =~ s|^(WARNING: .*?)$|<span class="warn">$1</span>|mg;
+        $data =~ s|^(FATAL: .*?)$|<span class="error">$1</span>|mg;
+    }
+
     print $data;
 
 } else {
