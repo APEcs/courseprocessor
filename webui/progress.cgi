@@ -15,7 +15,7 @@ use File::Path qw(make_path);
 use ConfigMicro;
 use Logger;
 use SessionHandler;
-use Utils qw(path_join load_file);
+use Utils qw(path_join load_file untaint_path);
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
@@ -84,7 +84,7 @@ $mode = "export" if(!$mode || ($mode ne "export" && $mode ne "process"));
 
 # Work out some names and paths
 my $outbase = path_join($settings -> {"config"} -> {"work_path"}, $session -> {"sessid"});
-my $logfile = path_join($outbase, "$mode.log");
+my $logfile = untaint_path(path_join($outbase, "$mode.log"));
 
 # Send the contents of the log file to the user if possible
 if(-f $logfile) {
