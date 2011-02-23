@@ -277,6 +277,72 @@ sub get_sess_course {
 }
 
 
+## @fn $ set_sess_verbosity($sysvars, $verb_export, $verb_process)
+# Set the export and processor verbosity levels for the session. 
+#
+# @param sysvars      A reference to a hash containing database, session, and settings objects.
+# @param verb_export  The verbosity of exporting, should be 0 or 1.
+# @param verb_process The verbosity of processing, should be 0 or 1.
+# @return undef on success, otherwise an error message.
+sub set_sess_verbosity {
+    my $sysvars      = shift;
+    my $verb_export  = shift;
+    my $verb_process = shift;
+
+    # Obtain the session record
+    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
+
+    # delete any existing verbosities selection
+    my $nukeverbosity = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                    " WHERE `id` = ? AND `key` LIKE ?");
+    $nukeverbosity -> execute($session -> {"id"}, "verb_export")
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session export verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
+
+    $nukeverbosity -> execute($session -> {"id"}, "verb_process")
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session process verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
+
+    # Insert the new value
+    my $newverbosity = $sysvars -> {"dbh"} -> prepare("INSERT INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                      " VALUES(?, ?, ?)");
+    $newverbosity -> execute($session -> {"id"}, "verb_export", $verb_export)
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session export verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
+
+    $newverbosity -> execute($session -> {"id"}, "verb_process", $verb_process)
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session export verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
+
+    return undef;
+}
+
+
+## @fn $ get_sess_verbosity($sysvars, $mode)
+# Obtain the value for the specified verbosity type. The secodn argument must be "export" or
+# "process", or the function will die with an error.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param mode    The job mode, should be either "export" or "process".
+# @return The verbosity level set for the specified mode.
+sub get_sess_verbosity {
+    my $sysvars = shift;
+    my $mode    = shift;
+
+    die "Illegal mode passed to get_sess_verbosity()\n" if($mode ne "export" && $mode ne "process");
+
+    # Obtain the session record
+    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
+
+    # Ask the database for the user's settings
+    my $getdata = $sysvars -> {"dbh"} -> prepare("SELECT value FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                 " WHERE `id` = ? AND `key` LIKE ?");
+    $getdata -> execute($session -> {"id"}, "verb_".$mode)
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session course variable: ".$sysvars -> {"dbh"} -> errstr);
+
+    my $data = $getdata -> fetchrow_arrayref();
+    return $data -> [0] if($data && $data -> [0]);
+
+    return undef;
+}
+
+
 # =============================================================================
 #  Wiki interaction
 
@@ -498,7 +564,10 @@ sub launch_exporter {
         $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to create temporary output dir $outpath: $!") if($@);
     }
 
-    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"wiki2course"}." -v".
+    my $extraverb = "";
+    $extraverb = "-v" if(get_sess_verbosity($sysvars, "export"));
+
+    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"wiki2course"}." -v $extraverb".
               " -u ".$wikiconfig -> {"WebUI"} -> {"username"}.
               " -p ".$wikiconfig -> {"WebUI"} -> {"password"}.
               " -n $course".
@@ -769,8 +838,17 @@ sub do_stage2_course {
         
         # Is the selected course in the list?
         if($courses -> {$selected}) {
-            # Course is good, store it and return
+            # Course is good, store it
             set_sess_course($sysvars, $selected);
+
+            # Work out the verbosity controls, and store them
+            # Do not use the values set directly, as they can't be trusted - just see whether they are set
+            my $verb_export  = (defined($sysvars -> {"cgi"} -> param("expverb")) && $sysvars -> {"cgi"} -> param("expverb"));
+            my $verb_process = (defined($sysvars -> {"cgi"} -> param("procverb")) && $sysvars -> {"cgi"} -> param("procverb"));
+
+            set_sess_verbosity($sysvars, $verb_export, $verb_process);
+
+            # return sweet nothings, as all is well.
             return (undef, undef);
 
         } else { # if($courses -> {$selected}) 
