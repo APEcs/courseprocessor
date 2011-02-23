@@ -101,7 +101,7 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
                  "height"   => 40,
                  "alt"      => "Process course",
                  "icon"     => "process",
-                 "hasback"  => 0,
+                 "hasback"  => 1,
                  "func"     => \&build_stage4_process },
                { "active"   => "templates/default/images/stages/finish_active.png",
                  "inactive" => "templates/default/images/stages/finish_inactive.png",
