@@ -456,7 +456,7 @@ sub wiki_fetch {
 
     # First attempt to get the page
     my $page = $wikih -> get_page({ title => $pagename } )
-        or die "FATAL: Unable to fetch page '$pagename'. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+        or die "FATAL: Unable to fetch page '$pagename'. Error from the API was: ".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
 
     # Do we have any content? If not, return an error...
     die "FATAL: $pagename page is missing!\n" if($page -> {"missing"});
@@ -510,7 +510,7 @@ sub wiki_course_exists {
 
     # Fetch the linked page
     my $coursedata = $wikih -> get_page({ title => $cdlink })
-        or die "FATAL: Unable to fetch coursedata page ($cdlink). Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+        or die "FATAL: Unable to fetch $config->{wiki2course}->{data_page} page ($cdlink). Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
 
     # Do we have any content? If not, return an error...
     die "FATAL: $cdlink page is missing!\n" if($coursedata -> {"missing"});
@@ -1043,8 +1043,7 @@ sub wiki_export_files {
     my $filenames; # Store a hash of filenames saved into the media dir here...
 
     # We need the page to start with
-    my $list = wiki_fetch($wikih, $listpage, 1)
-        or die "FATAL: Unable to fetch $listpage page. Error from the API was:".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+    my $list = wiki_fetch($wikih, $listpage, 1);
     
     # Do we have any content? If not, bomb now
     if(!$list) {
