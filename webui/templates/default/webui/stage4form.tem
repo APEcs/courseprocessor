@@ -5,7 +5,7 @@
 <div class="left" style="margin: auto">
 ***error***
 
-<div id="exporting" class="padover"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_PROCESS_WORKING}</div>
+<div id="processing" class="padover"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_PROCESS_WORKING}</div>
 <div id="success" class="padover" style="display: none;">{L_PROCESS_SUCCESS}</div>
 <div id="warnings" class="padover" style="display: none;">{L_PROCESS_WARNINGS}</div>
 <div id="fatals" class="padover" style="display: none;">{L_PROCESS_FATALS}</div>
@@ -31,10 +31,6 @@
 
 <script type="text/javascript">
 // <!--
-// The code to hide the form, show the progress bar, and update the progress bar as
-// the upload proceeds. This is based on code dug up from around the net, as the
-// CGI upload hook documentation lacks in detail what it makes up for in opaqueness.
-// Much is based around http://www.tek-tips.com/viewthread.cfm?qid=1580695&page=1
 
 // a jquery-like function, a shortcut to document.getElementById
 function $(o) {
@@ -46,13 +42,13 @@ function parseResp(req) {
 
     $("progdisplay").innerHTML = txt;
 
-    // Determine whether the export has finished...
-    var testfrag = txt.substr(txt.length - 23, 22);
-    if(testfrag == "Export finished.<br />") {
+    // Determine whether the processing has finished...
+    var testfrag = txt.substr(txt.length - 27, 26);
+    if(testfrag == "Processing complete.<br />") {
         $("dosub").disabled = false;
 
         // Hide the progress
-        $("exporting").style.display = "none";
+        $("processing").style.display = "none";
 
         // do we have any warnings?
         if(txt.indexOf("WARNING:") != -1) {
@@ -64,7 +60,7 @@ function parseResp(req) {
     // Processing not explicitly finished - are there fatal errors, though?
     } else if(txt.indexOf("FATAL:") != -1) {
         // Hide the progress
-        $("exporting").style.display = "none";
+        $("processing").style.display = "none";
 
         // Show the fatals error
         $("fatals").style.display = "block";

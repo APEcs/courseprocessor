@@ -31,10 +31,6 @@
 
 <script type="text/javascript">
 // <!--
-// The code to hide the form, show the progress bar, and update the progress bar as
-// the upload proceeds. This is based on code dug up from around the net, as the
-// CGI upload hook documentation lacks in detail what it makes up for in opaqueness.
-// Much is based around http://www.tek-tips.com/viewthread.cfm?qid=1580695&page=1
 
 // a jquery-like function, a shortcut to document.getElementById
 function $(o) {
