@@ -1,0 +1,93 @@
+<!-- javascript needed for ajax work -->
+<script type="text/javascript" src="templates/default/ajax.js"></script>
+<script type="text/javascript" src="templates/default/sprintf.js"></script>
+
+<div class="left" style="margin: auto">
+***error***
+
+<div id="exporting" class="padover"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_PROCESS_WORKING}</div>
+<div id="success" class="padover" style="display: none;">{L_PROCESS_SUCCESS}</div>
+<div id="warnings" class="padover" style="display: none;">{L_PROCESS_WARNINGS}</div>
+<div id="fatals" class="padover" style="display: none;">{L_PROCESS_FATALS}</div>
+<div id="progress">
+     <fieldset>
+         <legend>{L_PROCESS_STATUS}</legend>
+         <div id="progdisplay"></div>
+     </fieldset>
+</div>
+<form action="index.cgi" method="post">
+<table class="formtable" cellpadding="3" cellspacing="1">
+    <tr>
+        <td class="nextbox">
+            <input type="hidden" name="stage"  value="5" />
+            <input type="hidden" name="bstage" value="2" /><!-- No point in going back to exporting from here, so back to stage 2 again -->
+            <input type="submit" name="back" accesskey="b" value="{L_BACK}" />
+            <input type="submit" id="dosub" name="dofinish" accesskey="n" value="{L_NEXT}" disabled="disabled" />
+        </td>
+    </tr>
+</table>
+</form>
+</div>
+
+<script type="text/javascript">
+// <!--
+// The code to hide the form, show the progress bar, and update the progress bar as
+// the upload proceeds. This is based on code dug up from around the net, as the
+// CGI upload hook documentation lacks in detail what it makes up for in opaqueness.
+// Much is based around http://www.tek-tips.com/viewthread.cfm?qid=1580695&page=1
+
+// a jquery-like function, a shortcut to document.getElementById
+function $(o) {
+    return document.getElementById(o);
+}
+
+function parseResp(req) {
+    var txt = req.responseText;
+
+    $("progdisplay").innerHTML = txt;
+
+    // Determine whether the export has finished...
+    var testfrag = txt.substr(txt.length - 23, 22);
+    if(testfrag == "Export finished.<br />") {
+        $("dosub").disabled = false;
+
+        // Hide the progress
+        $("exporting").style.display = "none";
+
+        // do we have any warnings?
+        if(txt.indexOf("WARNING:") != -1) {
+            $("warnings").style.display = "block";
+        } else {
+            $("success").style.display = "block";
+        }
+
+    // Processing not explicitly finished - are there fatal errors, though?
+    } else if(txt.indexOf("FATAL:") != -1) {
+        // Hide the progress
+        $("exporting").style.display = "none";
+
+        // Show the fatals error
+        $("fatals").style.display = "block";
+
+    // Processing still going okay...
+    } else { 
+        // queue another request
+        setTimeout("getProgress()", ***delay***);
+    }
+}
+
+function getProgress() {
+
+    // create ajax request. rand is needed to prevent IE from caching
+    var url = "progress.cgi?mode=process&rand=" + Math.floor(Math.random()*99999);
+    var onErrorFunc = function (status) { alert("AJAX error: "+status); };
+
+    var myAjax = new bsn.Ajax();
+    myAjax.makeRequest( url, "GET", parseResp, onErrorFunc );
+}
+
+// Start the progress updating
+getProgress();
+
+// -->
+</script>
