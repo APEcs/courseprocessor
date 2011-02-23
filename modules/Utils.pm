@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid untaint_path);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -361,6 +361,22 @@ sub read_pid {
         unless($realpid);
 
     return $realpid;
+}
+
+## @fn $ untaint_path($taintedpath)
+# Untaint the path provided. This will attempt to pull a valid path out of
+# the specified tainted path - note that this is rather stricter about 
+# path contents than strictly necessary, and it will only allow alphanumerics,
+# /, . and - in paths.
+#
+# @param taintedpath The tainted path to untaint.
+# @return The untainted path, or undef if the path can not be untainted.
+sub untaint_path {
+    my $taintedpath = shift;
+
+    my ($untainted) = $taintedpath =~ m|^(/(?:[-\w.]+)(?:/[-\w.]+)*)$|;
+
+    return $untainted;
 }
 
 1;
