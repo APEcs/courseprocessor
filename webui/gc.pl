@@ -81,6 +81,8 @@ sub prune_old_dirs {
         or $sysvars -> {"logger"} -> die_log("internal", "FATAL: Unable to open directory for reading: $!");
 
     while(my $entry = readdir(PATH)) {
+        next if($entry eq "." || $entry eq ".."); # skip current and parent
+
         my $fullpath = untaint_path(path_join($path, $entry));
 
         # only bother checking directories
