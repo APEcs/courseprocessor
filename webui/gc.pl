@@ -111,7 +111,6 @@ sub prune_old_dirs {
 # @param sysvars A reference to a hash containing database, logger, and settings objects.
 sub garbage_collect {
     my $sysvars = shift;
-    my $now     = time();
 
     prune_old_dirs($sysvars, untaint_path($sysvars -> {"settings"} -> {"config"} -> {"work_path"}));
     prune_old_dirs($sysvars, untaint_path($sysvars -> {"settings"} -> {"config"} -> {"output_path"}));
