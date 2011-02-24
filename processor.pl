@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 
+## @file
 # APEcs course processor, front-end and dispatcher. This script is the core of
 # the APEcs course processor, it handles command line and configuration loading,
 # loading of the various input and output handler plugins, and invocation of 
