@@ -33,7 +33,7 @@ BEGIN {
         $path = $1;
     }
 }
-use lib ("$path/../modules");
+use lib ("$path/../../modules");
 
 # System modules
 use DBI;
