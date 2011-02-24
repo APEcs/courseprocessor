@@ -41,6 +41,7 @@ function parseResp(req) {
     var txt = req.responseText;
 
     $("progdisplay").innerHTML = txt;
+    $("progdisplay").scrollTop = $("progdisplay").scrollHeight;
 
     // Determine whether the export has finished...
     var testfrag = txt.substr(txt.length - 23, 22);
