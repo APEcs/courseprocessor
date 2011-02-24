@@ -113,14 +113,8 @@ sub garbage_collect {
     my $sysvars = shift;
     my $now     = time();
 
-    # We only want to run the garbage collect occasionally
-    if($sysvars -> {"settings"} -> {"config"} -> {"last_dirgc"} < $now - $sysvars -> {"settings"} -> {"config"} -> {"dir_gc"}) {
-        # Okay, we're due a garbage collect, update the config to reflect that we're doing it
-        $sysvars -> {"settings"} -> set_db_config($sysvars -> {"dbh"}, $sysvars -> {"settings"} -> {"database"} -> {"settings"}, "last_dirgc", $now);
-
-        prune_old_dirs($sysvars, untaint_path($sysvars -> {"settings"} -> {"config"} -> {"work_path"}));
-        prune_old_dirs($sysvars, untaint_path($sysvars -> {"settings"} -> {"config"} -> {"output_path"}));
-    }
+    prune_old_dirs($sysvars, untaint_path($sysvars -> {"settings"} -> {"config"} -> {"work_path"}));
+    prune_old_dirs($sysvars, untaint_path($sysvars -> {"settings"} -> {"config"} -> {"output_path"}));
 }
 
 
