@@ -121,7 +121,7 @@ sub garbage_collect {
 $logger = Logger -> new();
 
 # Load the system config
-my $settings = ConfigMicro -> new("$path/config/site.cfg")
+my $settings = ConfigMicro -> new("$path/../config/site.cfg")
     or $logger -> die_log("internal", "Unable to obtain configuration file: ".$ConfigMicro::errstr);
 
 # Database initialisation. Errors in this will kill program.
