@@ -38,7 +38,7 @@ use File::Path qw(make_path);
 use ConfigMicro;
 use Logger;
 use SessionHandler;
-use Utils qw(path_join load_file untaint_path);
+use Utils qw(path_join load_file untaint_path read_pid);
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
@@ -64,6 +64,30 @@ END {
     # Stop logging if it has been enabled.
     $logger -> end_log() if($logger);
 }
+
+
+## @fn $ check_zip($sysvars, $pidfile)
+# Determine whether the zip wrapper is currently working. This will determine whether the
+# wrapper process is still alive, and return true if it is.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param pidfile Optional PID file to load, if not specified the session default file is used.
+# @return true if the exporter is running, false otherwise.
+sub check_zip {
+    my $sysvars = shift;
+    my $pidfile = shift || untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "zipwrapper.pid"));
+
+    # Does the pid file even exist? If not don't bother doing anything
+    return 0 if(!-f $pidfile);
+
+    # It exists, so we need to load it and see if the process is running
+    my $pid = read_pid($pidfile);
+
+    return $pid if(kill 0, $pid);
+
+    return undef;
+}
+
 
 # A logger for... logging stuff
 $logger = Logger -> new();
@@ -103,29 +127,42 @@ my $session = SessionHandler -> new(logger   => $logger,
 my $mode = $out -> param("mode");
 
 # Fix up the mode for safety
-$mode = "export" if(!$mode || ($mode ne "export" && $mode ne "process"));
+$mode = "export" if(!$mode || ($mode ne "export" && $mode ne "process" && $mode ne "zipwrapper"));
 
 # Work out some names and paths
 my $outbase = path_join($settings -> {"config"} -> {"work_path"}, $session -> {"sessid"});
 my $logfile = untaint_path(path_join($outbase, "$mode.log"));
+my $pidfile = untaint_path(path_join($outbase, "$mode.pid"));
 
-# Send the contents of the log file to the user if possible
-if(-f $logfile) {
-    my $data = load_file($logfile);
+# if we are looking at the zipwrapper, we just need to send back whether
+# it is currently working or finished
+if($mode eq "zipwrapper") {
+    my $status = check_zip({"logger"   => $logger,
+                            "dbh"      => $dbh,
+                            "settings" => $settings,
+                            "cgi"      => $out}) ? "Working" : "Finished";
 
     print $out -> header(-type => 'text/plain');
-    $data =~ s|\n|<br />\n|g; # explicitly force newlines
-    $data =~ s|$outbase||g;   # remove scary/path exposing output
-
-    # If we have colourisation enabled, do some
-    if($settings -> {"config"} -> {"colour_progress"}) {
-        $data =~ s|^(WARNING: .*?)$|<span class="warn">$1</span>|mg;
-        $data =~ s|^(FATAL: .*?)$|<span class="error">$1</span>|mg;
-    }
-
-    print $data;
-
+    print $status;
 } else {
-    print $out -> header(-type => 'text/plain');
-    print "No log file present.";
+    # Otherwise, send the contents of the log file to the user if possible
+    if(-f $logfile) {
+        my $data = load_file($logfile);
+        
+        print $out -> header(-type => 'text/plain');
+        $data =~ s|\n|<br />\n|g; # explicitly force newlines
+        $data =~ s|$outbase||g;   # remove scary/path exposing output
+        
+        # If we have colourisation enabled, do some
+        if($settings -> {"config"} -> {"colour_progress"}) {
+            $data =~ s|^(WARNING: .*?)$|<span class="warn">$1</span>|mg;
+            $data =~ s|^(FATAL: .*?)$|<span class="error">$1</span>|mg;
+        }
+        
+        print $data;
+
+    } else {
+        print $out -> header(-type => 'text/plain');
+        print "No log file present.";
+    }
 }
