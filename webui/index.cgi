@@ -741,7 +741,7 @@ sub launch_zip {
     my $sysvars = shift;
 
     # Create the command to launch the zippery 
-    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." $path/tools/zipcourse.pl".
+    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"config"} -> {"base"}."/tools/zipcourse.pl".
         " ".$sysvars -> {"session"} -> {"sessid"}.
         " ".get_sess_course($sysvars).
         ' 2>&1 &';
