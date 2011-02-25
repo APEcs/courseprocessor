@@ -24,7 +24,7 @@
 
 use strict;
 use lib qw(../modules);
-use utf8;
+#use utf8;
 
 # System modules
 use CGI;
