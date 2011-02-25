@@ -132,7 +132,7 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
                  "height"   => 40,
                  "alt"      => "Finish",
                  "icon"     => "finish",
-                 "hasback"  => 0,
+                 "hasback"  => 1,
                  "func"     => \&build_stage5_finish } ];
 
 # =============================================================================
@@ -733,6 +733,73 @@ sub halt_processor {
 }
 
 
+## @fn void launch_zip($sysvars)
+# Start the zip script to pack the course into a zip file the user can download. 
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+sub launch_zip {
+    my $sysvars = shift;
+
+    # Create the command to launch the zippery 
+    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." $path/tools/zipcourse.pl".
+        " ".$sysvars -> {"session"} -> {"sessid"}.
+        " ".get_sess_course($sysvars).
+        ' 2>&1 &';
+
+    # Start it going...
+    `$cmd`;
+}
+
+
+## @fn $ check_zip($sysvars, $pidfile)
+# Determine whether the zip wrapper is currently working. This will determine whether the
+# wrapper process is still alive, and return true if it is.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param pidfile Optional PID file to load, if not specified the session default file is used.
+# @return true if the exporter is running, false otherwise.
+sub check_zip {
+    my $sysvars = shift;
+    my $pidfile = shift || untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "zipwrapper.pid"));
+
+    # Does the pid file even exist? If not don't bother doing anything
+    return 0 if(!-f $pidfile);
+
+    # It exists, so we need to load it and see if the process is running
+    my $pid = read_pid($pidfile);
+
+    return $pid if(kill 0, $pid);
+
+    return undef;
+}
+
+
+## @fn $ halt_zip($sysvars)
+# Determine whether the zip wrapper is still working, and if it is kill it. This will
+# attempt to load the PID file for the zip wrapper, and kill the process specified in
+# it if the process is running, otherwise it will simply delete the file.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @return true if the exporter was running and has been killed, false otherwise.
+sub halt_zip {
+    my $sysvars = shift;
+
+    my $pidfile = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "zipwrapper.pid"));
+
+    # Is the processor still going?
+    my $pid = check_processor($sysvars, $pidfile);
+
+    # Remove the no-longer-needed pid file
+    unlink($pidfile);
+
+    # If the process is running, try to kill it
+    # We could probably use TERM rather than KILL, but this can't be blocked...
+    return kill 9,$pid if($pid);
+
+    return 0;
+}
+
+
 # =============================================================================
 #  Stages...
 
@@ -882,6 +949,10 @@ sub build_stage2_course {
 
         # We can also get here from processing, so check and halt that if needed
         halt_processor($sysvars);
+
+        # And we can get here from the final step too, so check whether the zip
+        # wrapper is running, and kill it if needed
+        halt_zip($sysvars);
     }
 
     # If the user has logged in successfully, obtain a list of courses from the wiki.
