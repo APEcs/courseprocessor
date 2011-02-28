@@ -741,7 +741,7 @@ sub launch_zip {
     my $sysvars = shift;
 
     my $outbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
-    my $logfile = path_join($outbase, "process.log");
+    my $logfile = path_join($outbase, "zipwrapper.log");
 
     my $cname = get_sess_course($sysvars);
     my ($name) = $cname =~ /^(\w+)$/;
