@@ -586,7 +586,7 @@ sub launch_exporter {
               " -n $course".
               " -o $outpath".
               " -w ".$wikiconfig -> {"WebUI"} -> {"api_url"}.
-              " -g ".path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name).
+              " -g ".untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name)).
               " --pid $pidfile".
               " > $logfile".
               ' 2>&1 &';
@@ -674,7 +674,7 @@ sub launch_processor {
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb".
               " -c $coursedata".
               " -d $outpath".
-              " -f ".path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name).
+              " -f ".untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name)).
               " --pid $pidfile".
               " > $logfile".
               ' 2>&1 &';
@@ -743,10 +743,12 @@ sub launch_zip {
     my $cname = get_sess_course($sysvars);
     my ($name) = $cname =~ /^(\w+)$/;
 
+    my $sessid = $sysvars -> {"session"} -> {"sessid"};
+    my ($sid) = $sessid =~ /^([a-fA-F0-9]{32})$/;
+
     # Create the command to launch the zippery 
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"config"} -> {"base"}."/tools/zipcourse.pl".
-        " ".$sysvars -> {"session"} -> {"sessid"}.
-        " $name".
+        " $sid $name".
         ' 2>&1 &';
 
     # Start it going...
@@ -790,7 +792,7 @@ sub halt_zip {
     my $pidfile = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "zipwrapper.pid"));
 
     # Is the processor still going?
-    my $pid = check_processor($sysvars, $pidfile);
+    my $pid = check_zip($sysvars, $pidfile);
 
     # Remove the no-longer-needed pid file
     unlink($pidfile);
