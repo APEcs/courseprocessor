@@ -660,7 +660,7 @@ sub launch_processor {
     my $logfile    = path_join($outbase, "process.log");
     my $coursedata = path_join($outbase, "coursedata");
     my $pidfile    = path_join($outbase, "process.pid");
-    my $outpath    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"output_path"}, $sysvars -> {"session"} -> {"sessid"}, "output"));
+    my $outpath    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"output_path"}, $sysvars -> {"session"} -> {"sessid"}, get_sess_course($sysvars)));
 
     # Make sure the output path exist
     if(!-d $outpath) {
@@ -976,6 +976,10 @@ sub build_stage2_course {
     my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
+    # If we have an error, encapsulate it
+    $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
+        if($error);
+
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("COURSE_TITLE", $subcourse);
     my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("COURSE_TITLE", $subcourse),
@@ -1039,7 +1043,7 @@ sub do_stage2_course {
 }
 
 
-## @fn $ build_stage3_export($sysvars, $error, $nolaunch)
+## @fn $ build_stage3_export($sysvars, $error)
 # Generate the content for the export stage of the wizard. This will, if needed, check that
 # the user has selected an appropriate course, and then lanuch the wiki2course script in
 # the background to fetch the data from the wiki before sending back the status form to the
@@ -1081,6 +1085,10 @@ sub build_stage3_export {
     my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
     $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_export_delay"} if(get_sess_verbosity($sysvars, "export"));
 
+    # If we have an error, encapsulate it
+    $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
+        if($error);
+
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse);
     my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("EXPORT_TITLE", $subcourse),
@@ -1095,7 +1103,7 @@ sub build_stage3_export {
 }
 
 
-## @fn $ build_stage4_process($sysvars, $error, $nolaunch)
+## @fn $ build_stage4_process($sysvars, $error)
 # Generate the content for the processing stage of the wizard. This will check that the
 # wiki2course script has actually finished, and the course data directory exists, and if
 # both are true it will launch the processor script in the background before sending back 
@@ -1134,6 +1142,10 @@ sub build_stage4_process {
     my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
     $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_process_delay"} if(get_sess_verbosity($sysvars, "process"));
 
+    # If we have an error, encapsulate it
+    $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
+        if($error);
+
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("PROCESS_TITLE", $subcourse);
     my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("PROCESS_TITLE", $subcourse),
@@ -1144,6 +1156,61 @@ sub build_stage4_process {
                                                                                                                              "***course***"   => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***" => $subcourse -> {"***lccourse***"},
                                                                                                                              "***delay***"    => $delay}));
+    return ($title, $message);    
+}
+
+
+## @fn $ build_stage5_finish($sysvars)
+# Generate the content for the final stage of the wizard. This will check that the
+# processor script has actually finished, and the course data directory exists, and if
+# both are true it will launch the zip wrapper script in the background before sending back 
+# the status form to the user.
+#
+# @param sysvars  A reference to a hash containing database, session, and settings objects.
+# @return An array of two values: the title of the page, and the messagebox to show on the page.
+sub build_stage5_finish {
+    my $sysvars  = shift;
+
+    # We need to get the wiki's information regardless of anything else, so get the name first...
+    my $config_name = get_sess_login($sysvars)
+        or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
+
+    # Obtain the wiki's configuration
+    my $wiki = get_wiki_config($sysvars, $config_name);
+
+    # Is the processor still running? If so, kick the user back to stage 4
+    return build_stage4_process($sysvars, $sysvars -> {"template"} -> replace_langvar("FINISH_PROCESSING"))
+        if(check_processor($sysvars));
+
+    # We have a course selected, so now we need to start the export. First get the 
+    # course name for later...
+    my $course = get_sess_course($sysvars);
+
+    # Invoke the wrapper if needed
+    launch_zip($sysvars) unless(check_zip($sysvars));
+
+    my $preview  = path_join($sysvars -> {"settings"} -> {"config"} -> {"output_url"},
+                             $sysvars -> {"session"} -> {"sessid"},
+                             $course, "index.html");
+    my $download = path_join($sysvars ->  {"settings"} -> {"config"} -> {"output_url"},
+                             $sysvars -> {"session"} -> {"sessid"},
+                             $course.".zip");
+
+    # Precalculate some variables to use in templating
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
+
+    # Now generate the title, message.
+    my $title    = $sysvars -> {"template"} -> replace_langvar("FINISH_TITLE", $subcourse);
+    my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("FINISH_TITLE", $subcourse),
+                                                          $stages -> [STAGE_FINISH] -> {"icon"},
+                                                          $stages, STAGE_FINISH,
+                                                          $sysvars -> {"template"} -> replace_langvar("FINISH_LONGDESC", $subcourse),
+                                                          $sysvars -> {"template"} -> load_template("webui/stage5form.tem", {"***error***"       => $error,
+                                                                                                                             "***course***"      => $subcourse -> {"***course***"},
+                                                                                                                             "***lccourse***"    => $subcourse -> {"***lccourse***"},
+                                                                                                                             "***previewurl***"  => $preview,
+                                                                                                                             "***downloadurl***" => $download}));
     return ($title, $message);    
 }
 

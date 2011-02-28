@@ -52,4 +52,5 @@ FINISH_LONGDESC      = Your ***lccourse*** has been processed, and is now ready 
 FINISH_PREVIEW       = You can preview a version of your ***lccourse*** online by <a class="ext" href="***previewurl***">clicking here</a>. If you discover and fix any problems with it, you can click Prev to return to the course selection (note that, if you take too long, your session may time out, in which case you will need to <a href="index.cgi">start from the beginning again</a>.)
 FINISH_DOWNLOAD      = You can download a copy of your processed ***lccourse*** by <a href="***downloadurl***">clicking here</a>. The ***lccourse*** is zipped up, so you will need to unzip it once you have downloaded it.
 FINISH_ZIPPING       = Zipping up your ***lccourse***. Please wait for your download.
+FINISH_PROCESSING    = The processor is still working; you can not proceed to the final stage until the processor has finished working!
 
