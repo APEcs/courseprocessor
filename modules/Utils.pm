@@ -374,7 +374,7 @@ sub read_pid {
 sub untaint_path {
     my $taintedpath = shift;
 
-    my ($untainted) = $taintedpath =~ m|^(/(?:[-\w.]+)(?:/[-\w.]+)*)$|;
+    my ($untainted) = $taintedpath =~ m|^(/?(?:[-\w.]+)(?:/[-\w.]+)*)$|;
 
     return $untainted;
 }
