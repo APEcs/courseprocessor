@@ -1,0 +1,56 @@
+<!-- javascript needed for ajax work -->
+<script type="text/javascript" src="templates/default/ajax.js"></script>
+<script type="text/javascript" src="templates/default/sprintf.js"></script>
+
+<div class="left" style="margin: auto">
+***error***
+<p>{L_FINISH_PREVIEW}</p>
+<div id="processing" class="padover"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_FINISH_ZIPPING}</div>
+<div id="completed" class="padover" style="display: none;">{L_FINISH_DOWNLOAD}</div>
+<form action="index.cgi" method="post">
+<table class="formtable" cellpadding="3" cellspacing="1">
+    <tr>
+        <td class="nextbox">
+            <input type="hidden" name="bstage" value="2" /><!-- No point in going back to exporting from here, so back to stage 2 again -->
+            <input type="submit" name="back" accesskey="b" value="{L_BACK}" />
+        </td>
+    </tr>
+</table>
+</form>
+</div>
+
+<script type="text/javascript">
+// <!--
+
+function parseResp(req) {
+    var txt = req.responseText;
+
+    if(txt = "Finished") {
+        // Hide the progress
+        $("processing").style.display = "none";
+        
+        // Show the zip download
+        $("completed").style.display = "block";
+
+    // Processing still going okay...
+    } else { 
+        // queue another request
+        setTimeout("getProgress()", ***delay***);
+    }
+}
+
+function getProgress() {
+
+    // create ajax request. rand is needed to prevent IE from caching
+    var url = "progress.cgi?mode=process&rand=" + Math.floor(Math.random()*99999);
+    var onErrorFunc = function (status) { alert("AJAX error: "+status); };
+
+    var myAjax = new bsn.Ajax();
+    myAjax.makeRequest( url, "GET", parseResp, onErrorFunc );
+}
+
+// Start the progress updating
+getProgress();
+
+// -->
+</script>
