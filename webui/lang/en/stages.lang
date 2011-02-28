@@ -45,3 +45,10 @@ PROCESS_WARNINGS     = <span class="warn">Your ***lccourse*** has been processed
 PROCESS_FATALS       = <span class="error">A fatal error was encountered while processing your ***lccourse***. Processing failed, and you must fix the fatal error shown below before you can try again.</span>
 PROCESS_WORKING      = Processing...
 PROCESS_EXPORTING    = The exporter is still working; you can not proceed to processing until the exporter has finished working!
+
+FINISH_TITLE         = Preview and download
+FINISH_LONGDESC      = Your ***lccourse*** has been processed, and is now ready for you to check through and download. Note that the links given below are only valid for at most ***timeout***, so if you need to spend a lot of time checking your material, be sure to download the zip file and check through that rather than previewing it online.
+FINISH_PREVIEW       = You can preview a version of your ***lccourse*** online by <a class="ext" href="***previewurl***">clicking here</a>. If you discover and fix any problems with it, you can click Prev to return to the course selection (note that, if you take too long, your session may time out, in which case you will need to <a href="index.cgi">start from the beginning again</a>.)
+FINISH_DOWNLOAD      = You can download a copy of your processed ***lccourse*** by <a href="***downloadurl***">clicking here</a>. The ***lccourse*** is zipped up, so you will need to unzip it once you have downloaded it.
+FINISH_ZIPPING       = Zipping up your ***lccourse***. Please wait for your download.
+
