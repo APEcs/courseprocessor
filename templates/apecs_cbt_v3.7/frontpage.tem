@@ -23,13 +23,13 @@
         <link rel="help" href="framework-docs/somehelpdoc.html" title="Help" />
 
      <!-- new wiki-based features -->
-    <script type="text/javascript" src="../../TWPopup/mootools-core.js"></script>
-    <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
-    <script type="text/javascript" src="../../TWPopup/popup.js"></script>
-    <script type="text/javascript" src="../../twtools/zebra.js"></script>
-    <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
-    <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
-    <link href="../../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="TWPopup/mootools-core.js"></script>
+    <script type="text/javascript" src="TWPopup/webtoolkit.base64.js"></script>
+    <script type="text/javascript" src="TWPopup/popup.js"></script>
+    <script type="text/javascript" src="twtools/zebra.js"></script>
+    <link href="TWPopup/popup.css" rel="stylesheet" type="text/css" />
+    <link href="MediaWiki/Common.css" rel="stylesheet" type="text/css" />
+    <link href="MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
 
     </head>
     <body id="frontpage" onload="formatBackToTopLink();">
