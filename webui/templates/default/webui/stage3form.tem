@@ -32,11 +32,6 @@
 <script type="text/javascript">
 // <!--
 
-// a jquery-like function, a shortcut to document.getElementById
-function $(o) {
-    return document.getElementById(o);
-}
-
 function parseResp(req) {
     var txt = req.responseText;
 
