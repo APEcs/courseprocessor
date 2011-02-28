@@ -11,6 +11,7 @@
 <table class="formtable" cellpadding="3" cellspacing="1">
     <tr>
         <td class="nextbox">
+            <input type="hidden" name="stage" value="6" /><!-- needed to make Prev handling logic work -->
             <input type="hidden" name="bstage" value="2" /><!-- No point in going back to exporting from here, so back to stage 2 again -->
             <input type="submit" name="back" accesskey="b" value="{L_BACK}" />
         </td>
