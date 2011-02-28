@@ -1218,7 +1218,8 @@ sub build_stage5_finish {
                                                           $sysvars -> {"template"} -> load_template("webui/stage5form.tem", {"***course***"      => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***"    => $subcourse -> {"***lccourse***"},
                                                                                                                              "***previewurl***"  => $preview,
-                                                                                                                             "***downloadurl***" => $download}));
+                                                                                                                             "***downloadurl***" => $download,
+                                                                                                                             "***timeout***"     => $sysvars -> {"template"} -> humanise_seconds($sysvars -> {"settings"} -> {"config"} -> {"session_length"})}));
     return ($title, $message);    
 }
 
