@@ -6,7 +6,7 @@
     <title>***title***</title>
 
     <link href="templates/default/site.css" rel="stylesheet" type="text/css" />
-    <script type='text/javascript' src="templates/default/mootools-core-1..3.js"></script>
+    <script type='text/javascript' src="templates/default/mootools-core-1.3.js"></script>
     <script type='text/javascript' src="templates/default/site.js"></script>
 
     <!--[if IE]>
