@@ -151,32 +151,37 @@ sub process {
     # Go through each theme defined in the metadata, processing its contents into 
     # the output format.
     foreach my $theme (keys(%{$self -> {"mdata"} -> {"themes"}})) {
+        my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme);
 
         # Skip themes that should not be included
         if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"}) {
             $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Theme $theme excluded by filtering rules.");
+
+            # Nuke skipped content from the destination.
+            `$self->{config}->{paths}->{rm} -rf $fulltheme` unless($self -> {"config"} -> {"Processor"} -> {"debug"});
             next;
         }
 
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing theme $theme.");
 
         # Confirm that the theme is a directory, and check inside for subdirs ($theme is a theme, subdirs are modules)
-        my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme);
         if(-d $fulltheme) {
 
             # Now we need to get a list of modules inside the theme. This looks at the list of modules 
             # stored in the metadata so that we don't need to worry about non-module directoried...
             foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
+                my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
                 # Determine whether the module will be included in the course
                 if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"}) {
                     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Module $theme excluded by filtering rules.");
+
+                    # Nuke skipped content from the destination
+                    `$self->{config}->{paths}->{rm} -rf $fullmodule` unless($self -> {"config"} -> {"Processor"} -> {"debug"});
                     next;
                 }
 
                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $module ($fulltheme/$module).");
-
-                my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
                 # If this is a module directory, we want to scan it for steps
                 if(-d $fullmodule) {
@@ -192,6 +197,10 @@ sub process {
                         # Step exclusion has already been determined by the preprocessor, so we can just check that
                         if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"}) {
                             $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Step $stepid excluded by filtering rules.");
+
+                            my $nukename = path_join($fullmodule, "node".lead_zero($stepid).".html");
+                            `$self->{config}->{paths}->{rm} -f $nukename` unless($self -> {"config"} -> {"Processor"} -> {"debug"});
+                            
                             next;
                         }
 
