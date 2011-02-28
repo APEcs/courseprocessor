@@ -1206,8 +1206,7 @@ sub build_stage5_finish {
                                                           $stages -> [STAGE_FINISH] -> {"icon"},
                                                           $stages, STAGE_FINISH,
                                                           $sysvars -> {"template"} -> replace_langvar("FINISH_LONGDESC", $subcourse),
-                                                          $sysvars -> {"template"} -> load_template("webui/stage5form.tem", {"***error***"       => $error,
-                                                                                                                             "***course***"      => $subcourse -> {"***course***"},
+                                                          $sysvars -> {"template"} -> load_template("webui/stage5form.tem", {"***course***"      => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***"    => $subcourse -> {"***lccourse***"},
                                                                                                                              "***previewurl***"  => $preview,
                                                                                                                              "***downloadurl***" => $download}));

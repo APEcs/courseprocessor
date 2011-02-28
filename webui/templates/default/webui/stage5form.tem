@@ -3,7 +3,6 @@
 <script type="text/javascript" src="templates/default/sprintf.js"></script>
 
 <div class="left" style="margin: auto">
-***error***
 <p>{L_FINISH_PREVIEW}</p>
 <div id="processing" class="padover"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_FINISH_ZIPPING}</div>
 <div id="completed" class="padover" style="display: none;">{L_FINISH_DOWNLOAD}</div>
