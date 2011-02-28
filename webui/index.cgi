@@ -740,6 +740,9 @@ sub halt_processor {
 sub launch_zip {
     my $sysvars = shift;
 
+    my $outbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
+    my $logfile = path_join($outbase, "process.log");
+
     my $cname = get_sess_course($sysvars);
     my ($name) = $cname =~ /^(\w+)$/;
 
@@ -749,6 +752,7 @@ sub launch_zip {
     # Create the command to launch the zippery 
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"config"} -> {"base"}."/tools/zipcourse.pl".
         " $sid $name".
+        " > $logfile".
         ' 2>&1 &';
 
     # Start it going...

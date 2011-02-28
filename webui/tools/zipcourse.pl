@@ -100,5 +100,5 @@ chdir $basedir;
 unlink $zipname;
 
 # Do the zip
-`$settings->{paths}->{zip} -r9 $zipname $output`;
+print `$settings->{paths}->{zip} -r9 $zipname $output`;
 
