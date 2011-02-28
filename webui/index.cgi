@@ -740,10 +740,13 @@ sub halt_processor {
 sub launch_zip {
     my $sysvars = shift;
 
+    my $cname = get_sess_course($sysvars);
+    my ($name) = $cname =~ /^(\w+)$/;
+
     # Create the command to launch the zippery 
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"config"} -> {"base"}."/tools/zipcourse.pl".
         " ".$sysvars -> {"session"} -> {"sessid"}.
-        " ".get_sess_course($sysvars).
+        " $name".
         ' 2>&1 &';
 
     # Start it going...
