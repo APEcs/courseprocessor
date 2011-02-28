@@ -89,10 +89,13 @@ write_pid(untaint_path(path_join($settings -> {"config"} -> {"work_path"}, $ARGV
 
 # Now calculate paths we will need
 my $basedir = untaint_path(path_join($settings -> {"config"} -> {"output_path"}, $ARGV[0]));
-my $output  = path_join($basedir, "output");
+my $output  = path_join($basedir, $ARGV[1]);
 
 my @now = localtime();
-my $zipname = path_join($basedir, $ARGV[1]."-".($now[5] + 1900).lead_zero($now[4] + 1).lead_zero($now[3])."-".lead_zero($now[2]).lead_zero($now[1]).lead_zero($now[0]).".zip");
+my $zipname = path_join($basedir, $ARGV[1].".zip");
+
+# Remove the zip file if it exists, for safety
+unlink $zipname;
 
 # Do the zip
 `$settings->{paths}->{zip} -r9 $zipname $output`;
