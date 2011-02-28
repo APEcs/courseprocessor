@@ -92,7 +92,7 @@ my $basedir = untaint_path(path_join($settings -> {"config"} -> {"output_path"},
 my $output  = path_join($basedir, $ARGV[1]);
 
 my @now = localtime();
-my $zipname = path_join($basedir, $ARGV[1].".zip");
+my $zipname = untaint_path(path_join($basedir, $ARGV[1].".zip"));
 
 # Remove the zip file if it exists, for safety
 unlink $zipname;
