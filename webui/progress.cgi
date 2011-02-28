@@ -85,6 +85,9 @@ sub check_zip {
 
     return $pid if(kill 0, $pid);
 
+    # get here and the task in the pid file is no longer present, so remove the file
+    unlink $pidfile;
+
     return undef;
 }
 
