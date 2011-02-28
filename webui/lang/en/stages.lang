@@ -17,6 +17,7 @@ LOGIN_ERR_BADLOGIN   = Unable to log into the selected wiki with the provided us
 LOGIN_ERR_NOLOGIN    = You did not enter a value for either the username or password. Please enter your login details in full.
 LOGIN_ERR_BADWIKI    = The selected wiki does not appear to be supported by this webapp.
 LOGIN_ERR_NOWIKI     = You have not selected a wiki to use. Please ensure that you select the wiki you want to export a course from in the dropdown below.
+LOGIN_ERR_FAILWIKI   = Unable to obtain wiki selection information. This probably means that your session has timed out, and you will need to log in again.
 
 COURSE_TITLE         = Select the ***lccourse*** to process.
 COURSE_LONGDESC      = <p>You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process.</p><p>Please select the ***lccourse*** to export and process from the list below, and then click Next. If you have accidentally logged into the wrong wiki, press Prev to return to the login form to log into a different wiki.</p>
