@@ -20,6 +20,9 @@
     </table>
 <table class="formtable" cellpadding="3" cellspacing="1">
     <tr>
+        <td class="helpbox">
+            <button type="button" name="help" value="help" onclick="callHelp(2);"><img src="templates/default/images/help.png" width="16" height="16" alt="help" />&nbsp;{L_HELP}</button>
+        </td>
         <td class="nextbox">
             <input type="hidden" name="stage"  value="3" />
             <input type="hidden" name="bstage" value="1" />

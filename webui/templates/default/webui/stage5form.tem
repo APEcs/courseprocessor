@@ -10,6 +10,9 @@
 <form action="index.cgi" method="post">
 <table class="formtable" cellpadding="3" cellspacing="1">
     <tr>
+        <td class="helpbox">
+            <button type="button" name="help" value="help" onclick="callHelp(5);"><img src="templates/default/images/help.png" width="16" height="16" alt="help" />&nbsp;{L_HELP}</button>
+        </td>
         <td class="nextbox">
             <input type="hidden" name="stage" value="6" /><!-- needed to make Prev handling logic work -->
             <input type="hidden" name="bstage" value="2" /><!-- No point in going back to exporting from here, so back to stage 2 again -->
