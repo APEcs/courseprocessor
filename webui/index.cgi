@@ -45,6 +45,7 @@ use Time::HiRes qw(time);
 use ConfigMicro;
 use Logger;
 use SessionHandler;
+use SessionSupport;
 use Template;
 use Utils qw(path_join is_defined_numeric get_proc_size read_pid untaint_path);
 
