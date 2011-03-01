@@ -4,3 +4,8 @@ window.addEvent('domready', function() {
         element.target = '_blank';
     });    
 });
+
+function callHelp(currentStage)
+{
+    window.open("help.cgi?stage="+currentStage);
+}
