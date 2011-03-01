@@ -1481,7 +1481,7 @@ sub cleanup_module {
     my $moddir = shift;
 
     # do nothing if we have debug mode enabled
-    return unless($self -> {"config"} -> {"Processor"} -> {"debug"});
+    return if($self -> {"config"} -> {"Processor"} -> {"debug"});
 
     my $out = `$self->{config}->{paths}->{rm} -fv $moddir/node*.html`;
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Cleanup output:\n$out");
