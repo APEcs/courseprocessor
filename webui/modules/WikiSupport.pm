@@ -79,6 +79,7 @@ sub new {
 # @return true if the user details allow them to log into the wiki, false if
 # the user's details do not work (wrong username/password/no account/etc)
 sub check_wiki_login {
+    my $self       = shift;
     my $username   = shift;
     my $password   = shift;
     my $wikiconfig = shift;
@@ -106,6 +107,7 @@ sub check_wiki_login {
 # @param wikiconfig A reference to the wiki's configuration object.
 # @return A reference to a hash of course namespaces to titles..
 sub get_wiki_courses {
+    my $self       = shift;
     my $wikiconfig = shift;
 
     my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
