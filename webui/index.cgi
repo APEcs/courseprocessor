@@ -494,7 +494,7 @@ sub build_stage1_login {
     $sysvars -> {"sess_supp"} -> clear_sess_login();
 
     # Get a hash of wikis we know how to talk to
-    my $wikis = get_wikiconfig_hash($sysvars);
+    my $wikis = $sysvars -> {"wiki"} -> get_wikiconfig_hash();
 
     # And has the user selected one?
     my $setwiki = $sysvars -> {"cgi"} -> param("wiki");
@@ -542,15 +542,15 @@ sub do_stage1_login {
     # Yes - do we have a wiki selected?
     if($setwiki) {
         # Get a hash of wikis we know how to talk to
-        my $wikis = get_wikiconfig_hash($sysvars);
+        my $wikis = $sysvars -> {"wiki"} -> get_wikiconfig_hash();
 
         # Is the wiki valid?
         if($setwiki =~ /^\w+\.config$/ && $wikis -> {$setwiki}) {
             # Do we have login details? If so, try to validate them...
             if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password")) {
-                if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), 
-                                    $sysvars -> {"cgi"} -> param("password"),
-                                    $wikis -> {$setwiki})) {
+                if($sysvars -> {"wiki"} -> check_wiki_login($sysvars -> {"cgi"} -> param("username"), 
+                                                            $sysvars -> {"cgi"} -> param("password"),
+                                                            $wikis -> {$setwiki})) {
                     $sysvars -> {"sess_supp"} -> set_sess_login($setwiki);
                     return (undef, undef);
 
@@ -614,10 +614,10 @@ sub build_stage2_course {
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
-    my $wiki = get_wiki_config($sysvars, $config_name);
+    my $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name);
 
     # Get the list of courses
-    my $courses = get_wiki_courses($wiki);
+    my $courses = $sysvars -> {"wiki"} -> get_wiki_courses($wiki);
     
     # And convert to a select box
     my $courselist = make_course_select($sysvars, $courses, $sysvars -> {"cgi"} -> param("course"));
@@ -667,7 +667,7 @@ sub do_stage2_course {
     my $selected = $sysvars -> {"cgi"} -> param("course");
     if($selected) {
         # Get the list of courses...
-        my $courses = get_wiki_courses($wikiconfig);
+        my $courses = $sysvars -> {"wiki"} -> get_wiki_courses($wikiconfig);
         
         # Is the selected course in the list?
         if($courses -> {$selected}) {
@@ -715,7 +715,7 @@ sub build_stage3_export {
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
-    my $wiki = get_wiki_config($sysvars, $config_name);
+    my $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name);
 
     # did the user submit from course selection?
     if($sysvars -> {"cgi"} -> param("doexport")) {
@@ -775,7 +775,7 @@ sub build_stage4_process {
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
-    my $wiki = get_wiki_config($sysvars, $config_name);
+    my $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name);
 
     # Is the exporter still running? If so, kick the user back to stage 3
     return build_stage3_export($sysvars, $sysvars -> {"template"} -> replace_langvar("PROCESS_EXPORTING"))
@@ -830,7 +830,7 @@ sub build_stage5_finish {
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
-    my $wiki = get_wiki_config($sysvars, $config_name);
+    my $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name);
 
     # Is the processor still running? If so, kick the user back to stage 4
     return build_stage4_process($sysvars, $sysvars -> {"template"} -> replace_langvar("FINISH_PROCESSING"))
