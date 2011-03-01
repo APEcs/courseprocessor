@@ -943,10 +943,10 @@ my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {
     or $logger -> die_log($out -> remote_host(), "Unable to create template handling object: ".$Template::errstr);
 
 # Create something to help out with wiki interaction
-my $wiki = SessionHandler -> new(logger   => $logger,
-                                 cgi      => $out, 
-                                 dbh      => $dbh,
-                                 settings => $settings)
+my $wiki = WikiSupport -> new(logger   => $logger,
+                              cgi      => $out, 
+                              dbh      => $dbh,
+                              settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create wiki support object: ".$WikiSupport::errstr);
 
 # Create or continue a session
