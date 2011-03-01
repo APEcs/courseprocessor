@@ -1,5 +1,6 @@
 NEXT                 = Next &gt;
 BACK                 = &lt; Prev
+HELP                 = Contact support.
 
 FOOTER_COPY          = Copyright (C)2011 APEcs, released under the terms of the GNU GPL v2.<br/>Stage icons taken from the <a href ="http://commons.wikimedia.org/wiki/Crystal_Clear">Crystal Clear icon set</a> by Everaldo Coelho under the terms of the GNU LGPL.
 FOOTER_CONTACT       = Contact <a href ="mailto:apesupport@cs.man.ac.uk">apesupport@cs.man.ac.uk</a> if you encounter any problems using this site.

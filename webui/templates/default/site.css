@@ -317,6 +317,13 @@ td.nextbox {
     text-align: right;
 }
 
+td.helpbox {
+    padding: 0;
+    padding-top: 5px;
+    border: none;
+    text-align: left;
+}
+
 td.micon {
     padding: 5px;
     border: none;
