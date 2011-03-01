@@ -1089,7 +1089,8 @@ my $session = SessionHandler -> new(logger   => $logger,
 my $sess_support = SessionSupport -> new(logger   => $logger,
                                          cgi      => $out, 
                                          dbh      => $dbh,
-                                         settings => $settings)
+                                         settings => $settings,
+                                         session  => $session)
     or $logger -> die_log($out -> remote_host(), "Unable to create session support object: ".$SessionSupport::errstr);
 
 # Generate the page based on the current step
