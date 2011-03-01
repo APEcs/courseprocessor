@@ -37,7 +37,6 @@ use Encode;
 use File::Copy;
 use File::Path qw(make_path);
 use HTML::Entities;
-use MediaWiki::API;
 use MIME::Base64;
 use Time::HiRes qw(time);
 
@@ -48,6 +47,7 @@ use SessionHandler;
 use SessionSupport;
 use Template;
 use Utils qw(path_join is_defined_numeric get_proc_size read_pid untaint_path);
+use WikiSupport;
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
@@ -136,142 +136,6 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
                  "icon"     => "finish",
                  "hasback"  => 1,
                  "func"     => \&build_stage5_finish } ];
-
-# =============================================================================
-#  Wiki interaction
-
-## @fn $ check_wiki_login($username, $password, $wikiconfig)
-# Check whether the specified user credentials correspond to a valid login
-# for the selected wiki. This will attempt to log into the wiki using the
-# username and password provided and, if the login is successful, return true.
-# If the login fail for any reason, this will return false.
-#
-# @param username   The username to log into the wiki using.
-# @param password   The password to provide when logging into the wiki.
-# @param wikiconfig The configuration data corresponding to the wiki to log into.
-# @return true if the user details allow them to log into the wiki, false if
-# the user's details do not work (wrong username/password/no account/etc)
-sub check_wiki_login {
-    my $username   = shift;
-    my $password   = shift;
-    my $wikiconfig = shift;
-
-    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
-        or die "FATAL: Unable to create new MediaWiki API object.";
-
-    my $status = $mw -> login( { lgname => $username, lgpassword => $password });
-
-    # If we have a login, log out again and return true.
-    if($status) {
-        $mw -> logout();
-        return 1;
-    }
-
-    # No login, give up
-    return 0;
-}
-
-
-## @fn $ get_wiki_courses($wikiconfig)
-# Obtain a list of courses in the specified wiki. This will log into the wiki and
-# attempt to retrieve and parse the courses page stored on the wiki.
-#
-# @param wikiconfig A reference to the wiki's configuration object.
-# @return A reference to a hash of course namespaces to titles..
-sub get_wiki_courses {
-    my $wikiconfig = shift;
-
-    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
-        or die "FATAL: Unable to create new MediaWiki API object.";
-
-    # Log in using the 'internal' export user.
-    $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"}, 
-                    lgpassword => $wikiconfig -> {"WebUI"} -> {"password"}})
-        or die "FATAL: Unable to log into wiki. This is possibly a serious configuration error.\nAPI reported: ".$mw -> {"error"} -> {"code"}.': '. $mw -> {"error"} -> {"details"};
-
-    # The contents of the course list page should now be accessible...
-    my $coursepage = $mw->get_page( { title => $wikiconfig -> {"WebUI"} -> {"course_list"} } );
-
-    # Do we have it?
-    die "FATAL: Wiki configuration file specifies a course list page with no content."
-        if($coursepage -> {"missing"} || !$coursepage -> {"*"});
-
-    # We have something, so we want to parse out the contents
-    my @courselist = $coursepage -> {"*"} =~ /\[\[(.*?)\]\]/g;
-
-    my $coursehash;
-    # Process each course into the hash, using the namespace as the key
-    foreach my $course (@courselist) {
-        my ($ns, $title) = $course =~ /^(\w+):.*?\|(.*)$/;
-        
-        # Skip image/media just in case the user has an image on the page
-        next if($ns eq "Image" || $ns eq "Media");
-
-        # shove the results into the hash
-        $coursehash -> {$ns} = $title;
-    }
-    
-    # Probably not needed, but meh...
-    $mw -> logout();
-
-    return $coursehash;
-}
-
-
-# =============================================================================
-#  Configuration interaction
-
-## @fn $ get_wikiconfig_hash($sysvars)
-# Obtain a hash containing the processor configurations for the wikis the web ui
-# knows how to talk to. The hash is keyed off the configuration filename, while
-# the value of each is a ConfigMicro object.
-#
-# @param sysvars A reference to a hash containing database, session, and settings objects.
-# @return A hash of configurations.
-sub get_wikiconfig_hash {
-    my $sysvars    = shift;
-    my $confighash = {};
-
-    # open the wiki configuration directory...
-    opendir(CONFDIR, $sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"})
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to open wiki configuration dir: ".$sysvars -> {"dbh"} -> errstr);
-
-    while(my $entry = readdir(CONFDIR)) {
-        # Skip anything that is obviously not config-like
-        next unless($entry =~ /.config$/);
-
-        # Try to load the config. This may well fail, but it's not fatal if it does...
-        my $config = ConfigMicro -> new(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $entry))
-            or $sysvars -> {"logger"} -> warn_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to open wiki configuration: ".$ConfigMicro::errstr);
-
-        # If we actually have a config, store it
-        $confighash -> {$entry} = $config if($config);
-    }
-
-    closedir(CONFDIR);
-
-    return $confighash;
-}
-
-
-## @fn $ get_wiki_config($sysvars, $config_name)
-# Load the configuration file for the specified wiki. This will load the config
-# from the wiki configuration directory and return a reference to it.
-#
-# @param sysvars     A reference to a hash containing database, session, and settings objects.
-# @param config_name The name of the wiki config to load. Should not contain any path!
-# @return A reference to the wiki config object, or undef on failure.
-sub get_wiki_config {
-    my $sysvars     = shift;
-    my $config_name = shift;
-
-    # Try to load the config. 
-    my $config = ConfigMicro -> new(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name))
-        or $sysvars -> {"logger"} -> warn_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to open wiki configuration $config_name: ".$ConfigMicro::errstr);
-
-    return $config;
-}
-
 
 # =============================================================================
 #  Form list/dropdown creation
@@ -1078,6 +942,13 @@ if($settings -> {"config"} -> {"compress_output"}) {
 my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {"base"}, "templates"))
     or $logger -> die_log($out -> remote_host(), "Unable to create template handling object: ".$Template::errstr);
 
+# Create something to help out with wiki interaction
+my $wiki = SessionHandler -> new(logger   => $logger,
+                                 cgi      => $out, 
+                                 dbh      => $dbh,
+                                 settings => $settings)
+    or $logger -> die_log($out -> remote_host(), "Unable to create wiki support object: ".$WikiSupport::errstr);
+
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
                                     cgi      => $out, 
@@ -1100,7 +971,8 @@ my $content = page_display({"logger"    => $logger,
                             "template"  => $template,
                             "dbh"       => $dbh,
                             "settings"  => $settings,
-                            "cgi"       => $out});
+                            "cgi"       => $out,
+                            "wiki"      => $wiki});
 
 # And start the printing process
 print $out -> header(-charset => 'utf-8',

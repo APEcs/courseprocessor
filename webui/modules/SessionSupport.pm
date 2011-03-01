@@ -38,11 +38,11 @@ BEGIN {
 # ============================================================================
 #  Constructor
 
-## @cmethod SessionHandler new(@args)
-# Create a new SessionHandler object, and start session handling.
+## @cmethod SessionSupport new(@args)
+# Create a new SessionSupport object, and start session handling.
 #
 # @param args A hash of key, value pairs to initialise the object with.
-# @return     A reference to a new SessionHandler object.
+# @return     A reference to a new SessionSupport object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
