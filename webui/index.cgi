@@ -24,6 +24,7 @@
 
 use strict;
 use lib qw(../modules);
+use lib qw(modules);
 #use utf8;
 
 # System modules
@@ -134,227 +135,6 @@ my $stages = [ { "active"   => "templates/default/images/stages/welcome_active.p
                  "icon"     => "finish",
                  "hasback"  => 1,
                  "func"     => \&build_stage5_finish } ];
-
-# =============================================================================
-#  Database interaction
-
-## @fn $ clear_sess_login($sysvars)
-# Clear the marker indicating that the current session has logged into the wiki
-# successfully, and remove the wiki selection.
-#
-# @param sysvars A reference to a hash containing database, session, and settings objects.
-# @return undef on success, otherwise an error message.
-sub clear_sess_login {
-    my $sysvars = shift;
-
-    # Obtain the session record
-    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
-
-    # simple query, really...
-    my $nukedata = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                  " WHERE `id` = ? AND `key` LIKE ?");
-    $nukedata -> execute($session -> {"id"}, "logged_in")
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session login flag: ".$sysvars -> {"dbh"} -> errstr);
-
-    $nukedata -> execute($session -> {"id"}, "wiki_config")
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session wiki setup: ".$sysvars -> {"dbh"} -> errstr);
-
-    return undef;
-}
-
-
-## @fn $ set_sess_login($sysvars, $wiki_config)
-# Mark the user for this session as logged in, and store the wiki config that
-# they have selected. Note that this <i>does not</i> store any user login info:
-# the only time the user's own login info is present is during the step to 
-# validate that the user is allowed to use the wiki. Once that is checked,
-# this is called to say that the user has logged in successfully, at that point
-# the bot user specified in the wiki config takes over the export process. This
-# is a means to avoid having to store the user's password in plain text for
-# later invocations of wiki2course.pl and processor.pl, instead a special 
-# read-only user is used once a user has proved they have access.
-#
-# @param sysvars A reference to a hash containing database, session, and settings objects.
-# @param wiki_config The name of the wiki the user has selected and logged into.
-# @return undef on success, otherwise an error message.
-sub set_sess_login {
-    my $sysvars     = shift;
-    my $wiki_config = shift;
-
-    # Make sure we have no existing data
-    clear_sess_login($sysvars);
-
-    # Obtain the session record
-    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
-
-    # Only one query needed for both operations
-    my $setdata = $sysvars -> {"dbh"} -> prepare("INSERT INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                 " VALUES(?, ?, ?)");
-
-    $setdata -> execute($session -> {"id"}, "logged_in", "1")
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session login flag: ".$sysvars -> {"dbh"} -> errstr);
-
-    $setdata -> execute($session -> {"id"}, "wiki_config", $wiki_config)
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session wiki setup: ".$sysvars -> {"dbh"} -> errstr);
-
-    return undef;
-}
-
-
-## @fn $ get_sess_login($sysvars)
-# Obtain the user's wiki login status, and the name of the wiki they logged into if
-# they have done so.
-#
-# @param sysvars A reference to a hash containing database, session, and settings objects.
-# @return The name of the wiki config for the wiki the user has logged into, or undef
-#         if the user has not logged in yet.
-sub get_sess_login {
-    my $sysvars = shift;
-
-    # Obtain the session record
-    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
-
-    # Ask the database for the user's settings
-    my $getdata = $sysvars -> {"dbh"} -> prepare("SELECT value FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                 " WHERE `id` = ? AND `key` LIKE ?");
-
-    # First, have we logged in? If not, return undef
-    $getdata -> execute($session -> {"id"}, "logged_in")
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session login variable: ".$sysvars -> {"dbh"} -> errstr);
-    
-    my $data = $getdata -> fetchrow_arrayref();
-    return 0 unless($data && $data -> [0]);
-
-    # We're logged in, get the wiki config name!
-    $getdata -> execute($session -> {"id"}, "wiki_config")
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session wiki variable: ".$sysvars -> {"dbh"} -> errstr);
-
-    $data = $getdata -> fetchrow_arrayref();
-    return $data -> [0] if($data && $data -> [0]);
-
-    # Get here and we have no wiki config selected, fall over. This should not happen!
-    return undef;
-}
-
-
-## @fn $ set_sess_course($sysvars, $course)
-# Set the course the selected by the user in their session data for later use.
-#
-# @param sysvars A reference to a hash containing database, session, and settings objects.
-# @param course  The name of the course namespace the user has chosen to export.
-# @return undef on success, otherwise an error message.
-sub set_sess_course {
-    my $sysvars = shift;
-    my $course  = shift;
-
-    # Obtain the session record
-    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
-
-    # delete any existing course selection
-    my $nukecourse = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                    " WHERE `id` = ? AND `key` LIKE 'course'");
-    $nukecourse -> execute($session -> {"id"})
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session course selection: ".$sysvars -> {"dbh"} -> errstr);
-
-    # Insert the new value
-    my $newcourse = $sysvars -> {"dbh"} -> prepare("INSERT INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                   " VALUES(?, 'course', ?)");
-    $newcourse -> execute($session -> {"id"}, $course)
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session course selection: ".$sysvars -> {"dbh"} -> errstr);
-
-    return undef;
-}
-
-
-## @fn $ get_sess_course($sysvars)
-# Obtain the name of the course the user has selected to export.
-#
-# @param sysvars A reference to a hash containing database, session, and settings objects.
-# @return The name of the course selected by the user, or undef if one has not been selected.
-sub get_sess_course {
-    my $sysvars = shift;
-
-    # Obtain the session record
-    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
-
-    # Ask the database for the user's settings
-    my $getdata = $sysvars -> {"dbh"} -> prepare("SELECT value FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                 " WHERE `id` = ? AND `key` LIKE 'course'");
-    $getdata -> execute($session -> {"id"})
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session course variable: ".$sysvars -> {"dbh"} -> errstr);
-
-    my $data = $getdata -> fetchrow_arrayref();
-    return $data -> [0] if($data && $data -> [0]);
-
-    return undef;
-}
-
-
-## @fn $ set_sess_verbosity($sysvars, $verb_export, $verb_process)
-# Set the export and processor verbosity levels for the session. 
-#
-# @param sysvars      A reference to a hash containing database, session, and settings objects.
-# @param verb_export  The verbosity of exporting, should be 0 or 1.
-# @param verb_process The verbosity of processing, should be 0 or 1.
-# @return undef on success, otherwise an error message.
-sub set_sess_verbosity {
-    my $sysvars      = shift;
-    my $verb_export  = shift;
-    my $verb_process = shift;
-
-    # Obtain the session record
-    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
-
-    # delete any existing verbosities selection
-    my $nukeverbosity = $sysvars -> {"dbh"} -> prepare("DELETE FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                    " WHERE `id` = ? AND `key` LIKE ?");
-    $nukeverbosity -> execute($session -> {"id"}, "verb_export")
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session export verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
-
-    $nukeverbosity -> execute($session -> {"id"}, "verb_process")
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session process verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
-
-    # Insert the new value
-    my $newverbosity = $sysvars -> {"dbh"} -> prepare("INSERT INTO ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                      " VALUES(?, ?, ?)");
-    $newverbosity -> execute($session -> {"id"}, "verb_export", $verb_export)
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session export verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
-
-    $newverbosity -> execute($session -> {"id"}, "verb_process", $verb_process)
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session export verbosity selection: ".$sysvars -> {"dbh"} -> errstr);
-
-    return undef;
-}
-
-
-## @fn $ get_sess_verbosity($sysvars, $mode)
-# Obtain the value for the specified verbosity type. The secodn argument must be "export" or
-# "process", or the function will die with an error.
-#
-# @param sysvars A reference to a hash containing database, session, and settings objects.
-# @param mode    The job mode, should be either "export" or "process".
-# @return The verbosity level set for the specified mode.
-sub get_sess_verbosity {
-    my $sysvars = shift;
-    my $mode    = shift;
-
-    $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "Illegal mode passed to get_sess_verbosity()") if($mode ne "export" && $mode ne "process");
-
-    # Obtain the session record
-    my $session = $sysvars -> {"session"} -> get_session($sysvars -> {"session"} -> {"sessid"});
-
-    # Ask the database for the user's settings
-    my $getdata = $sysvars -> {"dbh"} -> prepare("SELECT value FROM ".$sysvars -> {"settings"} -> {"database"} -> {"session_data"}.
-                                                 " WHERE `id` = ? AND `key` LIKE ?");
-    $getdata -> execute($session -> {"id"}, "verb_".$mode)
-        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session course variable: ".$sysvars -> {"dbh"} -> errstr);
-
-    my $data = $getdata -> fetchrow_arrayref();
-    return $data -> [0] if($data && $data -> [0]);
-
-    return undef;
-}
-
 
 # =============================================================================
 #  Wiki interaction
@@ -578,7 +358,7 @@ sub launch_exporter {
     }
 
     my $extraverb = "";
-    $extraverb = "-v" if(get_sess_verbosity($sysvars, "export"));
+    $extraverb = "-v" if($sysvars -> {"sess_supp"} -> get_sess_verbosity("export"));
 
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"wiki2course"}." -v $extraverb".
               " -u ".$wikiconfig -> {"WebUI"} -> {"username"}.
@@ -660,7 +440,7 @@ sub launch_processor {
     my $logfile    = path_join($outbase, "process.log");
     my $coursedata = path_join($outbase, "coursedata");
     my $pidfile    = path_join($outbase, "process.pid");
-    my $outpath    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"output_path"}, $sysvars -> {"session"} -> {"sessid"}, get_sess_course($sysvars)));
+    my $outpath    = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"output_path"}, $sysvars -> {"session"} -> {"sessid"}, $sysvars -> {"sess_supp"} -> get_sess_course()));
 
     # Make sure the output path exist
     if(!-d $outpath) {
@@ -669,7 +449,7 @@ sub launch_processor {
     }
 
     my $extraverb = "";
-    $extraverb = "-v" if(get_sess_verbosity($sysvars, "process"));
+    $extraverb = "-v" if($sysvars -> {"sess_supp"} -> get_sess_verbosity("process"));
 
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb".
               " -c $coursedata".
@@ -743,7 +523,7 @@ sub launch_zip {
     my $outbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
     my $logfile = path_join($outbase, "zipwrapper.log");
 
-    my $cname = get_sess_course($sysvars);
+    my $cname = $sysvars -> {"sess_supp"} -> get_sess_course();
     my ($name) = $cname =~ /^(\w+)$/;
 
     my $sessid = $sysvars -> {"session"} -> {"sessid"};
@@ -846,7 +626,7 @@ sub build_stage1_login {
     my $error   = shift;
 
     # First, remove the 'logged in' marker
-    clear_sess_login($sysvars);
+    $sysvars -> {"sess_supp"} -> clear_sess_login();
 
     # Get a hash of wikis we know how to talk to
     my $wikis = get_wikiconfig_hash($sysvars);
@@ -906,7 +686,7 @@ sub do_stage1_login {
                 if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), 
                                     $sysvars -> {"cgi"} -> param("password"),
                                     $wikis -> {$setwiki})) {
-                    set_sess_login($sysvars, $setwiki);
+                    $sysvars -> {"sess_supp"} -> set_sess_login($setwiki);
                     return (undef, undef);
 
                 } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
@@ -965,7 +745,7 @@ sub build_stage2_course {
     }
 
     # If the user has logged in successfully, obtain a list of courses from the wiki.
-    my $config_name = get_sess_login($sysvars)
+    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -1027,14 +807,14 @@ sub do_stage2_course {
         # Is the selected course in the list?
         if($courses -> {$selected}) {
             # Course is good, store it
-            set_sess_course($sysvars, $selected);
+            $sysvars -> {"sess_supp"} -> set_sess_course($selected);
 
             # Work out the verbosity controls, and store them
             # Do not use the values set directly, as they can't be trusted - just see whether they are set
             my $verb_export  = (defined($sysvars -> {"cgi"} -> param("expverb")) && $sysvars -> {"cgi"} -> param("expverb"));
             my $verb_process = (defined($sysvars -> {"cgi"} -> param("procverb")) && $sysvars -> {"cgi"} -> param("procverb"));
 
-            set_sess_verbosity($sysvars, $verb_export, $verb_process);
+            $sysvars -> {"sess_supp"} -> set_sess_verbosity($verb_export, $verb_process);
 
             # return sweet nothings, as all is well.
             return (undef, undef);
@@ -1066,7 +846,7 @@ sub build_stage3_export {
     my $error    = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
-    my $config_name = get_sess_login($sysvars)
+    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -1081,7 +861,7 @@ sub build_stage3_export {
 
     # We have a course selected, so now we need to start the export. First get the 
     # course name for later...
-    my $course = get_sess_course($sysvars);
+    my $course = $sysvars -> {"sess_supp"} -> get_sess_course();
 
     # Invoke the exporter if it isn't already running
     launch_exporter($sysvars, $wiki, $config_name, $course) unless(check_exporter($sysvars));
@@ -1092,7 +872,7 @@ sub build_stage3_export {
 
     # Get the default delay, but override it if verbosity is enabled.
     my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
-    $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_export_delay"} if(get_sess_verbosity($sysvars, "export"));
+    $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_export_delay"} if($sysvars -> {"sess_supp"} -> get_sess_verbosity("export"));
 
     # If we have an error, encapsulate it
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
@@ -1126,7 +906,7 @@ sub build_stage4_process {
     my $error    = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
-    my $config_name = get_sess_login($sysvars)
+    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -1138,7 +918,7 @@ sub build_stage4_process {
 
     # We have a course selected, so now we need to start the export. First get the 
     # course name for later...
-    my $course = get_sess_course($sysvars);
+    my $course = $sysvars -> {"sess_supp"} -> get_sess_course();
 
     # Invoke the processor if needed
     launch_processor($sysvars, $config_name) unless(check_processor($sysvars));
@@ -1149,7 +929,7 @@ sub build_stage4_process {
 
     # Get the default delay, but override it if verbosity is enabled.
     my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
-    $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_process_delay"} if(get_sess_verbosity($sysvars, "process"));
+    $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_process_delay"} if($sysvars -> {"sess_supp"} -> get_sess_verbosity("process"));
 
     # If we have an error, encapsulate it
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
@@ -1181,7 +961,7 @@ sub build_stage5_finish {
     my $sysvars  = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
-    my $config_name = get_sess_login($sysvars)
+    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -1193,7 +973,7 @@ sub build_stage5_finish {
 
     # We have a course selected, so now we need to start the export. First get the 
     # course name for later...
-    my $course = get_sess_course($sysvars);
+    my $course = $sysvars -> {"sess_supp"} -> get_sess_course();
 
     # Invoke the wrapper if needed
     launch_zip($sysvars) unless(check_zip($sysvars));
@@ -1304,13 +1084,21 @@ my $session = SessionHandler -> new(logger   => $logger,
                                     settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
+# And the support object to provide webui specific functions
+my $sess_support = SessionSupport -> new(logger   => $logger,
+                                         cgi      => $out, 
+                                         dbh      => $dbh,
+                                         settings => $settings)
+    or $logger -> die_log($out -> remote_host(), "Unable to create session support object: ".$SessionSupport::errstr);
+
 # Generate the page based on the current step
-my $content = page_display({"logger"   => $logger,
-                            "session"  => $session,
-                            "template" => $template,
-                            "dbh"      => $dbh,
-                            "settings" => $settings,
-                            "cgi"      => $out});
+my $content = page_display({"logger"    => $logger,
+                            "session"   => $session,
+                            "sess_supp" => $sess_support,
+                            "template"  => $template,
+                            "dbh"       => $dbh,
+                            "settings"  => $settings,
+                            "cgi"       => $out});
 
 # And start the printing process
 print $out -> header(-charset => 'utf-8',
