@@ -28,6 +28,7 @@ require 5.005;
 use strict;
 
 use MediaWiki::API;
+use Utils qw(path_join);
 
 # Globals...
 use vars qw{$VERSION $errstr};
