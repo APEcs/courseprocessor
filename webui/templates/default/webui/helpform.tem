@@ -1,6 +1,6 @@
 <div class="left" style="margin: auto">
 ***error***
-<form action="index.cgi" method="post">
+<form action="help.cgi" method="post">
     <table class="formtable" cellpadding="3" cellspacing="1">
         <tr class="header"><td class="formfield" colspan="2"><b>{L_HELP_STAGE}</b></td></tr>
         <tr><td class="formfield" colspan="2">{L_HELP_STAGEDESC}</td></tr>
