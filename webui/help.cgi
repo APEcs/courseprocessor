@@ -179,7 +179,7 @@ sub get_static_data {
 
     # work out the static information for the user - username, wiki, and so on
     # Get the wiki username and configuration names first..
-    my ($data -> {"config_name"}, $data -> {"wiki_user"}) = $sysvars -> {"sess_supp"} -> get_sess_login();
+    ($data -> {"config_name"}, $data -> {"wiki_user"}) = $sysvars -> {"sess_supp"} -> get_sess_login();
 
     # Obtain the wiki's configuration if possible
     $data -> {"wiki"} = $sysvars -> {"wiki"} -> get_wiki_config($data -> {"config_name"}) if($data -> {"config_name"});
@@ -195,7 +195,7 @@ sub get_static_data {
         if($stage =~ /^\d+$/);
 
     # Get the selected course namespace
-    my $data -> {"course"} = $sysvars -> {"sess_supp"} -> get_sess_course() || $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NONS");
+    $data -> {"course"} = $sysvars -> {"sess_supp"} -> get_sess_course() || $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NONS");
 
     return $data;
 }
