@@ -82,47 +82,66 @@ my @titlenames = ("WELCOME_TITLE",
                   "PROCESS_TITLE",
                   "FINISH_TITLE");
 
+## @fn $ get_static_data($sysvars, $stage)
+# Obtain the data stored against the user's settings and the transformed stage data.
+#
+# @param sysvars  A reference to a hash containing template, cgi, settings, session, and database objects.
+# @param stage    The stage the user was on when they hit "Contact support"
+# @return A hash containing the configuration name, wiki username, wiki config, stage, and course
+sub get_static_data {
+    my $sysvars = shift;
+    my $stage   = shift;
+    my $data    = { "stage" => $stage };
+
+    # work out the static information for the user - username, wiki, and so on
+    # Get the wiki username and configuration names first..
+    my ($data -> {"config_name"}, $data -> {"wiki_user"}) = $sysvars -> {"sess_supp"} -> get_sess_login();
+
+    # Obtain the wiki's configuration if possible
+    $data -> {"wiki"} = $sysvars -> {"wiki"} -> get_wiki_config($data -> {"config_name"}) if($data -> {"config_name"});
+
+    # Set defaults if not...
+    $data -> {"wiki"} -> {"WebUI"} -> {"name"} = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NOWIKI")
+        unless($data -> {"config_name"} && $data -> {"wiki"});
+
+    $data -> {"wiki_user"} = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_USERNAME") unless($data -> {"wiki_user"});
+
+    # Get the title for the stage, if the stage set is numeric.
+    $data -> {"stagename"} = $sysvars -> {"template"} -> replace_langvar($titlenames[$stage] || "HELP_ERR_NOSTAGE") 
+        if($stage =~ /^\d+$/);
+
+    # Get the selected course namespace
+    my $data -> {"course"} = $sysvars -> {"sess_supp"} -> get_sess_course() || $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NONS");
+
+    return $data;
+}
+
+
 ## @fn @ build_help_form($stage, $error, $args)
 # Generate the form to send to the user requesting their details and the details of the problem.
 # This will build the contents of the page through which the user should detail their problem
 # with the course processor web interface. 
 #
-# @param stage  The stage the user was on when they hit "Contact support"
-# @param error  An error message to send back to the user.
-# @param args   A reference to a hash containing any defined variables to show in the form.
+# @param sysvars  A reference to a hash containing template, cgi, settings, session, and database objects.
+# @param stage    The stage the user was on when they hit "Contact support"
+# @param error    An error message to send back to the user.
+# @param args     A reference to a hash containing any defined variables to show in the form.
 # @return Two strings: the title of the page, and the message box containing the contact form.
 sub build_help_form {
     my $sysvars = shift;
     my $stage   = shift;
     my $error   = shift;
     my $args    = shift;
-    my ($wiki, $stagename) = ({}, $stage);
 
-    # work out the static information for the user - username, wiki, and so on
-    # Get the wiki username and configuration names first..
-    my ($config_name, $wiki_user) = $sysvars -> {"sess_supp"} -> get_sess_login();
-
-    # Obtain the wiki's configuration if possible
-    $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name) if($config_name);
-
-    # Set defaults if not...
-    $wiki -> {"WebUI"} -> {"name"} = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NOWIKI") if(!$config_name || !$wiki);
-    $wiki_user = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_USERNAME") if(!$wiki_user);
-
-    # Get the title for the stage, if the stage set is numeric.
-    $stagename = $sysvars -> {"template"} -> replace_langvar($titlenames[$stage] || "HELP_ERR_NOSTAGE") 
-        if($stage =~ /^\d+$/);
-
-    # Get the selected course namespace
-    my $course = $sysvars -> {"sess_supp"} -> get_sess_course() || $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NONS");
+    my $static = get_static_data($sysvars, $stage);
 
     # If we have an error, encapsulate it
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
         if($error);
 
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
-                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
+    my $subcourse = {"***course***"   => ($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Spit out the message box with the form...
     return ($sysvars -> {"template"} -> replace_langvar("HELP_TITLE"),
@@ -131,11 +150,11 @@ sub build_help_form {
                                                     $sysvars -> {"template"} -> replace_langvar("HELP_SUMMARY"),
                                                     $sysvars -> {"template"} -> replace_langvar("HELP_LONGDESC"),
                                                     $sysvars -> {"template"} -> load_template("webui/helpform.tem", {"***error***"      => $error,
-                                                                                                                     "***wikiname***"   => $wiki -> {"WebUI"} -> {"name"},
-                                                                                                                     "***username***"   => $wiki_user,
-                                                                                                                     "***coursename***" => $course,
-                                                                                                                     "***stagename***"  => $stagename,
-                                                                                                                     "***stage***"      => $stage,
+                                                                                                                     "***wikiname***"   => $static -> {"wiki"} -> {"WebUI"} -> {"name"},
+                                                                                                                     "***username***"   => $static -> {"wiki_user"},
+                                                                                                                     "***coursename***" => $static -> {"course"},
+                                                                                                                     "***stagename***"  => $static -> {"stagename"},
+                                                                                                                     "***stage***"      => $static -> {"stage"},
                                                                                                                      "***course***"     => $subcourse -> {"***course***"},
                                                                                                                      "***lccourse***"   => $subcourse -> {"***lccourse***"},
                                                                                                                      "***name***"       => $args -> {"name"},
