@@ -134,7 +134,7 @@ sub set_sess_login {
 }
 
 
-## @fn $ get_sess_login()
+## @fn @ get_sess_login()
 # Obtain the user's wiki login status, and the name of the wiki they logged into if
 # they have done so.
 #
@@ -157,15 +157,24 @@ sub get_sess_login {
     my $data = $getdata -> fetchrow_arrayref();
     return 0 unless($data && $data -> [0]);
 
+    # Some variables to fill in later...
+    my ($config_name, $wiki_user);
+
     # We're logged in, get the wiki config name!
     $getdata -> execute($session -> {"id"}, "wiki_config")
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session wiki variable: ".$self -> {"dbh"} -> errstr);
 
     $data = $getdata -> fetchrow_arrayref();
-    return $data -> [0] if($data && $data -> [0]);
+    $config_name = $data -> [0] if($data && $data -> [0]);
 
-    # Get here and we have no wiki config selected, fall over. This should not happen!
-    return undef;
+    # And get the user's wiki username
+    $getdata -> execute($session -> {"id"}, "username")
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session username variable: ".$self -> {"dbh"} -> errstr);
+
+    $data = $getdata -> fetchrow_arrayref();
+    $wiki_user = $data -> [0] if($data && $data -> [0]);
+
+    return ($config_name, $wiki_user);
 }
 
 

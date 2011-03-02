@@ -610,7 +610,7 @@ sub build_stage2_course {
     }
 
     # If the user has logged in successfully, obtain a list of courses from the wiki.
-    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
+    my ($config_name, $wiki_user) = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -711,7 +711,7 @@ sub build_stage3_export {
     my $error    = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
-    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
+    my ($config_name, $wiki_user) = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -771,7 +771,7 @@ sub build_stage4_process {
     my $error    = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
-    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
+    my ($config_name, $wiki_user) = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
@@ -826,7 +826,7 @@ sub build_stage5_finish {
     my $sysvars  = shift;
 
     # We need to get the wiki's information regardless of anything else, so get the name first...
-    my $config_name = $sysvars -> {"sess_supp"} -> get_sess_login()
+    my ($config_name, $wiki_user) = $sysvars -> {"sess_supp"} -> get_sess_login()
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
