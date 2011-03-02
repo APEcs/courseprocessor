@@ -74,6 +74,70 @@ END {
     $logger -> end_log() if($logger);
 }
 
+# Names of the language variables storing stage titles.
+my @titlenames = ("WELCOME_TITLE", 
+                  "LOGIN_TITLE",
+                  "COURSE_TITLE",
+                  "EXPORT_TITLE",
+                  "PROCESS_TITLE",
+                  "FINISH_TITLE");
+
+## @fn @ build_help_form($stage, $error, $args)
+# Generate the form to send to the user requesting their details and the details of the problem.
+# This will build the contents of the page through which the user should detail their problem
+# with the course processor web interface. 
+#
+# @param stage  The stage the user was on when they hit "Contact support"
+# @param error  An error message to send back to the user.
+# @param args   A reference to a hash containing any defined variables to show in the form.
+# @return Two strings: the title of the page, and the message box containing the contact form.
+sub build_help_form {
+    my $sysvars = shift;
+    my $stage   = shift;
+    my $error   = shift;
+    my $args    = shift;
+    my ($wiki, $stagename) = ("", $stage);
+
+    # work out the static information for the user - username, wiki, and so on
+    # Get the wiki username and configuration names first..
+    my ($config_name, $wiki_user) = $sysvars -> {"sess_supp"} -> get_sess_login();
+
+    # Obtain the wiki's configuration if possible
+    $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name) if($config_name);
+
+    # Set defaults if not...
+    $wiki -> {"WebUI"} -> {"name"} = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NOWIKI") if(!$config_name || !$wiki);
+    $wiki_user = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_USERNAME") if(!$wiki_user);
+
+    # Get the title for the stage, if the stage set is numeric.
+    $stagename = $sysvars -> {"template"} -> replace_langvar($titlenames[$stage] || "HELP_ERR_NOSTAGE") 
+        if($stage =~ /^\d+$/);
+
+    # Get the selected course namespace
+    my $course = $sysvars -> {"sess_supp"} -> get_sess_course() || $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NONS");
+
+    # If we have an error, encapsulate it
+    $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
+        if($error);
+
+    # Spit out the message box with the form...
+    return ($sysvars -> {"template"} -> replace_langvar("HELP_TITLE"),
+            $sysvars -> {"template"} -> message_box($sysvars -> {"template"} -> replace_langvar("HELP_TITLE"),
+                                                    "warn",
+                                                    $sysvars -> {"template"} -> replace_langvar("HELP_SUMMARY"),
+                                                    $sysvars -> {"template"} -> replace_langvar("HELP_LONGDESC"),
+                                                    $sysvars -> {"template"} -> load_template("webui/helpform.tem", {"***error***"     => $error,
+                                                                                                                     "***wikiname***"  => $wiki -> {"WebUI"} -> {"name"},
+                                                                                                                     "***username***"  => $wiki_user,
+                                                                                                                     "***course***"    => $course,
+                                                                                                                     "***stagename***" => $stagename,
+                                                                                                                     "***stage***"     => $stage,
+                                                                                                                     "***name***"      => $args -> {"name"},
+                                                                                                                     "***email***"     => $args -> {"email"},
+                                                                                                                     "***summary***"   => $args -> {"summary"},
+                                                                                                                     "***fullprob***"  => $args -> {"fullprob"}})));
+}
+
 
 # =============================================================================
 #  Core page code and dispatcher
@@ -87,16 +151,24 @@ END {
 # @return A string containing the page to display.
 sub page_display {
     my $sysvars = shift;
-    my ($title, $body, $extrahead) = ("", "", "");
+    my ($title, $body) = ("", "");
 
-    # Get the current stage, and make it zero if there's no stage defined
+    # Get the current stage, and make it unknown if there's no stage defined
     my $stage = is_defined_numeric($sysvars -> {"cgi"}, "stage");
-    $stage = "Unknown" if(!defined($stage));
+    $stage = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_NOSTAGE") if(!defined($stage));
 
-    
+    # Did the user submit?
+    if($sysvars -> {"cgi"} -> param("dohelp")) {
+
+
+    # User did not submit, so just send the empty form back...
+    } else {
+        ($title, $body) = build_help_form($sysvars, $stage);
+    }
+   
     return $sysvars -> {"template"} -> load_template("page.tem", 
                                                      { "***title***"     => $title,
-                                                       "***extrahead***" => $extrahead,
+                                                       "***extrahead***" => "",
                                                        "***core***"      => $body || '<p class="error">No page content available, this should not happen.</p>'});
 }
 

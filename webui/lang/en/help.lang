@@ -1,0 +1,25 @@
+HELP_TITLE        = Contact support
+HELP_SUMMARY      = You can use this form to contact the support team about a problem with the processor web interface.
+HELP_LONGDESC     = In order to provide the support team with all the information they might need about a problem, please fill in the form below. All the fields with bold titles are required, and must be filled in before your problem can be sent to the team. If you encounter any problems using this form, please email the support address given at the foot of the page directly, and describe the problem in as much detail as possible.
+
+HELP_STAGE        = Where you were
+HELP_STAGEDESC    = <span class="small">The following information about where you were in the web application will sent with your support request.</span>
+HELP_WIKINAME     = Selected wiki
+HELP_USERNAME     = Wiki username
+HELP_NAMESPACE    = Namespace
+HELP_STAGENAME    = Wizard stage
+
+HELP_ABOUTYOU     = About you
+HELP_ABOUTDESC    = <span class="small">Please enter some information that will allow the support team to contact you about the problem you are having. In particular, you must ensure that the email address you supply is valid and accessible to you, otherwise you will not get any response.</span>
+HELP_NAME         = Your name
+HELP_EMAIL        = Your email address
+
+HELP_PROBLEM      = Describe the problem
+HELP_PROBDESC     = <span class="small">Please provide a description of the problem you are having here, including as much detail as you can to help the support team narrow down the issue. Note that any exporting, processing, and zip logs that may have been generated will be automatically attached to your message for you, so you do not need to include them in your description.</span>
+HELP_SUMMARY      = Problem summary
+HELP_FULLPROB     = Problem description
+
+HELP_ERR_NOSTAGE  = Unknown.
+HELP_ERR_NONS     = Not set.
+HELP_ERR_NOWIKI   = Not set.
+HELP_ERR_USERNAME = Not set.

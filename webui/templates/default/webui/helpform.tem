@@ -1,0 +1,56 @@
+<div class="left" style="margin: auto">
+***error***
+<form action="index.cgi" method="post">
+    <table class="formtable" cellpadding="3" cellspacing="1">
+        <tr class="header"><td class="formfield" colspan="2"><b>{L_HELP_STAGE}</b></td></tr>
+        <tr><td class="formfield" colspan="2">{L_HELP_STAGEDESC}</td></tr>
+        <tr>
+            <td class="formname">{L_HELP_WIKINAME}:</td>
+            <td class="formfield">***wikiname***</td>
+        </tr>
+        <tr>
+            <td class="formname">{L_HELP_USERNAME}:</td>
+            <td class="formfield">***username***</td>
+        </tr>
+        <tr>
+            <td class="formname">{L_HELP_NAMESPACE}:</td>
+            <td class="formfield">***course***</td>
+        </tr>
+        <tr>
+            <td class="formname">{L_HELP_STAGENAME}:</td>
+            <td class="formfield">***stagename***</td>
+        </tr>
+        
+        <tr class="header"><td class="formfield" colspan="2"><b>{L_HELP_ABOUTYOU}</b></td></tr>
+        <tr><td class="formfield" colspan="2">{L_HELP_ABOUTDESC}</td></tr>
+        <tr>
+            <td class="formname">{L_HELP_NAME}:</td>
+            <td class="formfield"><input type="text" name="name" size="64" maxlength="128" value="***name***" /></td>
+        </tr>
+        <tr>
+            <td class="formname"><b>{L_HELP_EMAIL}</b>:</td>
+            <td class="formfield"><input type="text" name="email" size="64" maxlength="256" value="***email***" /></td>
+        </tr>
+
+        <tr class="header"><td class="formfield" colspan="2"><b>{L_HELP_PROBLEM}</b></td></tr>
+        <tr><td class="formfield" colspan="2">{L_HELP_PROBDESC}</td></tr>
+        <tr>
+            <td class="formname"><b>{L_HELP_SUMMARY}</b>:</td>
+            <td class="formfield"><input type="text" name="summary" size="80" maxlength="255" value="***summary***" /></td>
+        </tr>
+        <tr>
+            <td class="formnamet"><b>{L_HELP_FULLPROB}</b>:</td>
+            <td class="formfield"><textarea name="fullprob" cols="120" rows="20">***fullprob***"</textarea></td>
+        </tr>
+
+    </table>
+<table class="formtable" cellpadding="3" cellspacing="1">
+    <tr>
+        <td class="nextbox">
+            <input type="hidden" name="stage"  value="***stage***" />
+            <input type="submit" name="dohelp" accesskey="h" value="{L_HELP}" />
+        </td>
+    </tr>
+</table>
+</form>
+</div>
