@@ -16,7 +16,7 @@ HELP_EMAIL        = Your email address
 
 HELP_PROBLEM      = Describe the problem
 HELP_PROBDESC     = <span class="small">Please provide a description of the problem you are having here, including as much detail as you can to help the support team narrow down the issue. Note that any exporting, processing, and zip logs that may have been generated will be automatically attached to your message for you, so you do not need to include them in your description.</span>
-HELP_SUMMARY      = Problem summary
+HELP_PROBSUMM     = Problem summary
 HELP_FULLPROB     = Problem description
 
 HELP_ERR_NOSTAGE  = Unknown.

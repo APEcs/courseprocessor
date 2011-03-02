@@ -35,7 +35,7 @@
         <tr class="header"><td class="formfield" colspan="2"><b>{L_HELP_PROBLEM}</b></td></tr>
         <tr><td class="formfield" colspan="2">{L_HELP_PROBDESC}</td></tr>
         <tr>
-            <td class="formname"><b>{L_HELP_SUMMARY}</b>:</td>
+            <td class="formname"><b>{L_HELP_PROBSUMM}</b>:</td>
             <td class="formfield"><input type="text" name="summary" size="80" maxlength="255" value="***summary***" /></td>
         </tr>
         <tr>
