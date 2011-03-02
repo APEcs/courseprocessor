@@ -96,7 +96,7 @@ sub build_help_form {
     my $stage   = shift;
     my $error   = shift;
     my $args    = shift;
-    my ($wiki, $stagename) = ("", $stage);
+    my ($wiki, $stagename) = ({}, $stage);
 
     # work out the static information for the user - username, wiki, and so on
     # Get the wiki username and configuration names first..
