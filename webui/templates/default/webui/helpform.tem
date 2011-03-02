@@ -14,7 +14,7 @@
         </tr>
         <tr>
             <td class="formname">{L_HELP_NAMESPACE}:</td>
-            <td class="formfield">***course***</td>
+            <td class="formfield">***coursename***</td>
         </tr>
         <tr>
             <td class="formname">{L_HELP_STAGENAME}:</td>

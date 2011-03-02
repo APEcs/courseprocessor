@@ -120,22 +120,28 @@ sub build_help_form {
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
         if($error);
 
+    # Precalculate some variables to use in templating
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
+
     # Spit out the message box with the form...
     return ($sysvars -> {"template"} -> replace_langvar("HELP_TITLE"),
             $sysvars -> {"template"} -> message_box($sysvars -> {"template"} -> replace_langvar("HELP_TITLE"),
                                                     "warn",
                                                     $sysvars -> {"template"} -> replace_langvar("HELP_SUMMARY"),
                                                     $sysvars -> {"template"} -> replace_langvar("HELP_LONGDESC"),
-                                                    $sysvars -> {"template"} -> load_template("webui/helpform.tem", {"***error***"     => $error,
-                                                                                                                     "***wikiname***"  => $wiki -> {"WebUI"} -> {"name"},
-                                                                                                                     "***username***"  => $wiki_user,
-                                                                                                                     "***course***"    => $course,
-                                                                                                                     "***stagename***" => $stagename,
-                                                                                                                     "***stage***"     => $stage,
-                                                                                                                     "***name***"      => $args -> {"name"},
-                                                                                                                     "***email***"     => $args -> {"email"},
-                                                                                                                     "***summary***"   => $args -> {"summary"},
-                                                                                                                     "***fullprob***"  => $args -> {"fullprob"}})));
+                                                    $sysvars -> {"template"} -> load_template("webui/helpform.tem", {"***error***"      => $error,
+                                                                                                                     "***wikiname***"   => $wiki -> {"WebUI"} -> {"name"},
+                                                                                                                     "***username***"   => $wiki_user,
+                                                                                                                     "***coursename***" => $course,
+                                                                                                                     "***stagename***"  => $stagename,
+                                                                                                                     "***stage***"      => $stage,
+                                                                                                                     "***course***"     => $subcourse -> {"***course***"},
+                                                                                                                     "***lccourse***"   => $subcourse -> {"***lccourse***"},
+                                                                                                                     "***name***"       => $args -> {"name"},
+                                                                                                                     "***email***"      => $args -> {"email"},
+                                                                                                                     "***summary***"    => $args -> {"summary"},
+                                                                                                                     "***fullprob***"   => $args -> {"fullprob"}})));
 }
 
 
