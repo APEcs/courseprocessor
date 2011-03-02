@@ -23,3 +23,5 @@ HELP_ERR_NOSTAGE  = Unknown.
 HELP_ERR_NONS     = Not set.
 HELP_ERR_NOWIKI   = Not set.
 HELP_ERR_USERNAME = Not set.
+
+HELP_ERR_BADEMAIL = The specified email address does not appear to be valid.

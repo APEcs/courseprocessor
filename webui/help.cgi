@@ -248,6 +248,56 @@ sub build_help_form {
 }
 
 
+## @fn @ validate_help_form($sysvars)
+# Validate the fields submitted by the user from the help form.
+#
+# @return An array of two values: a reference to a hash of arguments, and a
+#         string containing any errors (or undef if all fields are okay)
+sub validate_help_form {
+    my $sysvars = shift;
+    my ($args, $error, $errors) = ({}, "", "");
+
+    # Pull out the name, even though it's not required
+    ($args -> {"name"}, $error) = validate_string($sysvars, 'name', {"required" => 0,
+                                                                     "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_NAME"),
+                                                                     "maxlen"   => 128});
+    $errors .= "$error<br />" if($error);
+
+    # Do we have an email specified?
+    ($args -> {"email"}, $error) =  validate_string($sysvars, 'email', {"required" => 1,
+                                                                        "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_EMAIL"),
+                                                                        "maxlen"   => 255});
+    $errors .= "$error<br />" if($error);
+    
+    # IF we have an email, we want to try to validate it...
+    if(!$error) {
+        # This is a fairly naive check, but there isn't a huge amount more we can do alas.
+        if($args -> {'email'} !~ /^[\w\.-]+\@([\w-]+\.)+\w+$/) {
+            $errors .= $sysvars -> {"template"} -> replace_langvar("HELP_ERR_BADEMAIL").'<br />';
+        }
+        
+        # Get here and either $errors has had an appropriate error appended to it, or the email is valid and not in use.
+        # lowercase the whole email, as we don't need to deal with "...." < address > here
+        $args -> {'email'} = lc($args -> {'email'}) if($args -> {'email'});
+    }
+    
+    # The summary is required...
+    ($args -> {"summary"}, $error) = validate_string($sysvars, 'summary', {"required" => 1,
+                                                                           "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_PROBSUMM"),
+                                                                           "maxlen"   => 255});
+    $errors .= "$error<br />" if($error);
+
+    # As is the full description
+    ($args -> {"fullprob"}, $error) = validate_string($sysvars, 'fullprob', {"required" => 1,
+                                                                             "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_FULLPROB")});
+    $errors .= "$error<br />" if($error);
+
+    return ($args, $errors);
+}
+
+
+
+
 # =============================================================================
 #  Core page code and dispatcher
 
@@ -268,7 +318,17 @@ sub page_display {
 
     # Did the user submit?
     if($sysvars -> {"cgi"} -> param("dohelp")) {
+        # Determine whether the form contents are valid
+        my ($args, $errors) = validate_help_form($sysvars);
+        
+        # No errors? The form is valid, so dispatch the email and acknowledge the submission.
+        if(!$errors) {
+            
 
+        # Form contained bad data, send back the form with errors...
+        } else {
+            ($title, $body) = build_help_form($sysvars, $stage, $errors, $args);
+        }
 
     # User did not submit, so just send the empty form back...
     } else {
