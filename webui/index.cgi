@@ -551,7 +551,7 @@ sub do_stage1_login {
                 if($sysvars -> {"wiki"} -> check_wiki_login($sysvars -> {"cgi"} -> param("username"), 
                                                             $sysvars -> {"cgi"} -> param("password"),
                                                             $wikis -> {$setwiki})) {
-                    $sysvars -> {"sess_supp"} -> set_sess_login($setwiki);
+                    $sysvars -> {"sess_supp"} -> set_sess_login($setwiki, $sysvars -> {"cgi"} -> param("username"));
                     return (undef, undef);
 
                 } else { #if(check_wiki_login($sysvars -> {"cgi"} -> param("username"), $sysvars -> {"cgi"} -> param("password")))
