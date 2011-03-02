@@ -69,7 +69,6 @@ sub new {
 # Clear the marker indicating that the current session has logged into the wiki
 # successfully, and remove the wiki selection.
 #
-# @param self A reference to a hash containing database, session, and settings objects.
 # @return undef on success, otherwise an error message.
 sub clear_sess_login {
     my $self = shift;
@@ -86,11 +85,14 @@ sub clear_sess_login {
     $nukedata -> execute($session -> {"id"}, "wiki_config")
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session wiki setup: ".$self -> {"dbh"} -> errstr);
 
+    $nukedata -> execute($session -> {"id"}, "username")
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session wiki username: ".$self -> {"dbh"} -> errstr);
+
     return undef;
 }
 
 
-## @fn $ set_sess_login($wiki_config)
+## @fn $ set_sess_login($wiki_config, $username)
 # Mark the user for this session as logged in, and store the wiki config that
 # they have selected. Note that this <i>does not</i> store any user login info:
 # the only time the user's own login info is present is during the step to 
@@ -101,12 +103,13 @@ sub clear_sess_login {
 # later invocations of wiki2course.pl and processor.pl, instead a special 
 # read-only user is used once a user has proved they have access.
 #
-# @param self A reference to a hash containing database, session, and settings objects.
 # @param wiki_config The name of the wiki the user has selected and logged into.
+# @param username    The username of the user who logged into the wiki.
 # @return undef on success, otherwise an error message.
 sub set_sess_login {
-    my $self     = shift;
+    my $self        = shift;
     my $wiki_config = shift;
+    my $username    = shift;
 
     # Make sure we have no existing data
     clear_sess_login($self);
@@ -124,6 +127,9 @@ sub set_sess_login {
     $setdata -> execute($session -> {"id"}, "wiki_config", $wiki_config)
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session wiki setup: ".$self -> {"dbh"} -> errstr);
 
+    $setdata -> execute($session -> {"id"}, "username", $username)
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session wiki setup: ".$self -> {"dbh"} -> errstr);
+
     return undef;
 }
 
@@ -132,7 +138,6 @@ sub set_sess_login {
 # Obtain the user's wiki login status, and the name of the wiki they logged into if
 # they have done so.
 #
-# @param self A reference to a hash containing database, session, and settings objects.
 # @return The name of the wiki config for the wiki the user has logged into, or undef
 #         if the user has not logged in yet.
 sub get_sess_login {
@@ -167,7 +172,6 @@ sub get_sess_login {
 ## @fn $ set_sess_course($course)
 # Set the course the selected by the user in their session data for later use.
 #
-# @param self A reference to a hash containing database, session, and settings objects.
 # @param course  The name of the course namespace the user has chosen to export.
 # @return undef on success, otherwise an error message.
 sub set_sess_course {
@@ -196,7 +200,6 @@ sub set_sess_course {
 ## @fn $ get_sess_course()
 # Obtain the name of the course the user has selected to export.
 #
-# @param self A reference to a hash containing database, session, and settings objects.
 # @return The name of the course selected by the user, or undef if one has not been selected.
 sub get_sess_course {
     my $self = shift;
@@ -220,7 +223,6 @@ sub get_sess_course {
 ## @fn $ set_sess_verbosity($verb_export, $verb_process)
 # Set the export and processor verbosity levels for the session. 
 #
-# @param self      A reference to a hash containing database, session, and settings objects.
 # @param verb_export  The verbosity of exporting, should be 0 or 1.
 # @param verb_process The verbosity of processing, should be 0 or 1.
 # @return undef on success, otherwise an error message.
@@ -258,7 +260,6 @@ sub set_sess_verbosity {
 # Obtain the value for the specified verbosity type. The secodn argument must be "export" or
 # "process", or the function will die with an error.
 #
-# @param self A reference to a hash containing database, session, and settings objects.
 # @param mode    The job mode, should be either "export" or "process".
 # @return The verbosity level set for the specified mode.
 sub get_sess_verbosity {
