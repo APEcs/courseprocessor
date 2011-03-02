@@ -1,0 +1,5 @@
+VALIDATE_NOTSET    = No value provided for '***field***', this field is required.
+VALIDATE_TOOLONG   = The value provided for '***field***' is too long. No more than ***maxlen*** characters can be provided for this field.
+VALIDATE_TOOSHORT  = The value provided for '***field***' is too short. At least ***minlen*** characters must be provided for this field.
+VALIDATE_BADCHARS  = The value provided for '***field***' contains illegal characters. ***desc***
+VALIDATE_BADFORMAT = The value provided for '***field***' is not valid. ***desc***
