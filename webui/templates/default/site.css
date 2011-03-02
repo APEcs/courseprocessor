@@ -80,6 +80,10 @@ body  {
     color: #ff7700;
 }
 
+.required {
+    color: #ff7700;
+}
+
 .small {
     font-size: x-small;
 }

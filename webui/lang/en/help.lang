@@ -1,6 +1,6 @@
 HELP_TITLE        = Contact support
 HELP_SUMMARY      = You can use this form to contact the support team about a problem with the processor web interface.
-HELP_LONGDESC     = <p>In order to provide the support team with all the information they might need about a problem, please fill in the form below. All the fields with bold titles are required, and must be filled in before your problem can be sent to the team. If you encounter any problems using this form, please email the support address given at the foot of the page directly, and describe the problem in as much detail as possible.</p>
+HELP_LONGDESC     = <p>In order to provide the support team with all the information they might need about a problem, please fill in the form below. All the highlighted fields are required, and must be filled in before your problem can be sent to the team. If you encounter any problems using this form, please email the support address given at the foot of the page directly, and describe the problem in as much detail as possible.</p>
 
 HELP_STAGE        = Where you were
 HELP_STAGEDESC    = <span class="small">The following information about where you were in the web application will be sent with your support request.</span>
