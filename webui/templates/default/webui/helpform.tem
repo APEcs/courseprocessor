@@ -40,7 +40,7 @@
         </tr>
         <tr>
             <td class="formnamet"><span class="required">{L_HELP_FULLPROB}</span>:</td>
-            <td class="formfield"><textarea name="fullprob" cols="120" rows="20">***fullprob***"</textarea></td>
+            <td class="formfield"><textarea name="fullprob" cols="120" rows="20">***fullprob***</textarea></td>
         </tr>
 
     </table>
