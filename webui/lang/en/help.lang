@@ -15,7 +15,7 @@ HELP_NAME         = Your name
 HELP_EMAIL        = Your email address
 
 HELP_PROBLEM      = Describe the problem
-HELP_PROBDESC     = <span class="small">Please provide a description of the problem you are having here, including as much detail as you can to help the support team narrow down the issue. Note that any exporting, processing, and zip logs that may have been generated will be automatically attached to your message for you, so you do not need to include them in your description.</span>
+HELP_PROBDESC     = <span class="small">Please provide a description of the problem you are having here, including as much detail as you can to help the support team narrow down the issue. Note that the exportor, processor, and zip logs will be automatically attached to your message for you if they exist, so you do not need to include them in your description.</span>
 HELP_PROBSUMM     = Problem summary
 HELP_FULLPROB     = Problem description
 
