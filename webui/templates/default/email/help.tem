@@ -1,0 +1,15 @@
+{L_EMAIL_STAGE}
+----------------------------------------------------------------------------
+{L_HELP_WIKINAME}: ***wikiname***
+{L_HELP_USERNAME}: ***username***
+{L_HELP_NAMESPACE}: ***coursename***
+{L_HELP_STAGENAME}: ***stagename*** ({L_EMAIL_STAGE} ***stage***)
+
+{L_EMAIL_USER}
+----------------------------------------------------------------------------
+{L_HELP_NAME}: ***name***
+{L_HELP_EMAIL}: ***email***
+
+{L_EMAIL_PROBLEM}
+----------------------------------------------------------------------------
+***fullprob***

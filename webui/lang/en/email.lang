@@ -1,0 +1,4 @@
+EMAIL_STAGE    = User wizard information
+EMAIL_STAGENUM = Stage
+EMAIL_USER     = User details
+EMAIL_PROBLEM  = Problem description
