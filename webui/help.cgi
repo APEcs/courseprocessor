@@ -358,7 +358,6 @@ sub send_help_email {
     # (if the user is the problem, we don't attach them to the email. Thankfully.)
     my @parts;
     my $part = Email::MIME -> create(attributes => { content_type => "text/plain",
-                                                     disposition  => "attachment",
                                                      charset      => "US-ASCII" 
                                                    },
                                      body       => $sysvars -> {"template"} -> load_template("email/help.tem", {"***wikiname***"   => $static -> {"wiki"} -> {"WebUI"} -> {"name"},
