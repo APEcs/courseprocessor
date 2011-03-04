@@ -27,5 +27,5 @@ HELP_ERR_USERNAME = Not set.
 HELP_ERR_BADEMAIL = The specified email address does not appear to be valid.
 
 ACK_TITLE         = Support request sent
-ACK_SUMMARY       = Your message has been sent to the support team, and the ream will respond as soon as possible.
-ACK_LONGDESC      = The information you have provided has been passed to the support team, along with copies of any logs and other information associated with your session. Your problem will be investigated, and the support team will contact you as soon as possible.
+ACK_SUMMARY       = Your message has been sent to the support team, and the team will respond as soon as possible.
+ACK_LONGDESC      = <p>The information you have provided has been passed to the support team, along with copies of any logs and other information associated with your session. Your problem will be investigated, and the support team will contact you as soon as possible.</p>
