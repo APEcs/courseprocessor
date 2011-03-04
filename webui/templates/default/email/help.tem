@@ -3,7 +3,7 @@
 {L_HELP_WIKINAME}: ***wikiname***
 {L_HELP_USERNAME}: ***username***
 {L_HELP_NAMESPACE}: ***coursename***
-{L_HELP_STAGENAME}: ***stagename*** ({L_EMAIL_STAGE} ***stage***)
+{L_HELP_STAGENAME}: ***stagename*** ({L_EMAIL_STAGENUM} ***stage***)
 
 {L_EMAIL_USER}
 ----------------------------------------------------------------------------
