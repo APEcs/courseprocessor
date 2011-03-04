@@ -343,13 +343,17 @@ sub send_help_email {
     my $logbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
 
     my $cwd = getcwd();
-    chdir($logbase)
-        or die "FATAL: Unable to change into working directory: $!\n";
 
-    # We're in the log directory, zip up any logs we can. Note that, if no log files
-    # exist, this could easily generate nothing...
-    `$sysvars->{paths}->{zip} -r9 logfiles.zip *.log`;
-    
+    # Only bother trying to zip up logs if the session has a working directory
+    if(-d $logbase) {
+        chdir($logbase)
+            or die "FATAL: Unable to change into working directory: $!\n";
+
+        # We're in the log directory, zip up any logs we can. Note that, if no log files
+        # exist, this could easily generate nothing...
+        `$sysvars->{paths}->{zip} -r9 logfiles.zip *.log`;
+    }
+
     # Okay, now we need to create the text part of the email including the user's problem
     # (if the user is the problem, we don't attach them to the email. Thankfully.)
     my @parts;
@@ -370,8 +374,10 @@ sub send_help_email {
                                                                                                                 "***fullprob***"   => $args -> {"fullprob"}}));
     push(@parts, $part);
 
-    # If we have a log zipfile, we want to attach it as well.
-    if(-f "logfiles.zip") {
+    # If we have a log zipfile, we want to attach it as well. Use an absolute path for the
+    # check, but if the file exists then the current working directory is the session work
+    # directory anyway, so we can use a relative path when loading the data...
+    if(-f path_join($logbase, "logfiles.zip")) {
         $part = Email::MIME -> create(attributes => { content_type => "application/zip",
                                                       disposition  => "attachment",
                                                       name         => "logfiles.zip",
@@ -380,6 +386,9 @@ sub send_help_email {
                                       body       => io("logfiles.zip") -> all);
         push(@parts, $part);
     }
+
+    # Restore the old directory if needed (may do nothing)
+    chdir($cwd);
 
     # Make the overall email...
     my $email = Email::MIME -> create(header => [ From    => $sysvars -> {"settings"} -> {"config"} -> {"system_email"},
