@@ -23,20 +23,25 @@
 #
 
 use strict;
-use lib qw(../modules);
-use lib qw(modules);
 #use utf8;
 
+# Add the paths to custom modules to the include list
+use lib qw(../modules);
+use lib qw(modules);
+
 # System modules
-use CGI;
-use CGI::Compress::Gzip qw/:standard -utf8/;   # Enabling utf8 here is kinda risky, with the file uploads, but eeegh
+use CGI qw/:standard -utf8/;                   # Ensure that both CGI and the compressed version are loaded with utf8 enabled.
+use CGI::Compress::Gzip qw/:standard -utf8/;
 use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possible and send them to the user as well as stderr
+use Cwd;
 use DBI;
 use Digest;
+use Email::MIME;
 use Encode;
 use File::Copy;
 use File::Path qw(make_path);
 use HTML::Entities;
+use IO::All;
 use MIME::Base64;
 use Time::HiRes qw(time);
 
@@ -201,7 +206,7 @@ sub get_static_data {
 }
 
 
-## @fn @ build_help_form($stage, $error, $args)
+## @fn @ build_help_form($sysvars, $stage, $error, $args)
 # Generate the form to send to the user requesting their details and the details of the problem.
 # This will build the contents of the page through which the user should detail their problem
 # with the course processor web interface. 
@@ -245,6 +250,23 @@ sub build_help_form {
                                                                                                                      "***email***"      => $args -> {"email"},
                                                                                                                      "***summary***"    => $args -> {"summary"},
                                                                                                                      "***fullprob***"   => $args -> {"fullprob"}})));
+}
+
+
+## @fn @ build_acknowledge($sysvars)
+# Generate the acknowledgment message to send back to the user.
+#
+# @param sysvars  A reference to a hash containing template, cgi, settings, session, and database objects.
+# @return Two strings: the title of the page, and the message box containing the acknowledgment.
+sub build_acknowledge {
+    my $sysvars = shift;
+
+    # Spit out the message box with the form...
+    return ($sysvars -> {"template"} -> replace_langvar("ACK_TITLE"),
+            $sysvars -> {"template"} -> message_box($sysvars -> {"template"} -> replace_langvar("ACK_TITLE"),
+                                                    "info",
+                                                    $sysvars -> {"template"} -> replace_langvar("ACK_SUMMARY"),
+                                                    $sysvars -> {"template"} -> replace_langvar("ACK_LONGDESC"));
 }
 
 
@@ -296,6 +318,80 @@ sub validate_help_form {
 }
 
 
+## @fn $ send_help_email($sysvars, $stage, $args)
+# Attempt to send a message to the support address with the information the user
+# has supplied. This will prepare the email, including zipping up any existing 
+# log files, and squirt the lot at sendmail.
+#
+# @param sysvars  A reference to a hash containing template, cgi, settings, session, and database objects.
+# @param stage    The stage the user was on when they hit "Contact support"
+# @param args     A reference to a hash containing any defined variables to show in the form.
+# @return undef on success, otherwise this returns an error message.  
+sub send_help_email {
+    my $sysvars = shift;
+    my $stage   = shift;
+    my $args    = shift;
+
+    # Obtain all the various gubbings about the user...
+    my $static = get_static_data($sysvars, $stage);
+
+    # Precalculate some variables to use in templating
+    my $subcourse = {"***course***"   => ($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course")};
+
+    # Now work out where the user's logs might be
+    my $logbase = untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}));
+
+    my $cwd = getcwd();
+    chdir($logbase)
+        or die "FATAL: Unable to change into working directory: $!\n";
+
+    # We're in the log directory, zip up any logs we can. Note that, if no log files
+    # exist, this could easily generate nothing...
+    `$sysvars->{paths}->{zip} -r9 logfiles.zip *.log`;
+    
+    # Okay, now we need to create the text part of the email including the user's problem
+    # (if the user is the problem, we don't attach them to the email. Thankfully.)
+    my @parts;
+    my $part = Email::MIME -> create(attributes => { content_type => "text/plain",
+                                                     disposition  => "attachment",
+                                                     charset      => "US-ASCII" 
+                                                   },
+                                     body       => $sysvars -> {"template"} -> load_template("email/help.tem", {"***wikiname***"   => $static -> {"wiki"} -> {"WebUI"} -> {"name"},
+                                                                                                                "***username***"   => $static -> {"wiki_user"},
+                                                                                                                "***coursename***" => $static -> {"course"},
+                                                                                                                "***stagename***"  => $static -> {"stagename"},
+                                                                                                                "***stage***"      => $static -> {"stage"},
+                                                                                                                "***course***"     => $subcourse -> {"***course***"},
+                                                                                                                "***lccourse***"   => $subcourse -> {"***lccourse***"},
+                                                                                                                "***name***"       => $args -> {"name"},
+                                                                                                                "***email***"      => $args -> {"email"},
+                                                                                                                "***summary***"    => $args -> {"summary"},
+                                                                                                                "***fullprob***"   => $args -> {"fullprob"}}));
+    push(@parts, $part);
+
+    # If we have a log zipfile, we want to attach it as well.
+    if(-f "logfiles.zip") {
+        $part = Email::MIME -> create(attributes => { content_type => "application/zip",
+                                                      disposition  => "attachment",
+                                                      name         => "logfiles.zip",
+                                                      encoding     => "base64"
+                                                   },
+                                      body       => io("logfiles.zip") -> all);
+        push(@parts, $part);
+    }
+
+    # Make the overall email...
+    my $email = Email::MIME -> create(header => [ From    => $sysvars -> {"settings"} -> {"config"} -> {"system_email"},
+                                                  To      => $sysvars -> {"settings"} -> {"config"} -> {"help_email"},
+                                                  Subject => $args -> {"summary"}
+                                                ],
+                                      parts  => \@parts);
+    
+    # And send it
+    return $sysvars -> {"template"} -> send_email_sendmail($email);
+}
+
 
 
 # =============================================================================
@@ -323,7 +419,16 @@ sub page_display {
         
         # No errors? The form is valid, so dispatch the email and acknowledge the submission.
         if(!$errors) {
-            
+            my $errors = send_help_email($sysvars, $stage, $args);
+
+            # If the mail was sent without problems, send the ack page...
+            if(!$errors) {
+                ($title, $body) = build_acknowledge($sysvars);
+
+            # otherwise send back the form with the errors in it
+            } else {
+                ($title, $body) = build_help_form($sysvars, $stage, $errors, $args);
+            }
 
         # Form contained bad data, send back the form with errors...
         } else {
@@ -375,7 +480,8 @@ if($settings -> {"config"} -> {"compress_output"}) {
 }
 
 # Create the template handler object
-my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {"base"}, "templates"))
+my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {"base"}, "templates"),
+                               mailcmd => "/usr/sbin/sendmail -t -f ".$settings -> {"config"} -> {"system_email"})
     or $logger -> die_log($out -> remote_host(), "Unable to create template handling object: ".$Template::errstr);
 
 # Create something to help out with wiki interaction
