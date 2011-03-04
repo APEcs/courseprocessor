@@ -391,7 +391,7 @@ sub send_help_email {
     chdir(untaint_path($cwd));
 
     # Make the overall email...
-    my $email = Email::MIME -> create(header => [ From    => $sysvars -> {"settings"} -> {"config"} -> {"system_email"},
+    my $email = Email::MIME -> create(header => [ From    => $args -> {"email"},
                                                   To      => $sysvars -> {"settings"} -> {"config"} -> {"help_email"},
                                                   Subject => $args -> {"summary"}
                                                 ],
