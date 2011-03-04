@@ -351,6 +351,11 @@ sub send_help_email {
 
         # We're in the log directory, zip up any logs we can. Note that, if no log files
         # exist, this could easily generate nothing...
+        
+        # Delete any old zip file, just in case
+        unlink("logfiles.zip") if(-f "logfiles.zip");
+
+        # And make the new one.
         `$sysvars->{settings}->{paths}->{zip} -r9 logfiles.zip *.log`;
     }
 
