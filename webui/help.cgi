@@ -266,7 +266,7 @@ sub build_acknowledge {
             $sysvars -> {"template"} -> message_box($sysvars -> {"template"} -> replace_langvar("ACK_TITLE"),
                                                     "info",
                                                     $sysvars -> {"template"} -> replace_langvar("ACK_SUMMARY"),
-                                                    $sysvars -> {"template"} -> replace_langvar("ACK_LONGDESC"));
+                                                    $sysvars -> {"template"} -> replace_langvar("ACK_LONGDESC")));
 }
 
 
