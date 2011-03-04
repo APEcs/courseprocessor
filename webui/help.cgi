@@ -351,7 +351,7 @@ sub send_help_email {
 
         # We're in the log directory, zip up any logs we can. Note that, if no log files
         # exist, this could easily generate nothing...
-        `$sysvars->{paths}->{zip} -r9 logfiles.zip *.log`;
+        `$sysvars->{settings}->{paths}->{zip} -r9 logfiles.zip *.log`;
     }
 
     # Okay, now we need to create the text part of the email including the user's problem
