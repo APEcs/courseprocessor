@@ -388,7 +388,7 @@ sub send_help_email {
     }
 
     # Restore the old directory if needed (may do nothing)
-    chdir($cwd);
+    chdir(untaint_path($cwd));
 
     # Make the overall email...
     my $email = Email::MIME -> create(header => [ From    => $sysvars -> {"settings"} -> {"config"} -> {"system_email"},
