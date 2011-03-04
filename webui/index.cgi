@@ -23,13 +23,15 @@
 #
 
 use strict;
-use lib qw(../modules);
-use lib qw(modules);
 #use utf8;
 
+# Add the paths to custom modules to the include list
+use lib qw(../modules);
+use lib qw(modules);
+
 # System modules
-use CGI;
-use CGI::Compress::Gzip qw/:standard -utf8/;   # Enabling utf8 here is kinda risky, with the file uploads, but eeegh
+use CGI qw/:standard -utf8/;                   # Ensure that both CGI and the compressed version are loaded with utf8 enabled.
+use CGI::Compress::Gzip qw/:standard -utf8/;
 use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possible and send them to the user as well as stderr
 use DBI;
 use Digest;
