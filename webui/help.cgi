@@ -398,7 +398,7 @@ sub send_help_email {
                                       parts  => \@parts);
     
     # And send it
-    return $sysvars -> {"template"} -> send_email_sendmail($email);
+    return $sysvars -> {"template"} -> send_email_sendmail($email -> as_string());
 }
 
 
