@@ -624,6 +624,26 @@ sub build_stage2_course {
     # And convert to a select box
     my $courselist = make_course_select($sysvars, $courses, $sysvars -> {"cgi"} -> param("course"));
     
+    # Do we need to make a template block?
+    my $templateblock = "";
+    if($wiki -> {$wiki -> {"Processor"} -> {"output_handler"}} -> {"templatelist"}) {
+        # Split the list of templates up
+        my @templates = split(/,/, $wiki -> {$wiki -> {"Processor"} -> {"output_handler"}} -> {"templatelist"});
+
+        my $templatetemp;
+        foreach my $template (@templates) {
+            $templatetemp .= "<option value=\"$template\"";
+            # select the default template by... well, default.
+            $templatetemp .= ' selected="selected"' if($template eq $wiki -> {$wiki -> {"Processor"} -> {"output_handler"}} -> {"templates"});
+            $templatetemp .= ">$template";
+            # And explicitly mark it as the default, too.
+            $templatetemp .= ' (default)' if($template eq $wiki -> {$wiki -> {"Processor"} -> {"output_handler"}} -> {"templates"});
+            $templatetemp .= "</option>\n";
+        }
+
+        $templateblock = $sysvars -> {"template"} -> load_template("webui/template_block.tem", {"***templatelist***" => $templatetemp});
+    }
+
     # If we have an error, encapsulate it
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
         if($error);
@@ -642,9 +662,10 @@ sub build_stage2_course {
                                                           $error ? "warn" : $stages -> [STAGE_COURSE] -> {"icon"},
                                                           $stages, STAGE_COURSE,
                                                           $sysvars -> {"template"} -> replace_langvar("COURSE_LONGDESC", $subcourse),
-                                                          $sysvars -> {"template"} -> load_template("webui/stage2form.tem", {"***error***"   => $error,
-                                                                                                                             "***courses***" => $courselist,
-                                                                                                                             "***course***"  => $subcourse -> {"***course***"}}));
+                                                          $sysvars -> {"template"} -> load_template("webui/stage2form.tem", {"***error***"    => $error,
+                                                                                                                             "***courses***"  => $courselist,
+                                                                                                                             "***template***" => $templateblock,
+                                                                                                                             "***course***"   => $subcourse -> {"***course***"}}));
     return ($title, $message);
 }
 
