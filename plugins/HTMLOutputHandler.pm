@@ -3,8 +3,8 @@
 # for the course processor.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 3.0
-# @date    11 Nov 2010
+# @version 3.1
+# @date    8 March 2011
 # @copy    2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
@@ -1583,7 +1583,11 @@ sub preprocess {
     $self -> {"mdata"} = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "course", 1);
     die "FATAL: Unable to load course metadata.\n"
         if(!defined($self -> {"mdata"} -> {"course"}) || ref($self -> {"mdata"} -> {"course"}) ne "HASH");
-    
+
+    # We no longer need the course metadata
+    unlink path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "metadata.xml") 
+        unless($self -> {"config"} -> {"Processor"} -> {"debug"});
+
     # This should be the top-level "source data" directory, and it should contain theme dirs
     opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"outputdir"})
         or die "FATAL: Unable to open source directory for reading: $!";
@@ -1602,6 +1606,10 @@ sub preprocess {
             next if($metadata == 1 || !$metadata -> {"theme"});
 
             $self -> {"mdata"} -> {"themes"} -> {$theme} = $metadata; # otherwise, store it.
+
+            # We can remove the theme metadata now
+            unlink path_join($fulltheme, "metadata.xml") 
+                unless($self -> {"config"} -> {"Processor"} -> {"debug"});
 
             # Determine whether this theme will actually end up in the generated course
             my $exclude_theme = $self -> {"filter"} -> exclude_resource($metadata -> {"theme"});
