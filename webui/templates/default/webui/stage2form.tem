@@ -7,6 +7,7 @@
             <td class="formnamet">{L_COURSE_COURSE}:</td>
             <td class="formfield">***courses***</td>
         </tr>
+        ***template***
         <tr class="header"><td class="formfield" colspan="2"><b>{L_COURSE_OTITLE}</b></td></tr>
         <tr><td class="formname">&nbsp;</td>
             <td class="formfield">{L_COURSE_VERBWARN}</td>
