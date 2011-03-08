@@ -83,7 +83,7 @@ sub new {
         my @args = split(/,/, $argtemp);
         foreach my $arg (@args) {
             # split the arg up, if possible
-            my ($key, $val) = $arg =~ /^(\w+)\s*=\s*(.*)$/;
+            my ($key, $val) = $arg =~ /^(\w+)\s*:\s*(.*)$/;
             
             # Store it if we have something
             $self -> {"config"} -> {"HTMLOutputHandler"} -> {$key} = $val;
