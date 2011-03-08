@@ -73,6 +73,23 @@ sub new {
     $self -> {"htype"}       = PLUG_TYPE;
     $self -> {"description"} = PLUG_DESCRIPTION;
     
+    # Do we have any options specified on the command line?
+    if($self -> {"config"} -> {"Processor"} -> {"outargs"}) {
+        # If we have an arrayref, join it into a string (each element of the arrayref could contain
+        # multiple args, so we can't assume each element can be parsed as-is)
+        my $argtemp = ref($self -> {"config"} -> {"Processor"} -> {"outargs"}) ? join(',', $self -> {"config"} -> {"Processor"} -> {"outargs"}) : $self -> {"config"} -> {"Processor"} -> {"outargs"};
+
+        # Now split it up on our terms, and shove into the config
+        my @args = split(/,/, $argtemp);
+        foreach my $arg (@args) {
+            # split the arg up, if possible
+            my ($key, $val) = $arg =~ /^(\w+)\s*=\s*(.*)$/;
+            
+            # Store it if we have something
+            $self -> {"config"} -> {"HTMLOutputHandler"} -> {$key} = $val;
+        }
+    }
+
     # Set defaults in the configuration if values have not been provided.
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}    = DEFAULT_TIDY_COMMAND if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}));
     $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}   = DEFAULT_TIDY_ARGS    if(!defined($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}));

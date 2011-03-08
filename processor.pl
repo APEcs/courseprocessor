@@ -95,6 +95,7 @@ sub handle_commandline {
                'outhandler|o=s' => \$args -> {"output_handler"},
                'listhandlers|l' => \$args -> {"listhandlers"},
                'filter:s@'      => \$args -> {"filters"},    # filter can be specified once with a comma list, or many times
+               'outarg:s@'      => \$args -> {"outargs"},    # output handler arguments may also be comma list or multiple spec
                'pid|p=s'        => \$args -> {"pidfile"},
                'help|?|h'       => \$help,
                'man'            => \$man) or pod2usage(2);
