@@ -624,6 +624,10 @@ sub build_stage2_course {
     # And convert to a select box
     my $courselist = make_course_select($sysvars, $courses, $sysvars -> {"cgi"} -> param("course"));
     
+    # Precalculate some variables to use in templating
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
+
     # Do we need to make a template block?
     my $templateblock = "";
     if($wiki -> {$wiki -> {"Processor"} -> {"output_handler"}} -> {"templatelist"}) {
@@ -641,16 +645,14 @@ sub build_stage2_course {
             $templatetemp .= "</option>\n";
         }
 
-        $templateblock = $sysvars -> {"template"} -> load_template("webui/template_block.tem", {"***templatelist***" => $templatetemp});
+        $templateblock = $sysvars -> {"template"} -> load_template("webui/template_block.tem", {"***templatelist***" => $templatetemp,
+                                                                                                "***course***"       => $subcourse -> {"***course***"},
+                                                                                                "***lccourse***"     => $subcourse -> {"***lccourse***"}});
     }
 
     # If we have an error, encapsulate it
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
         if($error);
-
-    # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
-                     "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # If we have an error, encapsulate it
     $error = $sysvars -> {"template"} -> load_template("webui/stage_error.tem", {"***error***" => $error})
@@ -665,7 +667,8 @@ sub build_stage2_course {
                                                           $sysvars -> {"template"} -> load_template("webui/stage2form.tem", {"***error***"    => $error,
                                                                                                                              "***courses***"  => $courselist,
                                                                                                                              "***template***" => $templateblock,
-                                                                                                                             "***course***"   => $subcourse -> {"***course***"}}));
+                                                                                                                             "***course***"   => $subcourse -> {"***course***"},
+                                                                                                                             "***lccourse***" => $subcourse -> {"***lccourse***"}}));
     return ($title, $message);
 }
 
