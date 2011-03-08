@@ -3,6 +3,6 @@
             <td class="formfield">{L_COURSE_TEMPLATENOTE}</td>
         </tr>
         <tr>
-            <td class="formnamet">{L_COURSE_TEMPLATE}:</td>
+            <td class="formname">{L_COURSE_TEMPLATE}:</td>
             <td class="formfield"><select name="templates">***templatelist***</select></td>
         </tr>
