@@ -438,11 +438,11 @@ my $sess_support = SessionSupport -> new(logger   => $logger,
     or $logger -> die_log($out -> remote_host(), "Unable to create session support object: ".$SessionSupport::errstr);
 
 # We also need a form validator object
-my $validators = FormValidators -> new((logger   => $logger,
-                                         cgi      => $out, 
-                                         dbh      => $dbh,
-                                         settings => $settings,
-                                         session  => $session)
+my $validators = FormValidators -> new(logger   => $logger,
+                                       cgi      => $out, 
+                                       dbh      => $dbh,
+                                       settings => $settings,
+                                       session  => $session)
     or $logger -> die_log($out -> remote_host(), "Unable to create form validator object: ".$FormValidators::errstr);
 
 
