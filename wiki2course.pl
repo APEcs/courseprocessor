@@ -1334,6 +1334,18 @@ either enclose the username in quotes, or replace any spaces with
 underscores. Note that wiki usernames B<are case sensitive>, so check that 
 you use the correct case when specifying your username or the login will fail.
 
+=item B<-v, --verbose>
+
+Increase the verbosity of status reporting. By default (unless the quiet flag 
+is set), wiki2course.pl will only output warning messages during course export.
+If you include -v on the command line, it will output warnings and notices. 
+For complete status information including debug messages, specify -v twice 
+(-v -v).
+
+=item B<-w, --wiki>
+This argument is optional. If provided, the script will use the MediaWiki API
+script specified rather than the default DevWiki version.
+
 =back
 
 =head1 DESCRIPTION
