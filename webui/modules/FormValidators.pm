@@ -151,6 +151,67 @@ sub validate_string {
 }
 
 
+## @method @ validate_options($param, $settings)
+# Determine whether the value provided for the specified parameter is valid. This will
+# either look for the value specified in an array, or in a database table, depending 
+# on the value provided for source in the settings hash. Valid contents for settings are:
+#
+# required  - If true, the option can not be "".
+# default   - A default value to return if the option is '' or not present, and not required.
+# source    - The source of the options. If this is a reference to an array, the 
+#             value specified for the parameter is checked agains the array. If this
+#             if a string, the option is checked against the table named in the string.
+# where     - The 'WHERE' clause to add to database queries. Required when source is a
+#             string, otherwise it is ignored.
+# nicename  - Required, human-readable version of the parameter name.
+#
+# @param param    The name of the cgi parameter to check.
+# @param settings A reference to a hash of settings to control the validation 
+#                 done to the parameter.
+# @return An array of two values: the first contains the value in the parameter, or
+#         as much of it as can be salvaged, while the second contains an error message
+#         or undef if the parameter passes all checks.
+sub validate_options {
+    my $self     = shift;
+    my $param    = shift;
+    my $settings = shift;
+
+    my $value = $self -> {"cgi"} -> param($param);
+
+    # Bomb if the value is not set and it is required.
+    return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", "", {"***field***" => $settings -> {"nicename"}}))
+        if($settings -> {"required"} && (!defined($value) || $value eq ''));
+
+    # If the value not specified and not required, we can just return immediately
+    return ($settings -> {"default"}, undef) if(!defined($value) || $value eq "");
+
+    # Determine how we will check it. If the source is an array reference, we do an array check
+    if(ref($settings -> {"source"}) eq "ARRAY") {
+        foreach my $check (@{$settings -> {"source"}}) {
+            return ($value, undef) if($check eq $value);
+        }
+
+    # If the source is not a reference, we assue it is the table name to check
+    } elsif(not ref($settings -> {"source"})) {
+        my $checkh = $self -> {"dbh"} -> prepare("SELECT * 
+                                                  FROM ".$settings -> {"source"}."
+                                                       ".$settings -> {"where"});
+        # Check for the value in the table...
+        $checkh -> execute($value) 
+            or return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_DBERR", "", {"***field***" => $settings -> {"nicename"},
+                                                                                                    "***dberr***" => $self -> {"dbh"} -> errstr}));
+        my $checkr = $checkh -> fetchrow_arrayref();
+
+        # If we have a match, the value is valid
+        return ($value, undef) if($checkr);
+    }
+
+    # Get here and validation has failed. We can't rely on the value at all, so return
+    # nothing for it, and an error
+    return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADOPT", "", {"***field***" => $settings -> {"nicename"}}));
+}
+
+
 
 ## @fn $ set_error($error)
 # Set the error string to the specified value. This updates the class error
