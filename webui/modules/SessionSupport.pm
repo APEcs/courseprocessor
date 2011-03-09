@@ -2,8 +2,8 @@
 # This file contains the implementation of a session support class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 0.1
-# @date    1 Mar 2011
+# @version 0.3
+# @date    9 Mar 2011
 # @copy    2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@ BEGIN {
 #  Constructor
 
 ## @cmethod SessionSupport new(@args)
-# Create a new SessionSupport object, and start session handling.
+# Create a new SessionSupport object.
 #
 # @param args A hash of key, value pairs to initialise the object with.
 # @return     A reference to a new SessionSupport object.
@@ -285,6 +285,58 @@ sub get_sess_verbosity {
                                                  " WHERE `id` = ? AND `key` LIKE ?");
     $getdata -> execute($session -> {"id"}, "verb_".$mode)
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session course variable: ".$self -> {"dbh"} -> errstr);
+
+    my $data = $getdata -> fetchrow_arrayref();
+    return $data -> [0] if($data && $data -> [0]);
+
+    return undef;
+}
+
+
+## @fn $ set_sess_templates($templates)
+# Set the templates the selected by the user in their session data for later use.
+#
+# @param templates The name of the template theme the user has chosen for use by 
+#                  the processor.
+# @return undef on success, otherwise an error message.
+sub set_sess_templates {
+    my $self      = shift;
+    my $templates = shift;
+
+    # Obtain the session record
+    my $session = $self -> {"session"} -> get_session($self -> {"session"} -> {"sessid"});
+
+    # delete any existing template selection
+    my $nuketemplatest = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                    " WHERE `id` = ? AND `key` LIKE 'templates'");
+    $nuketemplates -> execute($session -> {"id"})
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session template selection: ".$self -> {"dbh"} -> errstr);
+
+    # Insert the new value
+    my $newtemplates = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                   " VALUES(?, 'templates', ?)");
+    $newtemplates -> execute($session -> {"id"}, $templates)
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session template selection: ".$self -> {"dbh"} -> errstr);
+
+    return undef;
+}
+
+
+## @fn $ get_sess_templates()
+# Obtain the name of the templates the user has selected for use by the processor.
+#
+# @return The name of the templates selected by the user, or undef if one has not been selected.
+sub get_sess_templates {
+    my $self = shift;
+
+    # Obtain the session record
+    my $session = $self -> {"session"} -> get_session($self -> {"session"} -> {"sessid"});
+
+    # Ask the database for the user's settings
+    my $getdata = $self -> {"dbh"} -> prepare("SELECT value FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                 " WHERE `id` = ? AND `key` LIKE 'templates'");
+    $getdata -> execute($session -> {"id"})
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session templates variable: ".$self -> {"dbh"} -> errstr);
 
     my $data = $getdata -> fetchrow_arrayref();
     return $data -> [0] if($data && $data -> [0]);
