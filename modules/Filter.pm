@@ -73,7 +73,7 @@ sub new {
     return $obj if(!$filterdata);
 
     # If the filters element is an arrayref, convert it to a string, otherwise just use it as a string...
-    my $filtertemp = ref($filterdata) ? join(',', $filterdata) : $filterdata;
+    my $filtertemp = ref($filterdata) ? join(',', @$filterdata) : $filterdata;
 
     # Split and enhashinate
     my @filters = split(/,/, $filtertemp);
