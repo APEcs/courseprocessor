@@ -5,7 +5,7 @@
 # if not entirely user-obsequious, web-based frontend to the APEcs course
 # processor and wiki export tools. 
 # 
-# @version 1.0.2 (24 February 2011)
+# @version 1.0.4 (9 March 2011)
 # @copy 2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
@@ -44,6 +44,7 @@ use Time::HiRes qw(time);
 
 # Custom modules
 use ConfigMicro;
+use FormValidators;
 use Logger;
 use SessionHandler;
 use SessionSupport;
@@ -315,10 +316,16 @@ sub launch_processor {
         $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "index.cgi: Unable to create output dir $outpath: $!") if($@);
     }
 
+    # Has the user enabled additional verbosity?
     my $extraverb = "";
     $extraverb = "-v" if($sysvars -> {"sess_supp"} -> get_sess_verbosity("process"));
 
-    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb".
+    # Do we need to provide any additional arguments to the output handler?
+    my $outargs = "";
+    my $templates = $sysvars -> {"sess_supp"} -> get_sess_templates();
+    $outargs .= " --outargs templates:$templates" if($templates);
+
+    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb $outargs".
               " -c $coursedata".
               " -d $outpath".
               " -f ".untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name)).
@@ -700,6 +707,25 @@ sub do_stage2_course {
             # Course is good, store it
             $sysvars -> {"sess_supp"} -> set_sess_course($selected);
 
+            # are there any template options available for this wiki?
+            if($wikiconfig -> {$wikiconfig -> {"Processor"} -> {"output_handler"}} -> {"templatelist"}) {
+                # Split the list of templates up ready for the validator
+                my @templates = split(/,/, $wikiconfig -> {$wikiconfig -> {"Processor"} -> {"output_handler"}} -> {"templatelist"});
+
+                # has the user selected a template?
+                my ($template, $error) = $sysvars -> {"validator"} -> validate_options("templates", {"required" => 0,
+                                                                                                     "default"  => $wikiconfig -> {$wikiconfig -> {"Processor"} -> {"output_handler"}} -> {"templates"},
+                                                                                                     "source"   => \@templates,
+                                                                                                     "nicename" => $sysvars -> {"template"} -> replace_langvar("COURSE_TEMPLATE")});
+                # If we have no error, store the template name
+                if(!$error) {
+                    $sysvars -> {"sess_supp"} -> set_sess_templates($template);
+                } else { # if(!$error)
+                    # User selected a non-existent template
+                    return build_stage2_course($sysvars,  $sysvars -> {"template"} -> replace_langvar("COURSE_ERR_BADCOURSE", $subcourse));
+                }
+            }
+
             # Work out the verbosity controls, and store them
             # Do not use the values set directly, as they can't be trusted - just see whether they are set
             my $verb_export  = (defined($sysvars -> {"cgi"} -> param("expverb")) && $sysvars -> {"cgi"} -> param("expverb"));
@@ -990,6 +1016,15 @@ my $sess_support = SessionSupport -> new(logger   => $logger,
                                          session  => $session)
     or $logger -> die_log($out -> remote_host(), "Unable to create session support object: ".$SessionSupport::errstr);
 
+# We also need a form validator object
+my $validators = FormValidators -> new((logger   => $logger,
+                                         cgi      => $out,
+                                         dbh      => $dbh,
+                                         settings => $settings,
+                                         session  => $session)
+    or $logger -> die_log($out -> remote_host(), "Unable to create form validator object: ".$FormValidators::errstr);
+
+
 # Generate the page based on the current step
 my $content = page_display({"logger"    => $logger,
                             "session"   => $session,
@@ -998,6 +1033,7 @@ my $content = page_display({"logger"    => $logger,
                             "dbh"       => $dbh,
                             "settings"  => $settings,
                             "cgi"       => $out,
+                            "validator" => $validators,
                             "wiki"      => $wiki});
 
 # And start the printing process
