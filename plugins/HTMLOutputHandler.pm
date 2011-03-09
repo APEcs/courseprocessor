@@ -77,7 +77,7 @@ sub new {
     if($self -> {"config"} -> {"Processor"} -> {"outargs"}) {
         # If we have an arrayref, join it into a string (each element of the arrayref could contain
         # multiple args, so we can't assume each element can be parsed as-is)
-        my $argtemp = ref($self -> {"config"} -> {"Processor"} -> {"outargs"}) ? join(',', $self -> {"config"} -> {"Processor"} -> {"outargs"}) : $self -> {"config"} -> {"Processor"} -> {"outargs"};
+        my $argtemp = join(',', $self -> {"config"} -> {"Processor"} -> {"outargs"});
 
         # Now split it up on our terms, and shove into the config
         my @args = split(/,/, $argtemp);

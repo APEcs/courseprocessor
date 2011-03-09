@@ -84,6 +84,7 @@ sub find_bins {
 sub handle_commandline {
     my ($man, $help);
     my $args = {};
+    my ($filters, $outargs);
 
     # Call Getopt::Long to handle the options processing
     GetOptions('verbose|v+'     => \$args -> {"verbosity"},
@@ -94,11 +95,16 @@ sub handle_commandline {
                'mediadir|m=s'   => \$args -> {"mediadir"},
                'outhandler|o=s' => \$args -> {"output_handler"},
                'listhandlers|l' => \$args -> {"listhandlers"},
-               'filter:s@'      => \$args -> {"filters"},    # filter can be specified once with a comma list, or many times
-               'outargs:s@'     => \$args -> {"outargs"},    # output handler arguments may also be comma list or multiple spec
+               # Can't set these directly, as getopt creates actual arrays sometimes!
+               'filter:s@'      => \$filters,    # filter can be specified once with a comma list, or many times
+               'outargs:s@'     => \$outargs,    # output handler arguments may also be comma list or multiple spec
                'pid|p=s'        => \$args -> {"pidfile"},
                'help|?|h'       => \$help,
                'man'            => \$man) or pod2usage(2);
+
+    # Store the arrayrefs if needed
+    $args -> {"filters"} = $filters if($filters);
+    $args -> {"outargs"} = $outargs if($outargs);
 
     pod2usage(-verbose => 2) if($man);
     pod2usage(-verbose => 0) if($help);
