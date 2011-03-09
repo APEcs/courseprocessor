@@ -326,6 +326,7 @@ td.helpbox {
     padding-top: 5px;
     border: none;
     text-align: left;
+    white-space: nowrap;
 }
 
 td.micon {
