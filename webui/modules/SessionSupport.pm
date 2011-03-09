@@ -307,7 +307,7 @@ sub set_sess_templates {
     my $session = $self -> {"session"} -> get_session($self -> {"session"} -> {"sessid"});
 
     # delete any existing template selection
-    my $nuketemplatest = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+    my $nuketemplates = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
                                                     " WHERE `id` = ? AND `key` LIKE 'templates'");
     $nuketemplates -> execute($session -> {"id"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session template selection: ".$self -> {"dbh"} -> errstr);
