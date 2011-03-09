@@ -1021,7 +1021,8 @@ my $validators = FormValidators -> new(logger   => $logger,
                                        cgi      => $out,
                                        dbh      => $dbh,
                                        settings => $settings,
-                                       session  => $session)
+                                       session  => $session,
+                                       template => $template)
     or $logger -> die_log($out -> remote_host(), "Unable to create form validator object: ".$FormValidators::errstr);
 
 
