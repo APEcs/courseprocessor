@@ -445,7 +445,10 @@ processor [options]
     -h, -?, --help          brief help message.
     -l, -listhandlers       list all available input, output, and reference handlers.
     --man                   full documentation.
-    -o, --outhandler        specify the output handler to process the course with.
+    -m, --mediadir=PATH     override the default media directory name.
+    --outargs=ARGS          set the values of options supported by the output handler.
+    -o, --outhandler=NAME   specify the output handler to process the course with.
+    --pid=FILE              write the processor process ID to the specified file.
     -v, --verbose           increase verbosity level, may be specified multiple times.
 
 
@@ -475,9 +478,11 @@ pre-existing data as the processed course will completely overwrite it.
 Specify an alternative configuration file to use during processing. If not set,
 the .courseprocessor.cfg file in the user's home directory will be used instead.
 
-=item B<-m, --mediadir>
+=item B<--filter>
 
-Specify an alternative media directory name (by default, this will be 'media')
+Specify one or more filters to apply during course processing. This option may be
+specified multiple times if you need to apply more than one filter, or you may
+provide it once with a comma separated list of filters.
 
 =item B<-h, -?, --help>
 
@@ -491,12 +496,9 @@ Lists the available input, output and reference handlers and then exit.
 
 Prints the manual page and exits.
 
-=item B<-o, --outhandler>
+=item B<-m, --mediadir>
 
-Overrides the outputhandler specified in the configuration file (if there is
-one). Note that this must be the full name of an outputhandler loaded by 
-the software and it is case sensitive. Use B<-l> to obtain the list of known
-handlers for valid values.
+Specify an alternative media directory name (by default, this will be 'media')
 
 =item B<--outargs>
 
@@ -505,21 +507,22 @@ option needs to be set, you may specify this argument multiple times, or separat
 output handler options with commas. When specifying the option, you should separate
 the option name and value with a colon, eg: --outargs templates:some_template_name
 
-=item B<-v, --verbose>
+=item B<-o, --outhandler>
 
-Increase the output verbosity. This may be repeated several times to increase
-the verbosity level. -v -v -v would enable all levels of output, including debug.
-
-=item B<--filter>
-
-Specify one or more filters to apply during course processing. This option may be
-specified multiple times if you need to apply more than one filter, or you may
-provide it once with a comma separated list of filters.
+Overrides the outputhandler specified in the configuration file (if there is
+one). Note that this must be the full name of an outputhandler loaded by 
+the software and it is case sensitive. Use B<-l> to obtain the list of known
+handlers for valid values.
 
 =item B<-p, --pid>
 
 If specified, the script will write its process ID to the file provided. This
 is primarily needed to support the web interface.
+
+=item B<-v, --verbose>
+
+Increase the output verbosity. This may be repeated several times to increase
+the verbosity level. -v -v -v would enable all levels of output, including debug.
 
 =back
 
