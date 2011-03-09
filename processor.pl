@@ -95,7 +95,7 @@ sub handle_commandline {
                'outhandler|o=s' => \$args -> {"output_handler"},
                'listhandlers|l' => \$args -> {"listhandlers"},
                'filter:s@'      => \$args -> {"filters"},    # filter can be specified once with a comma list, or many times
-               'outarg:s@'      => \$args -> {"outargs"},    # output handler arguments may also be comma list or multiple spec
+               'outargs:s@'     => \$args -> {"outargs"},    # output handler arguments may also be comma list or multiple spec
                'pid|p=s'        => \$args -> {"pidfile"},
                'help|?|h'       => \$help,
                'man'            => \$man) or pod2usage(2);
@@ -491,6 +491,13 @@ Overrides the outputhandler specified in the configuration file (if there is
 one). Note that this must be the full name of an outputhandler loaded by 
 the software and it is case sensitive. Use B<-l> to obtain the list of known
 handlers for valid values.
+
+=item B<--outargs>
+
+Allows options to be passed to the output handler. If more than one output handler
+option needs to be set, you may specify this argument multiple times, or separate
+output handler options with commas. When specifying the option, you should separate
+the option name and value with a colon, eg: --outargs templates:some_template_name
 
 =item B<-v, --verbose>
 
