@@ -86,7 +86,7 @@ sub new {
             my ($key, $val) = $arg =~ /^(\w+)\s*:\s*(.*)$/;
             
             # Store it if we have something
-            $self -> {"config"} -> {"HTMLOutputHandler"} -> {$key} = $val;
+            $self -> {"config"} -> {"HTMLOutputHandler"} -> {$key} = $val if($key && $val);
         }
     }
 
