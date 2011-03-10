@@ -24,7 +24,7 @@ COURSE_TITLE         = Select the ***lccourse*** to process.
 COURSE_LONGDESC      = <p>You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process.</p><p>Please select the ***lccourse*** to export and process from the list below, and then click Next. If you have accidentally logged into the wrong wiki, press Prev to return to the login form to log into a different wiki.</p>
 COURSE_COURSE        = Select ***course***
 COURSE_CTITLE        = ***course*** Selection.
-COURSE_COURSEPAGE    = <span class="small">The entries in the list shown here is taken from the ***cpurl*** page in the wiki. If you can not find the ***lccourse*** you want to export and process in the list, make sure that it has an entry on the ***cpurl*** page.</span>
+COURSE_COURSEPAGE    = <span class="small">The entries in the list shown here is taken from the <a class="ext" href="***cpurl***">***cpname***</a> page in the wiki. If you can not find the ***lccourse*** you want to export and process in the list, make sure that it has an entry on the <a class="ext" href="***cpurl***">***cpname***</a> page.</span>
 COURSE_TEMPLATES     = Processor template theme.
 COURSE_TEMPLATE      = Template theme
 COURSE_TEMPLATENOTE  = <span class="small">This is the template theme used by the processor when processing your ***lccourse*** into the finished package. If you require a template theme other than the default theme, you need to select it here.</span>

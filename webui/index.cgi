@@ -676,7 +676,8 @@ sub build_stage2_course {
                                                                                                                              "***template***" => $templateblock,
                                                                                                                              "***course***"   => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***" => $subcourse -> {"***lccourse***"},
-                                                                                                                             "***cpurl***"    => $wiki -> {"WebUI"} -> {"course_list"}}));
+                                                                                                                             "***cpname***"   => $wiki -> {"WebUI"} -> {"course_list"},
+                                                                                                                             "***cpurl***"    => $wiki -> {"WebUI"} -> {"course_url"}}));
     return ($title, $message);
 }
 
