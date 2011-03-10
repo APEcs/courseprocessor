@@ -302,7 +302,7 @@ sub setting_error {
 }
 
 
-print "PEVE Course Processor version ",get_version("processor")," started.\n";
+print "APEcs Course Processor version ",get_version("processor")," started.\n";
 
 # Get logging started
 my $log = new Logger();
