@@ -3,7 +3,7 @@ BACK                 = &lt; Prev
 HELP                 = Contact support.
 
 FOOTER_COPY          = Copyright (C)2011 APEcs, released under the terms of the GNU GPL v2.<br/>Stage icons taken from the <a href ="http://commons.wikimedia.org/wiki/Crystal_Clear">Crystal Clear icon set</a> by Everaldo Coelho under the terms of the GNU LGPL.
-FOOTER_CONTACT       = Contact <a href ="mailto:apesupport@cs.man.ac.uk">apesupport@cs.man.ac.uk</a> if you encounter any problems using this site.
+FOOTER_CONTACT       = Click the "Contact Support" button if you encounter any problems using this site.
 
 WELCOME_TITLE        = Welcome
 WELCOME_LONGDESC     = <p>This website allows you to export and process content from a supported wiki, avoiding the need to use the APEcs course processor tools directly.</p><p class="left">Before you continue, you will need to know which wiki you want to export content from, and you will need a login for that wiki before you can export and process any content.</p><p class="left"><b>Important:</b> before you can successfully export material from a wiki, you must ensure that it conforms to the <a class="ext" href="http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:DevWiki_Course_Structuring">structuring specification</a> and all metadata required is present. If the material is not structured correctly, or is missing metadata, the export step will fail!</p><p class="left">Each stage of the process will explain any actions you need to take. Once you have followed any instructions for a stage, click the 'Next' button to go to the next stage. Some stages will give you a 'Back' button to return to a previous stage if you want to make changes to the options you set.</p>
