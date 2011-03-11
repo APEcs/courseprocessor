@@ -1065,15 +1065,31 @@ sub write_course_index {
     my $self = shift;
     my $body;
 
-    # First, does the course explicity provide a course map?
-    if($self -> {"mdata"} -> {"course"} -> {"map"}) {
-        # Yes! We need to do no work - just output the user-specified map without messing around!
-        $body = $self -> {"mdata"} -> {"course"} -> {"map"}; 
+    # Does the course explicity provide a course map?
+    if($self -> {"mdata"} -> {"course"} -> {"maps"} &&
+       $self -> {"mdata"} -> {"course"} -> {"map"} &&
+       scalar($self -> {"mdata"} -> {"course"} -> {"map"})) {
 
-        # Better scan the text for media to retain, though.
+        foreach my $map (@{$self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"}}) {
+            # Skip maps that should not be included
+            if(!$self -> {"filter"} -> includes_filter($map)) {
+                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Map ".substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 16)."... excluded by filter rule");
+                next;
+            }
+
+            # The map is being included, so add its contents to the map body
+            $body .= (ref($map) eq "HASH" ? $map -> {"content"} : $map);
+        }
+
+        # Better scan the text for media to retain
         $self -> scan_step_media($body);
-    } else {
-        # Boo, no user-set course map, so we need to generate one. We need a sorted list of themes then...
+    } 
+
+
+    # If we get here with no body set, either the user has not specified any
+    # or all the specified maps failed filtering checks
+    if(!$body) {
+        # We need a sorted list of themes...
         my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
                                     if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
 
