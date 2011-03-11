@@ -23,8 +23,11 @@
 #
 
 use strict;
-use lib qw(../modules);
 #use utf8;
+
+# Add the paths to custom modules to the include list
+use lib qw(../modules);
+use lib qw(modules);
 
 # System modules
 use CGI;
