@@ -1089,6 +1089,8 @@ sub write_course_index {
     # If we get here with no body set, either the user has not specified any
     # or all the specified maps failed filtering checks
     if(!$body) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "No course map specified, or all maps filtered out. Generating map.");
+
         # We need a sorted list of themes...
         my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
                                     if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
