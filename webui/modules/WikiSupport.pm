@@ -332,7 +332,7 @@ sub get_wiki_courses {
         if($coursepage -> {"missing"} || !$coursepage -> {"*"});
 
     # We have something, so we want to parse out the contents
-    my @courselist = $coursepage -> {"*"} =~ /(\[\[.*?\]\](?:\s*\(Filters: .*?\))?)/g;
+    my @courselist = $coursepage -> {"*"} =~ /\[\[(.*?)\]\]/g;
 
     my $coursehash;
     # Process each course into the hash, using the namespace as the key

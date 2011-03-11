@@ -125,7 +125,7 @@ print $out -> header(-type => 'text/plain');
 # Only bother trying to get a list if we have a course
 if($course) {
     # We need wiki config stuff...
-    my ($config_name, $wiki_user) = $sess_supp -> get_sess_login();
+    my ($config_name, $wiki_user) = $sess_support -> get_sess_login();
 
     if($config_name) {
         # Obtain the wiki's configuration
