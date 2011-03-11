@@ -64,6 +64,77 @@ sub new {
     return bless $obj, $class;
 }
 
+
+# =============================================================================
+#  Metadata helpers
+
+## @fn $ metadata_find($wikiconfig, $page)
+# Attempt to extract the contents of a metadata block from the specified page.
+# This will search for the == Metadata == marker in the specified page content, and
+# attempt to extract any metadata enclosed in <pre> or <source> tags within the 
+# section following the marker.
+#
+# @param wikiconfig A reference to the wiki's configuration object.
+# @param page       The content of the page to extract metadata from.
+# @return undef if no metadata is found, otherwise the metadata XML.
+sub metadata_find {
+    my $wikiconfig = shift;
+    my $page  = shift;
+
+    # We have a page, can we pull the metadata out?
+    my ($metadata) = $page =~ m|==\s*$wikiconfig->{wiki2course}->{metadata}\s*==\s*<pre>\s*(.*?)\s*</pre>|ios;
+    
+    # Do we have metadata? If not, try again with <source> instead of <pre>
+    # Yes, we could do this in one regexp above, but
+    ($metadata) = $page =~ m|==\s*$wikiconfig->{wiki2course}->{metadata}\s*==\s*<source.*?>\s*(.*?)\s*</source>|ios
+        if(!$metadata);
+
+    # return whatever we may have now...
+    return $metadata;
+}
+
+
+## @fn void metadata_filters($metadata, $filterhash)
+# Look at the contents of the specified metadata, and put any filter names
+# found in it into the provided hash.
+#
+# @param metadata   A string containing the metadata to check through.
+# @param filterhash A reference to a hash to store filter names.
+sub metadata_filters {
+    my $metadata   = shift;
+    my $filterhash = shift;
+    
+    # Do nothing if we have no metadata to wrangle
+    return if(!$metadata);
+
+    # check the metadata for possible filter elements elements...
+    my @include_elems = $metadata =~ m|<include>(.*?)</include>|gs;
+    my @exclude_elems = $metadata =~ m|<exclude>(.*?)</exclude>|gs;
+    my @attribs       = $metadata =~ /(?:in|ex)clude="(.*?)"/gs;
+
+    # push any include filter names into the hash
+    foreach my $name (@include_elems) {
+        $filterhash -> {$name} = 1;
+    }
+
+    # And the same for the excludes...
+    foreach my $name (@exclude_elems) {
+        $filterhash -> {$name} = 1;
+    }
+
+    # The attributes might be a bit more of a pain...
+    foreach my $attrib (@attribs) {
+        # each attrib can contain a comma-separated list of filters, so split it
+        my @splitattribs = split(/,/, $attrib);
+
+        # And go through the resulting array
+        foreach my $name (@splitattribs) {
+            $filterhash -> {$name} = 1;
+        }
+    }
+}
+
+
 # =============================================================================
 #  Wiki interaction
 
@@ -100,6 +171,141 @@ sub check_wiki_login {
 }
 
 
+## @fn $ wiki_transclude($wikih, $page, $templatestr)
+# Call on the mediawiki api to convert the specified template string, doing any
+# transclusion necessary.
+#
+# @param wikih       A reference to a MediaWiki API object.
+# @param pagename    The title of the page the transclusion appears on
+# @param templatestr The unescaped transclusion string, including the {{ }}
+sub wiki_transclude {
+    my $wikih       = shift;
+    my $pagename    = shift;
+    my $templatestr = shift;
+
+    my $response = $wikih -> api({ action => 'expandtemplates',
+                                   title  => $pagename,
+                                   prop   => 'revisions',
+                                   text   => $templatestr} )
+        or die "FATAL: Unable to process transclusion in page $pagename. Error from the API was:".$wikih->{"error"}->{"code"}.': '.$wikih->{"error"}->{"details"}."\n";
+
+    # Fall over if the query returned nothing. This probably shouldn't happen - the only situation I can 
+    # think of is when the target of the transclusion is itself empty, and we Don't Want That anyway.
+    die "FATAL: Unable to obtain any content for transclusion in page $pagename" if(!$response -> {"expandtemplates"} -> {"*"});
+    
+    return $response -> {"expandtemplates"} -> {"*"};
+}
+
+
+## @fn $ wiki_fetch($wikih, $pagename, $transclude)
+# Attempt to obtain the contents of the specified wiki page, optionally doing
+# page transclusion on the content.
+#
+# @param wikih      A reference to a MediaWiki API object.
+# @param pagename   The title of the page to fetch.
+# @param transclude Enable transclusion of fetched pages.
+# @return A string containing the page data.
+sub wiki_fetch {
+    my $wikih      = shift;
+    my $pagename   = shift;
+    my $transclude = shift;
+
+    # First attempt to get the page
+    my $page = $wikih -> get_page({ title => $pagename } )
+        or die "FATAL: Unable to fetch page '$pagename'. Error from the API was: ".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"}."\n";
+
+    # Do we have any content? If not, return nothing
+    return "" if($page -> {"missing"});
+
+    my $content = $page -> {"*"};
+
+    # Return right here if we are not transcluding, no point doing more work than we need.
+    return $content if(!$transclude || !$content);
+
+    # Break any transclusions inside <nowiki></nowiki>
+    while($content =~ s|(<nowiki>.*?)\{\{([^<]+?)\}\}(.*?</nowiki>)|$1\{\(\{$2\}\)\}$3|is) { };
+
+    # recursively process any remaining transclusions
+    $content =~ s/(\{\{.*?\}\})/wiki_transclude($wikih, $pagename, $1)/ges; 
+
+    # revert the breakage we did above
+    while($content =~ s|(<nowiki>.*?)\{\(\{([^<]+?)\}\)\}(.*?</nowiki>)|$1\{\{$2\}\}$3|is) { };
+
+    # We should be able to return the page now
+    return $content;
+}
+
+
+## @fn $ get_course_filters($wikiconfig, $course)
+# Attempt to build up a list of all the filters available in the specified 
+# course. This will check through the metadata for the specified course 
+# looking for <filters> elements and records any filter names it encounters.
+#
+# @note This function will ignore any structuring problems with the wiki,
+#       and even mask broken metadata errors - if it can't find or parse
+#       metadta, it simply carries on without stopping.
+#
+# @param wikiconfig A reference to the wiki's configuration object.
+# @param course     The name of the course namespace to check through.
+# @return A string containing a comma-separated list of filter names.
+sub get_course_filters {
+    my $self       = shift;
+    my $wikiconfig = shift;
+    my $course     = shift;
+    my $filterhash; # A hash to act as a set of filter names.
+
+    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
+        or die "FATAL: Unable to create new MediaWiki API object.";
+
+    # Log in using the 'internal' export user.
+    $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"}, 
+                    lgpassword => $wikiconfig -> {"WebUI"} -> {"password"}})
+        or die "FATAL: Unable to log into wiki. This is possibly a serious configuration error.\nAPI reported: ".$mw -> {"error"} -> {"code"}.': '. $mw -> {"error"} -> {"details"};
+
+    # now get the course 'Course' page, whatever it is called
+    my $coursepage = wiki_fetch($mw, $course.":".$wikiconfig -> {"wiki2course"} -> {"course_page"}, 1);
+    
+    # if we have no content, give up now
+    return "" unless($coursepage);
+
+    # Try to pull the 'coursedata' page out
+    my ($cdlink) = $coursepage =~ /\[\[($course:$config->{wiki2course}->{data_page})\|.*?\]\]/i;
+
+    # If we have no coursedata, give up here
+    return "" unless($cdlink);
+
+    # Fetch the appropriate coursedata page
+    my $coursedata = wiki_fetch($mw, $cdlink, 1);
+
+    # pull any filters out of the metadata...
+    metadata_filters(metadata_find($wikiconfig, $coursedata), $filterhash);
+
+    # Now we need a list of theme names
+    my ($names) = $cdpage =~ m|==\s*$config->{wiki2course}->{themes_title}\s*==\s*(.*?)\s*==|ios;
+
+    # return any filters we have so far if we have no theme names
+    return join(',', keys(%{$filterhash})) if(!$names);
+
+    # We have names, so split them so we can pull theme pages
+    my @themes = $names =~ m{^\s*\[\[(.*?)(?:\|.*?)?\]\]}gim;
+    
+    # Process each of the theme pages, pulling the metadata for each
+    foreach my $theme (@themes) {
+        my $page = wiki_fetch($mw, $theme, 1);
+
+        # Do nothing if we have no page content
+        next if(!$page);
+
+        # Get the filter names out of the metadata
+        metadata_filters(metadata_find($wikiconfig, $page), $filterhash);
+    }
+
+    # We have checked everywhere that can have metadata, so return the 
+    # list of filters...
+    return join(',', keys(%{$filterhash})) if(!$names);
+}    
+
+
 ## @fn $ get_wiki_courses($wikiconfig)
 # Obtain a list of courses in the specified wiki. This will log into the wiki and
 # attempt to retrieve and parse the courses page stored on the wiki.
@@ -126,7 +332,7 @@ sub get_wiki_courses {
         if($coursepage -> {"missing"} || !$coursepage -> {"*"});
 
     # We have something, so we want to parse out the contents
-    my @courselist = $coursepage -> {"*"} =~ /\[\[(.*?)\]\]/g;
+    my @courselist = $coursepage -> {"*"} =~ /(\[\[.*?\]\](?:\s*\(Filters: .*?\))?)/g;
 
     my $coursehash;
     # Process each course into the hash, using the namespace as the key
