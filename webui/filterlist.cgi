@@ -37,7 +37,8 @@ use File::Path qw(make_path);
 use ConfigMicro;
 use Logger;
 use SessionHandler;
-use Utils qw(path_join load_file untaint_path read_pid);
+use SessionSupport;
+use WikiSupport;
 
 my $dbh;                                   # global database handle, required here so that the END block can close the database connection
 my $logger;                                # global logger handle, so that logging can be closed in END
