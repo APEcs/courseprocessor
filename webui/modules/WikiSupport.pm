@@ -269,7 +269,7 @@ sub get_course_filters {
     return "" unless($coursepage);
 
     # Try to pull the 'coursedata' page out
-    my ($cdlink) = $coursepage =~ /\[\[($course:$config->{wiki2course}->{data_page})\|.*?\]\]/i;
+    my ($cdlink) = $coursepage =~ /\[\[($course:$wikiconfig->{wiki2course}->{data_page})\|.*?\]\]/i;
 
     # If we have no coursedata, give up here
     return "" unless($cdlink);
@@ -281,7 +281,7 @@ sub get_course_filters {
     metadata_filters(metadata_find($wikiconfig, $coursedata), $filterhash);
 
     # Now we need a list of theme names
-    my ($names) = $cdpage =~ m|==\s*$config->{wiki2course}->{themes_title}\s*==\s*(.*?)\s*==|ios;
+    my ($names) = $coursedata =~ m|==\s*$wikiconfig->{wiki2course}->{themes_title}\s*==\s*(.*?)\s*==|ios;
 
     # return any filters we have so far if we have no theme names
     return join(',', keys(%{$filterhash})) if(!$names);
