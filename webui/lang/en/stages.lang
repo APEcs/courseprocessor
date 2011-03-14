@@ -23,8 +23,11 @@ LOGIN_ERR_FAILWIKI   = Unable to obtain wiki selection information. This probabl
 COURSE_TITLE         = Select the ***lccourse*** to process.
 COURSE_LONGDESC      = <p>You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process.</p><p>Please select the ***lccourse*** to export and process from the list below, and then click Next. If you have accidentally logged into the wrong wiki, press Prev to return to the login form to log into a different wiki.</p>
 COURSE_COURSE        = Select ***course***
-COURSE_CTITLE        = ***course*** Selection.
+COURSE_CTITLE        = ***course*** selection.
 COURSE_COURSEPAGE    = <span class="small">The entries in the list shown here is taken from the <a class="ext" href="***cpurl***">***cpname***</a> page in the wiki. If you can not find the ***lccourse*** you want to export and process in the list, make sure that it has an entry on the <a class="ext" href="***cpurl***">***cpname***</a> page.</span>
+COURSE_FTITLE        = Filter selection.
+COURSE_FILTERLIST    = <span class="small">Filters allow you to include or exclude content from a ***lccourse*** during processing. Filters that can be applied to the selected course can be chosen from the list below, and you may select multiple filters from the list. If the course contains no filters, this list will be disabled.
+COURSE_FILTERS       = Select filters
 COURSE_TEMPLATES     = Processor template theme.
 COURSE_TEMPLATE      = Template theme
 COURSE_TEMPLATENOTE  = <span class="small">This is the template theme used by the processor when processing your ***lccourse*** into the finished package. If you require a template theme other than the default theme, you need to select it here.</span>
