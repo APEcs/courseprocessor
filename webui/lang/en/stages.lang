@@ -28,7 +28,7 @@ COURSE_COURSEPAGE    = <span class="small">The entries in the list shown here is
 COURSE_FTITLE        = Filter selection.
 COURSE_FILTERLIST    = <span class="small">Filters allow you to include or exclude content from a ***lccourse*** during processing. Filters that can be applied to the selected ***lccourse*** can be chosen from the list below, and you may select multiple filters from the list. If the course contains no filters, this list will be disabled.
 COURSE_FILTERS       = Select filters
-COURSE_FETCHING      = Getting filter list.
+COURSE_FETCHING      = Fetching filter keyword list.
 COURSE_NOFILTERS     = No filters available
 COURSE_TEMPLATES     = Processor template theme.
 COURSE_TEMPLATE      = Template theme
