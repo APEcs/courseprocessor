@@ -548,6 +548,11 @@ hr {
     position: absolute;
 }
 
+select[disabled] {
+    color: black;
+    background-color: white;
+}
+
 /* -----------------------------------------------------------------------------
  *  Zebra table stuff
  */
