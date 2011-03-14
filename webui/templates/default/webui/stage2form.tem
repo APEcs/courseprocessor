@@ -129,8 +129,10 @@ function setFilters() {
     $('fetching').setStyle('display', 'block');
 }
 
-positionSpinner();
-setFilters();
+window.addEvent('domready', function() {
+    positionSpinner();
+    setFilters();
+});
 
 //-->
 </script>
