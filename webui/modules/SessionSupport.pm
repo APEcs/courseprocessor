@@ -229,6 +229,59 @@ sub get_sess_course {
 }
 
 
+## @fn $ set_sess_filters($filters)
+# Set the filters selected by the user in their session data for later use.
+#
+# @param filters The filters the user has selected to apply to the course.
+# @return undef on success, otherwise an error message.
+sub set_sess_filters {
+    my $self    = shift;
+    my $filters = shift;
+
+    # Obtain the session record
+    my $session = $self -> {"session"} -> get_session($self -> {"session"} -> {"sessid"});
+
+    # delete any existing filter selection
+    my $nukefilters = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                 " WHERE `id` = ? AND `key` LIKE 'filters'");
+    $nukefilters -> execute($session -> {"id"})
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to remove session filters selection: ".$self -> {"dbh"} -> errstr);
+
+    # Insert the new value if needed
+    if($filters) {
+        my $newfilters = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                                    " VALUES(?, 'filters', ?)");
+        $newfilters -> execute($session -> {"id"}, $filters)
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to set session filters selection: ".$self -> {"dbh"} -> errstr);
+    }
+
+    return undef;
+}
+
+
+## @fn $ get_sess_filters()
+# Obtain the filters the user has selected to apply to the course.
+#
+# @return A string containing the filters selected by the user, or undef if none have been selected.
+sub get_sess_filters {
+    my $self = shift;
+
+    # Obtain the session record
+    my $session = $self -> {"session"} -> get_session($self -> {"session"} -> {"sessid"});
+
+    # Ask the database for the user's settings
+    my $getdata = $self -> {"dbh"} -> prepare("SELECT value FROM ".$self -> {"settings"} -> {"database"} -> {"session_data"}.
+                                              " WHERE `id` = ? AND `key` LIKE 'filters'");
+    $getdata -> execute($session -> {"id"})
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to obtain session filters variable: ".$self -> {"dbh"} -> errstr);
+
+    my $data = $getdata -> fetchrow_arrayref();
+    return $data -> [0] if($data && $data -> [0]);
+
+    return undef;
+}
+
+
 ## @fn $ set_sess_verbosity($verb_export, $verb_process)
 # Set the export and processor verbosity levels for the session. 
 #
