@@ -59,8 +59,8 @@
 function positionSpinner() {
     var elem = $('fetching');
 
-    var divcoord = elem.getCoordinates(document.body);
-    var listcoord = $('filters').getCoordinates(document.body);
+    var divcoord = elem.getCoordinates();
+    var listcoord = $('filters').getCoordinates();
 
     elem.setPosition(listcoord.left + ((listcoord.width / 2) - (divcoord.width / 2)),
                      listcoord.top  + ((listcoord.height / 2) - (divcoord.height / 2)));
