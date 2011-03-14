@@ -68,14 +68,16 @@ function positionSpinner() {
     elem.setStyle('display', 'none');
 }
 
-function clearFilterList(elem) {
+function clearFilterList(elem, showNone) {
 
     elem.options.length = 0;
     elem.disabled = true;
 
-    // Add a "no filters" option to make it explicit
-    var noopt = new Element('option', { text: "{L_COURSE_NOFILTERS}"});
-    elem.add(noopt, null);
+    if(showNone) {
+        // Add a "no filters" option to make it explicit
+        var noopt = new Element('option', { text: "{L_COURSE_NOFILTERS}"});
+        elem.add(noopt, null);
+    }
 }
 
 function parseResp(req) {
@@ -87,7 +89,7 @@ function parseResp(req) {
 
     // If we have no response, clear the filter list
     if(txt.length == 0) {
-        clearFilterList(filterlist);
+        clearFilterList(filterlist, true);
 
     // If we have a response, split it and add the options...
     } else {
@@ -110,12 +112,15 @@ function parseResp(req) {
 
         // didn't actually get filters after all, so clear the list
         } else {
-            clearFilterList(filterlist);
+            clearFilterList(filterlist, true);
         }
     }
 }
 
 function setFilters() {
+    // Remove any old contents in the list, and show the spinner
+    clearFilterList(filterlist, false);
+
     // Get the selected course name
     var course = $('courseselect').options[$('courseselect').selectedIndex].value;
 
