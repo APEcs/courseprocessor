@@ -323,9 +323,13 @@ sub launch_processor {
     # Do we need to provide any additional arguments to the output handler?
     my $outargs = "";
     my $templates = $sysvars -> {"sess_supp"} -> get_sess_templates();
-    $outargs .= " --outargs templates:$templates" if($templates);
+    $outargs .= "--outargs templates:$templates" if($templates);
 
-    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb $outargs".
+    # Do we need to provide filters?
+    my $filters = $sysvars -> {"sess_supp"} -> get_sess_filters() || "";
+    $filters = "--filter=$filters" if($filters);
+
+    my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"paths"} -> {"processor"}." -v $extraverb $outargs $filters".
               " -c $coursedata".
               " -d $outpath".
               " -f ".untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name)).
