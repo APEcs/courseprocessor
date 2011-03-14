@@ -62,8 +62,8 @@ function positionSpinner() {
     var divcoord = elem.getCoordinates();
     var listcoord = $('filters').getCoordinates();
 
-    elem.setPosition(listcoord.left + ((listcoord.width / 2) - (divcoord.width / 2)),
-                     listcoord.top  + ((listcoord.height / 2) - (divcoord.height / 2)));
+    elem.setPosition({x: Math.round((listcoord.left + (listcoord.width / 2)) - (divcoord.width / 2)),
+                      y: Math.round((listcoord.top  + (listcoord.height / 2)) - (divcoord.height / 2))});
 
     elem.setStyle('display', 'none');
 }
