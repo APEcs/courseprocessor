@@ -544,6 +544,9 @@ hr {
     width: 60em;
 }
 
+#fetching {
+    position: absolute;
+}
 
 /* -----------------------------------------------------------------------------
  *  Zebra table stuff

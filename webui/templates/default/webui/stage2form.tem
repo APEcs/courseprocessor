@@ -52,8 +52,21 @@
 </table>
 </form>
 </div>
+<div id="fetching"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_COURSE_FETCHING}</div>
 <script type="text/javascript">
 //<!--
+
+function positionSpinner {
+    var elem = $('fetching');
+
+    var divcoord = elem.getCoordinates(document.body);
+    var listcoord = $('filters').getCoordinates(document.body);
+
+    elem.setPosition(listcoord.left + ((listcoord.width / 2) - (divcoord.width / 2)),
+                     listcoord.top  + ((listcoord.height / 2) - (divcoord.height / 2)));
+
+    elem.setStyle('display', 'none');
+}
 
 function clearFilterList(elem) {
 
@@ -61,12 +74,14 @@ function clearFilterList(elem) {
     elem.disabled = true;
 
     // Add a "no filters" option to make it explicit
-    var noopt = new Element('option', { text: "No filters available"});
+    var noopt = new Element('option', { text: "{L_COURSE_NOFILTERS}"});
     elem.add(noopt, null);
 }
 
 function parseResp(req) {
     var txt = req.responseText;
+
+    $('fetching').setStyle('display', 'none');
 
     var filterlist = $('filters');
 
@@ -110,8 +125,11 @@ function setFilters() {
 
     var myAjax = new bsn.Ajax();
     myAjax.makeRequest( url, "GET", parseResp, onErrorFunc );
+
+    $('fetching').setStyle('display', 'block');
 }
 
+positionSpinner();
 setFilters();
 
 //-->
