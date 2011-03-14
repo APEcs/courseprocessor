@@ -1,3 +1,7 @@
+<!-- javascript needed for ajax work -->
+<script type="text/javascript" src="templates/default/ajax.js"></script>
+<script type="text/javascript" src="templates/default/sprintf.js"></script>
+
 <div class="left" style="margin: auto">
 ***error***
 <form action="index.cgi" method="post">
