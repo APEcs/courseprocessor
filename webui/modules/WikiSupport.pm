@@ -252,7 +252,7 @@ sub get_course_filters {
     my $self       = shift;
     my $wikiconfig = shift;
     my $course     = shift;
-    my $filterhash; # A hash to act as a set of filter names.
+    my $filterhash = {}; # A hash to act as a set of filter names.
 
     my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
         or die "FATAL: Unable to create new MediaWiki API object.";
@@ -302,7 +302,7 @@ sub get_course_filters {
 
     # We have checked everywhere that can have metadata, so return the 
     # list of filters...
-    return join(',', keys(%{$filterhash})) if(!$names);
+    return join(',', keys(%{$filterhash}));
 }    
 
 
