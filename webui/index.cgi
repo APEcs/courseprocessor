@@ -192,7 +192,7 @@ sub make_course_select {
         $options .= ">".$coursehash -> {$ns}."</option>\n";
     }
 
-    return $sysvars -> {"template"} -> load_template("webui/course_select.tem", {"***entries***" => $options});
+    return $options;
 }
 
 

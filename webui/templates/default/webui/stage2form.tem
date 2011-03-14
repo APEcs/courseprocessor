@@ -8,7 +8,18 @@
         </tr>
         <tr>
             <td class="formnamet">{L_COURSE_COURSE}:</td>
-            <td class="formfield">***courses***</td>
+            <td class="formfield"><select name="course" id="courseselect" size="10" onchange="setFilters()";>
+                                  ***courses***
+                                  </select>
+            </td>
+        </tr>
+        <tr class="header"><td class="formfield" colspan="2"><b>{L_COURSE_FTITLE}</b></td></tr>
+        <tr><td class="formname">&nbsp;</td>
+            <td class="formfield">{L_COURSE_FILTERLIST}</td>
+        </tr>
+        <tr>
+            <td class="formnamet">{L_COURSE_FILTERS}:</td>
+            <td class="formfield"><select name="filters" id="filters" size="4" multiple="multiple"></select></td>
         </tr>
         ***template***
         <tr class="header"><td class="formfield" colspan="2"><b>{L_COURSE_OTITLE}</b></td></tr>
@@ -37,3 +48,38 @@
 </table>
 </form>
 </div>
+<script type="text/javascript">
+//<!--
+
+function parseResp(req) {
+    var txt = req.responseText;
+
+    var filterlist = $('filters');
+
+    // If we have no response, clear the filter list
+    if(txt.length == 0) {
+        filterlist.options.length = 0;
+        filterlist.disabled = true;
+
+        // Add a "no filters" option to make it explicit
+        var noopt = new Element('option', { text: "No filters available"});
+        filterlist.add(noopt);
+    }
+}
+
+function setFilters() {
+    // Get the selected course name
+    var course = $('courseselect').options[$('courseselect').selectedIndex].value;
+
+    // create ajax request. rand is needed to prevent IE from caching
+    var url = "filterlist.cgi?course="+course+"&rand=" + Math.floor(Math.random()*99999);
+    var onErrorFunc = function (status) { alert("AJAX error: "+status); };
+
+    var myAjax = new bsn.Ajax();
+    myAjax.makeRequest( url, "GET", parseResp, onErrorFunc );
+}
+
+setFilters();
+
+//-->
+</script>
