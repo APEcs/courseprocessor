@@ -119,7 +119,7 @@ function parseResp(req) {
 
 function setFilters() {
     // Remove any old contents in the list, and show the spinner
-    clearFilterList(filterlist, false);
+    clearFilterList($('filters'), false);
 
     // Get the selected course name
     var course = $('courseselect').options[$('courseselect').selectedIndex].value;
