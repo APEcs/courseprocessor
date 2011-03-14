@@ -55,6 +55,16 @@
 <script type="text/javascript">
 //<!--
 
+function clearFilterList(elem) {
+
+    elem.options.length = 0;
+    elem.disabled = true;
+
+    // Add a "no filters" option to make it explicit
+    var noopt = new Element('option', { text: "No filters available"});
+    elem.add(noopt, null);
+}
+
 function parseResp(req) {
     var txt = req.responseText;
 
@@ -62,12 +72,31 @@ function parseResp(req) {
 
     // If we have no response, clear the filter list
     if(txt.length == 0) {
-        filterlist.options.length = 0;
-        filterlist.disabled = true;
+        clearFilterList(filterlist);
 
-        // Add a "no filters" option to make it explicit
-        var noopt = new Element('option', { text: "No filters available"});
-        filterlist.add(noopt);
+    // If we have a response, split it and add the options...
+    } else {
+        var filters = txt.split(",");
+
+        // Did we actually get any filters?
+        if(filters.length > 0) {
+            // Remove the "no filters" message
+            filterlist.options.length = 0;
+
+            // Add the new filters
+            for(var i = 0; i < filters.length; ++i) {
+                var opt = new Element('option', { text: filters[i],
+                                                  value: filters[i]});
+                filterlist.add(opt, null);
+            }
+
+            // enable the list
+            filterlist.disabled = false;
+
+        // didn't actually get filters after all, so clear the list
+        } else {
+            clearFilterList(filterlist);
+        }
     }
 }
 
