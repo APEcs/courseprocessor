@@ -709,6 +709,35 @@ sub do_stage2_course {
             # Course is good, store it
             $sysvars -> {"sess_supp"} -> set_sess_course($selected);
 
+            # Get the filters for this course
+            my $filterlist = $sysvars -> {"wiki"} -> get_course_filters($wikiconfig, $selected);
+            if($filterlist) {
+                # split the filters up
+                my @filters = split(/,/, $filterlist);
+                
+                # And enhashinate
+                my %filterhash = map { $_,1 } @filters;
+
+                # Now go through each of the filters set by the user and, if it appears in the
+                # hash, we can add it to a temporary array
+                my @setfilter;
+                my @cgifilters = $sysvars -> {"cgi"} -> param('filters');
+                foreach my $filter (@cgifilters) {
+                    my ($safefilter) = $filter =~ /^(\w+)$/; # Ensure that we're only looking at alphanumerics
+                
+                    next if(!$safefilter); # And skip anything that didn't pass
+                    
+                    # Store the filter if it is valid
+                    push(@setfilter, $safefilter) if($filterhash{$safefilter});
+                }
+
+                $sysvars -> {"sess_supp"} -> set_sess_filters(join(",", @setfilter));
+
+            # if we have no filters for the course, forcibly remove any previously set filters
+            } else {
+                $sysvars -> {"sess_supp"} -> set_sess_filters("");
+            }
+
             # are there any template options available for this wiki?
             if($wikiconfig -> {$wikiconfig -> {"Processor"} -> {"output_handler"}} -> {"templatelist"}) {
                 # Split the list of templates up ready for the validator
