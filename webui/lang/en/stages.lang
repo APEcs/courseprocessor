@@ -26,7 +26,7 @@ COURSE_COURSE        = Select ***course***
 COURSE_CTITLE        = ***course*** selection.
 COURSE_COURSEPAGE    = <span class="small">The entries in the list shown here is taken from the <a class="ext" href="***cpurl***">***cpname***</a> page in the wiki. If you can not find the ***lccourse*** you want to export and process in the list, make sure that it has an entry on the <a class="ext" href="***cpurl***">***cpname***</a> page.</span>
 COURSE_FTITLE        = Filter selection.
-COURSE_FILTERLIST    = <span class="small">Filters allow you to include or exclude content from a ***lccourse*** during processing. Filters that can be applied to the selected course can be chosen from the list below, and you may select multiple filters from the list. If the course contains no filters, this list will be disabled.
+COURSE_FILTERLIST    = <span class="small">Filters allow you to include or exclude content from a ***lccourse*** during processing. Filters that can be applied to the selected ***lccourse*** can be chosen from the list below, and you may select multiple filters from the list. If the course contains no filters, this list will be disabled.
 COURSE_FILTERS       = Select filters
 COURSE_FETCHING      = Getting filter list.
 COURSE_NOFILTERS     = No filters available
