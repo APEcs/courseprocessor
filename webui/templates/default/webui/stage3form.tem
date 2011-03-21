@@ -57,7 +57,7 @@ function parseResp(req) {
         // do we have any warnings?
         if(txt.indexOf("WARNING:") != -1) {
             // Get all the warnings, adding them to the warnlist box
-            var warns = txt.match(/WARNING:.*<br \/>/g);
+            var warns = txt.match(/<span class="warn">WARNING:.*<\/span><br \/>/g);
             $("warnlist").innerHTML = warns.join("\n");
 
             $("warnings").style.display = "block";
