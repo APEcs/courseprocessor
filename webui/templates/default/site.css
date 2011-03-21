@@ -447,6 +447,22 @@ div.sortbar {
     overflow-y: auto;
 }
 
+#warnlist {
+    border-style: inset;
+    border-width: 1px;
+    background-color: #ddd;
+    font: 12px 'courier new', fixed;
+    white-space: nowrap;
+    width: 95%;
+    height: 8em;
+    text-align: left;
+    padding: 0.5em;
+    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+
 span.catfield {
     font-size: x-small;
     font-weight: bold;
