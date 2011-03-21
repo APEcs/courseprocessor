@@ -7,7 +7,12 @@
 
 <div id="exporting" class="padover"><img src="templates/default/images/spinner.gif" width="16" height="16" alt="spinner" />&nbsp;{L_EXPORT_WORKING}</div>
 <div id="success" class="padover" style="display: none;">{L_EXPORT_SUCCESS}</div>
-<div id="warnings" class="padover" style="display: none;">{L_EXPORT_WARNINGS}</div>
+<div id="warnings" class="padover" style="display: none;">{L_EXPORT_WARNINGS}
+    <fieldset>
+        <legend>{L_EXPORT_WARNTITLE}</legend>
+        <div id="warnlist"></div>
+    </fieldset>
+</div>
 <div id="fatals" class="padover" style="display: none;">{L_EXPORT_FATALS}</div>
 <div id="progress">
      <fieldset>
@@ -51,6 +56,10 @@ function parseResp(req) {
 
         // do we have any warnings?
         if(txt.indexOf("WARNING:") != -1) {
+            // Get all the warnings, adding them to the warnlist box
+            var warns = txt.match(/(WARNING:.*<br />)/g);
+            $("warnlist").innerHTML = warns.join("\n");
+
             $("warnings").style.display = "block";
         } else {
             $("success").style.display = "block";
