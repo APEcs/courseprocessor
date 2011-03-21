@@ -435,7 +435,7 @@ div.sortbar {
 #progdisplay {
     border-style: inset;
     border-width: 1px;
-    background-color: #ddd;
+    background-color: #eee;
     font: 12px 'courier new', fixed;
     white-space: nowrap;
     width: 95%;
@@ -450,7 +450,7 @@ div.sortbar {
 #warnlist {
     border-style: inset;
     border-width: 1px;
-    background-color: #ddd;
+    background-color: #eee;
     font: 12px 'courier new', fixed;
     white-space: nowrap;
     width: 95%;
