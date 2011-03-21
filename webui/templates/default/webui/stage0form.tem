@@ -1,4 +1,5 @@
 <div class="left" style="margin: auto">
+{L_WELCOME_MESSAGE}
 <form action="index.cgi" method="post">
 <table class="formtable" cellpadding="3" cellspacing="1">
     <tr>
