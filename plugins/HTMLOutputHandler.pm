@@ -1683,20 +1683,20 @@ sub preprocess {
                         foreach my $step (@sortedsteps) {
                             my ($stepid) = $step =~ /^node0?(\d+).html/;
 
-                            # If we have a step entry in the metadata, check whether this step will be excluded
-                            # (it will be excluded if the module is, or the step is listed in the metadata and
-                            # is excluded)
-                            my $exclude_step = $exclude_module ||
-                                ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} &&
-                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} &&
-                                 $self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid}));
-
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Preprocessing $fullmodule/$step... ");
 
                             my $content = load_file($step)
                                 or die "FATAL: Unable to open step file '$fullmodule/$step': $!\n";
 
                             my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}im;
+
+                            # If we have a step entry in the metadata, check whether this step will be excluded
+                            # (it will be excluded if the module is, or the step is listed in the metadata and
+                            # is excluded)
+                            my $exclude_step = $exclude_module ||
+                                ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} &&
+                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$title} &&
+                                 $self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$title}));
 
                             # Record the locations of any anchors in the course
                             if(!$exclude_step) {
