@@ -1,3 +1,50 @@
+Version 3.8
+===========
+
+Bug fixes:
+  - Filter list is cleared before requesting a new list, prevents users from 
+    selecting filter keywords, changing courses, and then hitting next with
+    the old filter selected.
+
+  - Rewording of welcome stage for clarity.
+  
+Additions:
+  - WARNING messages are now copied to separate boxes on the export and process
+    stages of the web interface.
+
+  - filtering rules for steps now use step titles rather than ids.
+
+  - full documentation for the web interface and filtering, and upgraded 
+    documentation for the rest of the system.
+
+Version 3.7.3
+=============
+
+Additions:
+  - Processor web interface now supports automatic discovery of filter keywords,
+    filtering, and template selection.
+
+Version 3.7.2
+=============
+
+Bug fixes:
+  - processor.pl and wiki2course.pl now search for external programs as needed.
+
+Additions:
+  - [bug 6] Initial version of the processor web interface. Basic features, no
+    filtering or template selection facilities.
+
+  - processor.pl and wiki2course.pl now support a --pid argument to write their
+    process ID to a file if needed.
+
+Version 3.7.0
+=============
+
+Bug fixes:
+  - various small fixes to correct behaviour for full release in response to 
+    testing.
+
+
 Version 3.7.0 RC 1
 ==================
 
