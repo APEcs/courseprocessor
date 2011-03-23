@@ -288,3 +288,10 @@ table.ambox-protection {
     border: 0;
     padding: 0;
 }
+
+.ashighlight {
+    max-height: 25em;
+    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
+}
