@@ -797,8 +797,14 @@ sub wiki_export_module {
                     if($step) {
                         my ($title, $body) = $step =~ m{^\s*(.*?)\s*==\s*(.*)$}iso;
 
-                        # If we have a title and body, we need to write the text out as html
-                        if($title && $body) {
+                        # If we have a title we need to write the text out as html
+                        if($title) {
+                            # If we have no body, write out a placeholder and tell the user
+                            if(!$body) {
+                                $logger -> print($logger -> WARNING, "Step $title in module $module has no body. Inserting placeholder message.");
+                                $body = "This step has been intentionally left blank.";
+                            }
+
                             my $stepname = path_join($moduledir, sprintf("step%02d.html", ++$stepnum));
 
                             if($convert) {
@@ -820,10 +826,11 @@ sub wiki_export_module {
 
                         # Otherwise, work out where the problem was...
                         } else {
+                            # kill newlines, otherwise it'll cause confusion in the output.
+                            $step =~ /\n/<br>/g;
+
                             if(!$title && $body) {
-                                die "FATAL: Unable to parse title from == $step in module $module\n";
-                            } elsif($title && !$body) {
-                                die "FATAL: Unable to parse body from == $step in module $module\n";
+                                die "FATAL: Unable to parse title from '== $step' in module $module\n";
                             } else {
                                 die "FATAL: Unable to parse body or title from $step in module $module\n";
                             }
