@@ -306,7 +306,7 @@ sub check_media_file {
         my $error = wiki_download($wikih, $filename, path_join($basedir, $mediadir, $filename));
         if(!$error) {
             $mediahash -> {$filename} = $filename;
-            $logger -> print($logger -> NOTICE, "Fetched $filename and stored in the media directory.") unless($quiet);
+            $logger -> print($logger -> WARNING, "Fetched $filename. Consider adding it to your media page to avoid this warning.") unless($quiet);
         } else {
             $logger -> print($logger -> WARNING, "Unable fetch $filename: $error") unless($quiet);
         }
