@@ -271,17 +271,19 @@ sub process_generated_media {
 }
 
 
-## @fn $ check_media_file($filename, $mediahash)
+## @fn $ check_media_file($wikih, $filename, $mediahash)
 # Determine whether the specified file is present in the media directory. This will attempt
 # to locate the named file in the media hash, and if it can not find an entry for it
 # it will print a warning to that effect and just pass through the filename. If an entry
 # can be found, but the case of the stored and checked name do not match it will correct 
 # the case to the stored case.
 #
+# @param wikih     A reference to the mediawiki API object.
 # @param filename  The name of the file to check.
 # @param mediahash A reference to a hash of media files in the media directory.
 # @return The checked file, including relative path to the media directory
 sub check_media_file {
+    my $wikih     = shift;
     my $filename  = shift;
     my $mediahash = shift;
 
@@ -298,7 +300,16 @@ sub check_media_file {
             $logger -> print($logger -> DEBUG, "Media file $filename is present in the media file list.") unless($quiet);
         }
     } else {
-        $logger -> print($logger -> WARNING, "Unable to locate $filename in the media directory.") unless($quiet);
+        $logger -> print($logger -> WARNING, "Unable to locate $filename in the media directory, attempting to fetch.") unless($quiet);
+        
+        # try to get the file, if we can then store it for later use
+        my $error = wiki_download($wikih, $filename, path_join($basedir, $mediadir, $filename));
+        if(!$error) {
+            $mediahash -> {$filename} = $filename;
+            $logger -> print($logger -> NOTICE, "Fetched $filename and stored in the media directory.") unless($quiet);
+        } else {
+            $logger -> print($logger -> WARNING, "Unable fetch $filename: $error") unless($quiet);
+        }
     }
 
     return "\"../../$mediadir/$filename\"";
@@ -354,7 +365,7 @@ sub process_entities_html {
     $content =~ s|"$wikih->{siteinfo}->{script}/File:(.*?)"|"../../$mediadir/$1"|gs;
 
     # Now check that the media link is actually valid.
-    $content =~ s{"../../$mediadir/([^"]+?)"}{check_media_file($1, $mediahash)}ges;
+    $content =~ s{"../../$mediadir/([^"]+?)"}{check_media_file($wikih, $1, $mediahash)}ges;
 
     # Finally, we want to check for and fix completely broken file links
     $content =~ s{<a href=".*?\?title=Special:Upload&amp;wpDestFile=.*?" class="new" title="(File:[^"]+)">File:.*?</a>}{broken_media_link($1, $page)}ges;
@@ -542,6 +553,27 @@ sub wiki_course_exists {
     die "FATAL: No content for $cdlink. Unable to process course.\n";
 }
 
+
+## @fn $ wiki_download($wikih, $title, $filename)
+# Attempt to download the file identified by the title from the wiki, and save it
+# to the specified title.
+#
+# @param wikih    A reference to the mediawiki API object.
+# @param title    The title of the file to download. Any namespace will be stripped!
+# @param filename The name of the file to write the contents to.
+# @return undef on success, otherwise an error message.
+sub wiki_download {
+    my $wikih    = shift;
+    my $title    = shift;
+    my $filename = shift;
+
+    # Work out where the image is...
+    my $url = wiki_media_url($wikih, $title);
+    return "Unable to obtain url for '$title'. This file does not exist in the wiki!" if(!$url);
+
+    # And download it
+    return wiki_download_direct($wikih, $url, $filename);
+}
 
 
 ## @fn $ wiki_download_direct($wikih, $url, $filename)
@@ -1097,27 +1129,16 @@ sub wiki_export_files {
  
                     $logger -> print($logger -> NOTICE, "Downloading '$entry'") unless($quiet);
                    
-                    # Now we can begin the download
-                    if($file = $wikih -> download({ title => $entry})) {
-                    
-                        $logger -> print($logger -> DEBUG, "Writing to $filename") unless($quiet);
-                        # We now have data, so we need to save it.
-                        open(DATFILE, ">", $filename)
-                            or die "\nERROR: Unable to save $filename: $!\n";
-                        
-                        binmode DATFILE;
-                        print DATFILE $file;
-                        
-                        close(DATFILE);
-
+                    my $errs = wiki_download($wikih, $name, $filename);
+                    if($errs) {
+                        $logger -> print($logger -> WARNING, "Unable to download '$name': $errs") unless($quiet);
+                    } else {
                         if(-z $filename) {
                             $logger -> print($logger -> WARNING, "Zero length file written for $filename! This file will be ignored.") unless($quiet);
                         } else {
                             ++$writecount;
                             $filenames -> {lc($name)} = $name;
                         }
-                    } else {
-                        $logger -> print($logger -> WARNING, "Unable to fetch $entry: the file ".(defined($file) ? "does not exist in the wiki." : "can not be downloaded at this time."))  unless($quiet);
                     }
                 } else {
                     die "FATAL: Unable to determine filename from $entry.\n";
