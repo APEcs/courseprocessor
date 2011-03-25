@@ -57,6 +57,26 @@ use constant DEFAULT_VERBOSITY => 0;
 use constant DEFAULT_MEDIADIR  => 'media'; 
 
 
+## @fn void warn_die_handler($fatal, @messages)
+# A simple handler for warn and die events that changes the normal behaviour of both
+# so that they print to STDOUT rather than STDERR.
+#
+# @param fatal    Should the function call exit rather than carry on as normal?
+# @param messages The array of messages passed to the die or warn.
+sub warn_die_handler {
+    my $fatal = shift;
+    my @messages = @_;
+
+    print STDOUT @messages;
+    exit 1 if($fatal);
+}
+
+# Override default warn and die behaviour to ensure that errors and
+# warnings do not end up out-of-order in printed logs.
+$SIG{__WARN__} = sub { warn_die_handler(0, @_); };
+$SIG{__DIE__}  = sub { warn_die_handler(1, @_); };
+
+
 ## @fn void find_bins($config)
 # Attempt to locate the external binaries the exporter relies on to operate. This
 # function will store the location of the binaries used by this script inside the
