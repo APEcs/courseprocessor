@@ -827,7 +827,7 @@ sub wiki_export_module {
                         # Otherwise, work out where the problem was...
                         } else {
                             # kill newlines, otherwise it'll cause confusion in the output.
-                            $step =~ /\n/<br>/g;
+                            $step =~ s/\n/<br>/g;
 
                             if(!$title && $body) {
                                 die "FATAL: Unable to parse title from '== $step' in module $module\n";
