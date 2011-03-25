@@ -98,8 +98,8 @@ sub warn_die_handler {
 
 # Override default warn and die behaviour to ensure that errors and
 # warnings do not end up out-of-order in printed logs.
-$SIG{__WARN__} = sub { warn_die_handler(0, @_); }
-$SIG{__DIE__}  = sub { warn_die_handler(1, @_); }
+$SIG{__WARN__} = sub { warn_die_handler(0, @_); };
+$SIG{__DIE__}  = sub { warn_die_handler(1, @_); };
 
 # -----------------------------------------------------------------------------
 #  Utility functions
