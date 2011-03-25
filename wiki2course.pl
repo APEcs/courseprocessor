@@ -821,11 +821,11 @@ sub wiki_export_module {
                         # Otherwise, work out where the problem was...
                         } else {
                             if(!$title && $body) {
-                                die "FATAL: Unable to parse title from $step\n";
+                                die "FATAL: Unable to parse title from == $step in module $module\n";
                             } elsif($title && !$body) {
-                                die "FATAL: Unable to parse body from $step\n";
+                                die "FATAL: Unable to parse body from == $step in module $module\n";
                             } else {
-                                die "FATAL: Unable to parse body or title from $step.\n";
+                                die "FATAL: Unable to parse body or title from $step in module $module\n";
                             }
                         }
                     }
