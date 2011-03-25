@@ -294,21 +294,21 @@ sub check_media_file {
         # we have a match, do the cases match?
         if($mediahash -> {lc($filename)} ne $filename) {
             # No, fix that...
-            $logger -> print($logger -> NOTICE, "Correcting case for media file $filename (should be '".$mediahash -> {lc($filename)}."'.") unless($quiet);
+            $logger -> print($logger -> NOTICE, "Correcting case for media file '$filename' (should be '".$mediahash -> {lc($filename)}."'.") unless($quiet);
             $filename = $mediahash -> {lc($filename)};
         } else {
-            $logger -> print($logger -> DEBUG, "Media file $filename is present in the media file list.") unless($quiet);
+            $logger -> print($logger -> DEBUG, "Media file '$filename' is present in the media file list.") unless($quiet);
         }
     } else {
-        $logger -> print($logger -> WARNING, "Unable to locate $filename in the media directory, attempting to fetch.") unless($quiet);
+        $logger -> print($logger -> WARNING, "Unable to locate '$filename' in the media directory, attempting to fetch.") unless($quiet);
         
         # try to get the file, if we can then store it for later use
         my $error = wiki_download($wikih, $filename, path_join($basedir, $mediadir, $filename));
         if(!$error) {
             $mediahash -> {$filename} = $filename;
-            $logger -> print($logger -> WARNING, "Fetched $filename. Consider adding it to your media page to avoid this warning.") unless($quiet);
+            $logger -> print($logger -> WARNING, "Fetched '$filename'. Consider adding it to your media page to avoid this warning.") unless($quiet);
         } else {
-            $logger -> print($logger -> WARNING, "Unable fetch $filename: $error") unless($quiet);
+            $logger -> print($logger -> WARNING, "Unable fetch '$filename': $error") unless($quiet);
         }
     }
 
@@ -833,7 +833,7 @@ sub wiki_export_module {
                         if($title) {
                             # If we have no body, write out a placeholder and tell the user
                             if(!$body) {
-                                $logger -> print($logger -> WARNING, "Step $title in module $module has no body. Inserting placeholder message.");
+                                $logger -> print($logger -> WARNING, "Step '$title' in module '$module' has no body. Inserting placeholder message.");
                                 $body = "This step has been intentionally left blank.";
                             }
 
