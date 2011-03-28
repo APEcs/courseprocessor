@@ -1194,10 +1194,20 @@ sub write_course_frontpage {
     # store the filename so it doesn't get cleaned up
     $self -> {"used_media"} -> {lc($self -> {"mdata"} -> {"course"} -> {"splash"})} = $self -> {"mdata"} -> {"course"} -> {"splash"};
 
+    # Work out the message...
+    my $message = $self -> {"mdata"} -> {"course"} -> {"message"};
+    if(ref($message) eq "HASH") {
+        if($message -> {"content"}) { # Fix hash ref issues
+            $message = $message -> {"content"};
+        } else {
+            $message = '<span class="error">No course message provided.</span>';
+        }
+    }
+    
     # dump the page.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "frontpage.html"),
               $self -> {"template"} -> load_template("frontpage.tem",
-                                                     {"***bodytext***"      => $self -> {"mdata"} -> {"course"} -> {"message"} || "No course message provided",
+                                                     {"***bodytext***"      => $message,
                                                       "***graphic***"       => $graphic,
                                                       "***title***"         => $self -> {"mdata"} -> {"course"} -> {"title"},
                                                       
