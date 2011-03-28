@@ -1255,7 +1255,7 @@ if(makedir($basedir)) {
         foreach my $step (sort keys(%$markers)) {
             $logger -> print($logger -> NOTICE, "Found the following markers in $step:");
             foreach my $marker (@{$markers -> {$step}}) {
-                print "    $step: ...$marker...\n";
+                print "    ...$marker...\n";
             }
             print "\n";
         }
