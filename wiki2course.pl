@@ -787,26 +787,28 @@ sub course_metadata_save {
 # -----------------------------------------------------------------------------
 #  Module export
 
-## @fn $ wiki_export_module($wikih, $module, $moduledir, $convert, $markers)
+## @fn $ wiki_export_module($wikih, $themetitle, $module, $moduledir, $convert, $markers)
 # Export the specified module to the module directory, splitting the steps into
 # separate files inside the directory. This determines whether the module dir
 # exists and, if it does not, it creates it, then it tries to save the module
 # into it as separate steps.
 #
-# @param wikih     A reference to a MediaWiki API object.
-# @param module    The name of the module to export, including namespace
-# @param moduledir The directory to write the module data to.
-# @param convert   If true, step contents are converted from wiki markup to html.
-# @param markers   A reference to a hash to store marker information in.
-# @param mediahash A reference to a hash of media files in the media directory.
+# @param wikih      A reference to a MediaWiki API object.
+# @param themetitle The title of the theme being exported
+# @param module     The name of the module to export, including namespace
+# @param moduledir  The directory to write the module data to.
+# @param convert    If true, step contents are converted from wiki markup to html.
+# @param markers    A reference to a hash to store marker information in.
+# @param mediahash  A reference to a hash of media files in the media directory.
 # @return true if the module was saved, false if there was a problem
 sub wiki_export_module {
-    my $wikih     = shift;
-    my $module    = shift;
-    my $moduledir = shift;
-    my $convert   = shift;
-    my $markers   = shift;
-    my $mediahash = shift;
+    my $wikih      = shift;
+    my $themetitle = shift;
+    my $module     = shift;
+    my $moduledir  = shift;
+    my $convert    = shift;
+    my $markers    = shift;
+    my $mediahash  = shift;
 
     $logger -> print($logger -> NOTICE, "Exporting module $module to $moduledir.") unless($quiet);
 
@@ -853,7 +855,7 @@ sub wiki_export_module {
                            
                             # Locate and record any markers
                             my @marklist = $body =~ /(.{0,16}\?\s*\?\s*\??.{0,56})/go;
-                            $markers -> {"$stepname"} = \@marklist
+                            $markers -> {"$themetitle; $module; $title ($stepname)"} = \@marklist
                                 if(scalar(@marklist));
 
                         # Otherwise, work out where the problem was...
@@ -883,26 +885,28 @@ sub wiki_export_module {
 }
 
 
-## @fn $ wiki_export_modules($wikih, $themepage, $themedir, $metadata, $convert, $markers)
+## @fn $ wiki_export_modules($wikih, $themetitle, $themepage, $themedir, $metadata, $convert, $markers)
 # Export the modules listed in the supplied theme page to the specified
 # data directory.
 #
-# @param wikih     A reference to a MediaWiki API object.
-# @param themepage The text of the theme page
-# @param themedir  The base output directory.
-# @param metadata  The theme metadata, needed for module dir naming.
-# @param convert   If true, step contents are converted from wiki markup to html.
-# @param markers   A reference to a hash to store marker information in.
-# @param mediahash A reference to a hash of media files in the media directory.
+# @param wikih      A reference to a MediaWiki API object.
+# @param themetitle The human readable title of the theme being exported.
+# @param themepage  The text of the theme page
+# @param themedir   The base output directory.
+# @param metadata   The theme metadata, needed for module dir naming.
+# @param convert    If true, step contents are converted from wiki markup to html.
+# @param markers    A reference to a hash to store marker information in.
+# @param mediahash  A reference to a hash of media files in the media directory.
 # @return The number of modules exported, or -1 on error.
 sub wiki_export_modules {
-    my $wikih     = shift;
-    my $themepage = shift;
-    my $themedir  = shift;
-    my $metadata  = shift;
-    my $convert   = shift;
-    my $markers   = shift;
-    my $mediahash = shift;
+    my $wikih      = shift;
+    my $themetitle = shift;
+    my $themepage  = shift;
+    my $themedir   = shift;
+    my $metadata   = shift;
+    my $convert    = shift;
+    my $markers    = shift;
+    my $mediahash  = shift;
 
     $logger -> print($logger -> NOTICE, "Parsing module names from theme page...") unless($quiet);
 
@@ -932,7 +936,7 @@ sub wiki_export_modules {
                 my $modulepath = path_join($themedir, $dirname);
 
                 # Export the contents of the module if possible
-                wiki_export_module($wikih, $module, $modulepath, $convert, $markers, $mediahash);
+                wiki_export_module($wikih, $themetitle, $module, $modulepath, $convert, $markers, $mediahash);
 
             } else {
                 die "FATAL: Unable to locate metadata entry for $truename. (Remember, the module name without namespace MUST match the metadata title!)\n";
@@ -1014,7 +1018,7 @@ sub wiki_export_theme {
                 if(makedir($themedir)) {
 
                     # We have the theme directory, now we need to start on modules!
-                    wiki_export_modules($wikih, $tpage, $themedir, $mdxml, $convert, $markers, $mediahash);
+                    wiki_export_modules($wikih, $mdxml -> {"title"}, $tpage, $themedir, $mdxml, $convert, $markers, $mediahash);
 
                     # Modules are processed, try saving the metadata
                     metadata_save($metadata, $themedir);
