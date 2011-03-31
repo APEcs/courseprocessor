@@ -103,18 +103,18 @@ sub validate_metadata_theme {
     my ($shortname) = $themedir =~ m|^.*/(.*?)$|;
 
     # check the theme name and title have been specified.
-    die "FATAL: metadata_validate: $shortname/metadata.xml missing theme title." if(!$xml -> {"theme"} -> {"title"});
-    die "FATAL: metadata_validate: $shortname/metadata.xml missing theme name."  if(!$xml -> {"theme"} -> {"name"});
-    die "FATAL: metadata_validate: $shortname/metadata.xml missing theme index order."  if(!$xml -> {"theme"} -> {"indexorder"});
+    die "FATAL: metadata for theme $shortname missing theme title." if(!$xml -> {"theme"} -> {"title"});
+    die "FATAL: metadata for theme $shortname missing theme name."  if(!$xml -> {"theme"} -> {"name"});
+    die "FATAL: metadata for theme $shortname missing theme index order."  if(!$xml -> {"theme"} -> {"indexorder"});
 
     # Check modules
     foreach my $module (keys(%{$xml -> {"theme"} -> {"module"}})) {
         next if($module eq "dummy"); # don't bother validating the dummy module
 
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "metadata_validate: checking $module");
-        die "FATAL: metadata_validate: $shortname/metadata.xml missing module title for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"title"});
-        die "FATAL: metadata_validate: $shortname/metadata.xml missing module level for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"level"});
-        die "FATAL: metadata_validate: $shortname/metadata.xml missing module index order for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"indexorder"});
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "checking $module");
+        die "FATAL: metadata for theme $shortname missing module title for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"title"});
+        die "FATAL: metadata for theme $shortname missing module level for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"level"});
+        die "FATAL: metadata for theme $shortname missing module index order for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"indexorder"});
 
         # check that any prereqs are valid.
         if($xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"}) {
@@ -129,7 +129,7 @@ sub validate_metadata_theme {
             
             # Check the target exists...
             foreach my $target (@$targets) {
-                die "FATAL: $shortname/metadata.xml contains unknown prerequisite '$target' for '$module'.\n" 
+                die "FATAL: metadata for theme $shortname contains unknown prerequisite '$target' for '$module'.\n" 
                     if(!$xml -> {"theme"} -> {"module"} -> {$target});
 
                 # Does the target list this module as a leadsto?
@@ -154,7 +154,7 @@ sub validate_metadata_theme {
             
             # Check the target exists
             foreach my $target (@$targets) {
-                die "FATAL: $shortname/metadata.xml contains unknown prerequisite '$target' for '$module'.\n" 
+                die "FATAL: metadata for theme $shortname contains unknown prerequisite '$target' for '$module'.\n" 
                     if(!$xml -> {"theme"} -> {"module"} -> {$target});
 
                 # Does the target list this module as a prerequisite?
@@ -204,22 +204,35 @@ sub validate_metadata_theme {
         }
 
         if(!$valid) {
-            $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "$module in $shortname/metadata.xml can not be validated. Output from input plugin checks is: ".join("\n", @errors));
+            $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "$module in metadata for theme $shortname can not be validated. Output from input plugin checks is: ".join("\n", @errors));
             return 0;
         } else {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$module in $shortname/metadata.xml appears to be valid");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$module in metadta for theme $shortname appears to be valid.");
         }
     }
 
     # If we have an includes section, we must have at least one resource section
     if($xml -> {"theme"} -> {"includes"}) {
-        die "FATAL: Error in metadata: $shortname/metadata.xml contains an includes element with no valid resources\n" if(ref($xml -> {"theme"} -> {"includes"}) ne "HASH" ||
+        die "FATAL: Error in metadata: metadata for theme $shortname contains an includes element with no valid resources\n" if(ref($xml -> {"theme"} -> {"includes"}) ne "HASH" ||
                                                                                                                           !$xml -> {"theme"} -> {"includes"} -> {"resource"} ||
                                                                                                                           !scalar(@{$xml -> {"theme"} -> {"includes"} -> {"resource"}}));
     }
 
+    # Do we have any theme-level objectives?
+    if($xml -> {"theme"} -> {"objectives"}) {
+        die "FATAL: Error in metadata: metadata for theme $shortname contains an objectives element with no valid objective elements\n" if(ref($xml -> {"theme"} -> {"objectives"}) ne "HASH" ||
+                                                                                                                                     !$xml -> {"theme"} -> {"objectives"} -> {"objective"} ||
+                                                                                                                                     !scalar(@{$xml -> {"theme"} -> {"objectives"} -> {"objective"}}));
+    }
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$shortname/metadata.xml is valid");
+    # Or any theme-level outcomes?
+    if($xml -> {"theme"} -> {"outcomes"}) {
+        die "FATAL: Error in metadata: metadata for theme $shortname contains an outcomes element with no valid outcome elements\n" if(ref($xml -> {"theme"} -> {"outcomes"}) ne "HASH" ||
+                                                                                                                                 !$xml -> {"theme"} -> {"outcomes"} -> {"outcome"} ||
+                                                                                                                                 !scalar(@{$xml -> {"theme"} -> {"outcomes"} -> {"outcome"}}));
+    }
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "metadata for theme $shortname is valid");
 
     return 1;
 }
