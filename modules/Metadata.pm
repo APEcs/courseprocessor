@@ -168,6 +168,20 @@ sub validate_metadata_theme {
             }
         }
 
+        # Do we have any objectives?
+        if($xml -> {"theme"} -> {"module"} -> {$module} -> {"objectives"}) {
+            die "FATAL: Error in metadata: $module contains an objectives element with no valid objective elements\n" if(ref($xml -> {"theme"} -> {"module"} -> {$module} -> {"objectives"}) ne "HASH" ||
+                                                                                                                         !$xml -> {"theme"} -> {"module"} -> {$module} -> {"objectives"} -> {"objective"} ||
+                                                                                                                         !scalar(@{$xml -> {"theme"} -> {"module"} -> {$module} -> {"objectives"} -> {"objective"}}));
+        }
+
+        # Or any outcomes?
+        if($xml -> {"theme"} -> {"module"} -> {$module} -> {"outcomes"}) {
+            die "FATAL: Error in metadata: $module contains an outcomes element with no valid outcome elements\n" if(ref($xml -> {"theme"} -> {"module"} -> {$module} -> {"outcomes"}) ne "HASH" ||
+                                                                                                                     !$xml -> {"theme"} -> {"module"} -> {$module} -> {"outcomes"} -> {"outcome"} ||
+                                                                                                                     !scalar(@{$xml -> {"theme"} -> {"module"} -> {$module} -> {"outcomes"} -> {"outcome"}}));
+        }
+
         # Do the input handler(s) think the module is valid?
         my $valid = 0;
         my @errors = ();
@@ -201,7 +215,7 @@ sub validate_metadata_theme {
     if($xml -> {"theme"} -> {"includes"}) {
         die "FATAL: Error in metadata: $shortname/metadata.xml contains an includes element with no valid resources\n" if(ref($xml -> {"theme"} -> {"includes"}) ne "HASH" ||
                                                                                                                           !$xml -> {"theme"} -> {"includes"} -> {"resource"} ||
-                                                                                                                          !scalar($xml -> {"theme"} -> {"includes"} -> {"resource"}));
+                                                                                                                          !scalar(@{$xml -> {"theme"} -> {"includes"} -> {"resource"}}));
     }
 
 
