@@ -295,3 +295,27 @@ hr {
 #footer a:hover {
 	color:#444;
 }
+
+ul.outcomes {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+li.outcome {
+    list-style: square inside; 
+    padding-left: 1em; 
+    padding-bottom: 0.2em;
+}
+
+ul.objectives {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+li.objective {
+    list-style: square inside; 
+    padding-left: 1em; 
+    padding-bottom: 0.2em;
+}
