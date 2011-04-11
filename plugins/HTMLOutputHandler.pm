@@ -299,17 +299,26 @@ sub step_sort {
 }
 
 
-## @fn $ get_step_name($stepid)
+## @method $ get_step_name($theme, $module, $stepid)
 # Given a step id, this returns a string containing the canonical filename for the 
 # step. Note that this will ensure that the step number is given a leading zero
 # if the supplied id is less than 10 and it does not already have a leading zero.
 #
+# @param theme  The name of the theme the step is in.
+# @param module The module the step is in.
 # @param stepid The id of the step to generate a filename form.
 # @return The step filename in the form 'stepXX.html'
 sub get_step_name {
+    my $self   = shift;
+    my $theme  = shift;
+    my $module = shift;
     my $stepid = shift;
 
-    return "step".lead_zero($stepid).".html";
+    # Work out what the step's output ID is, and die if it is not valid
+    my $outid = $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"}; 
+    die "FATAL: Attempt to access step in $theme/$module with stepid $stepid when step is excluded from output.\n" if(!$outid);
+
+    return "step".lead_zero($outid).".html";
 }
 
 
@@ -435,7 +444,7 @@ sub convert_link {
                                                   {"***backup***" => $backup,
                                                    "***theme***"  => $targ -> {"theme"},
                                                    "***module***" => $targ -> {"module"},
-                                                   "***step***"   => get_step_name($targ -> {"stepid"}),
+                                                   "***step***"   => $self -> get_step_name($targ -> {"theme"}, $targ -> {"module"}, $targ -> {"stepid"}),
                                                    "***anchor***" => $anchor,
                                                    "***text***"   => $text});
 }
@@ -786,6 +795,8 @@ sub write_glossary_pages {
 #         fragments.
 sub build_navlinks {
     my $self      = shift;
+    my $theme     = shift;
+    my $module    = shift;
     my $stepid    = shift;
     my $maxstep   = shift;
     my $level     = shift;
@@ -793,11 +804,11 @@ sub build_navlinks {
     
     if($stepid > 1) {
         $fragments -> {"button"} -> {"previous"} = $self -> {"template"} -> load_template("theme/module/previous_enabled.tem",
-                                                                                          {"***prevlink***" => get_step_name($stepid - 1),
+                                                                                          {"***prevlink***" => $self -> get_step_name($theme, $module, $stepid - 1),
                                                                                            "***level***"    => $level});
 
         $fragments -> {"link"} -> {"previous"}   = $self -> {"template"} -> load_template("theme/module/link_prevstep.tem",
-                                                                                          {"***prevstep***" => get_step_name($stepid - 1)});
+                                                                                          {"***prevstep***" => $self -> get_step_name($theme, $module, $stepid - 1)});
     } else {
         $fragments -> {"button"} -> {"previous"} = $self -> {"template"} -> load_template("theme/module/previous_disabled.tem",
                                                                                           {"***level***"    => $level});
@@ -806,18 +817,18 @@ sub build_navlinks {
 
     if($stepid < $maxstep) {
         $fragments -> {"button"} -> {"next"}     = $self -> {"template"} -> load_template("theme/module/next_enabled.tem",
-                                                                                          {"***nextlink***" => get_step_name($stepid + 1),
+                                                                                          {"***nextlink***" => $self -> get_step_name($theme, $module, $stepid + 1),
                                                                                            "***level***"    => $level});
         $fragments -> {"link"} -> {"next"}       = $self -> {"template"} -> load_template("theme/module/link_nextstep.tem",
-                                                                                          {"***nextstep***" => get_step_name($stepid + 1)});
+                                                                                          {"***nextstep***" => $self -> get_step_name($$theme, $module, stepid + 1)});
     } else {
         $fragments -> {"button"} -> {"next"}     = $self -> {"template"} -> load_template("theme/module/next_disabled.tem",
                                                                                           {"***level***"    => $level});
         $fragments -> {"link"} -> {"next"}       = "";
     }
 
-    $fragments -> {"link"} -> {"first"} = $self -> {"template"} -> load_template("theme/module/link_firststep.tem", { "***firststep***" => get_step_name(1) });
-    $fragments -> {"link"}  -> {"last"} = $self -> {"template"} -> load_template("theme/module/link_laststep.tem" , { "***laststep***"  => get_step_name($maxstep) });
+    $fragments -> {"link"} -> {"first"} = $self -> {"template"} -> load_template("theme/module/link_firststep.tem", { "***firststep***" => $self -> get_step_name($theme, $module, 1) });
+    $fragments -> {"link"}  -> {"last"} = $self -> {"template"} -> load_template("theme/module/link_laststep.tem" , { "***laststep***"  => $self -> get_step_name($theme, $module, $maxstep) });
 
     return $fragments;
 }
@@ -901,14 +912,14 @@ sub build_index_modules {
             next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"});
 
             $steps .= $self -> {"template"} -> load_template($prefix."index_step.tem",
-                                                             {"***url***"   => path_join($themeprefix, $module, get_step_name($stepid)),
+                                                             {"***url***"   => path_join($themeprefix, $module, $self -> get_step_name($theme, $module, $stepid)),
                                                               "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}});
         }
 
         # Generate the entry for the module.
         $body .= $self -> {"template"} -> load_template($prefix."index_entry.tem",
                                                         {"***name***"       => $module,
-                                                         "***stepurl***"    => path_join($themeprefix, $module, get_step_name(1)),
+                                                         "***stepurl***"    => path_join($themeprefix, $module, $self -> get_step_name($theme, $module, 1)),
                                                          "***title***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
                                                          "***level***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
                                                          "***difficulty***" => ucfirst($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}),
@@ -1334,7 +1345,7 @@ sub build_step_dropdowns {
         next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"output_id"});
 
         $stepdrop .= $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
-                                                            { "***name***"  => get_step_name($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"output_id"}),
+                                                            { "***name***"  => $self -> get_step_name($theme, $module, $step),
                                                               "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"title"}});
     }
      
@@ -1487,12 +1498,12 @@ sub get_step_dropdown {
 
     # set up a chunk to use as an anchor in the menu
     my $anchor = $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
-                                                        { "***name***"  => get_step_name($stepid),
+                                                        { "***name***"  => $self -> get_step_name($theme, $module, $stepid),
                                                           "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"} });
 
     # this chunk will replace the above
     my $replace = $self -> {"template"} -> load_template("theme/module/stepdrop-entry-current.tem",
-                                                         { "***name***"    => get_step_name($stepid),
+                                                         { "***name***"    => $self -> get_step_name($theme, $module, $stepid),
                                                            "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"} });
     
     die "FATAL: Unable to open anchor template stepdrop-entry.tem: $!"  if(!$anchor);
@@ -2092,11 +2103,11 @@ sub process_step {
     $body = $self -> convert_step_tags($body, $theme, $module, $stepid);
 
     # Build the navigation data we need for the step
-    my $navhash = $self -> build_navlinks($stepid, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
+    my $navhash = $self -> build_navlinks($theme, $module, $stepid, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
     
     # Save the step out as a templated step...
-    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".get_step_name($stepid));
-    save_file(get_step_name($stepid), 
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".$self -> get_step_name($theme, $module, $stepid));
+    save_file($self -> get_step_name($theme, $module, $stepid), 
               $self -> {"template"} -> load_template("theme/module/step.tem",
                                                      {# Basic content
                                                       "***title***"         => $title,
@@ -2135,12 +2146,12 @@ sub process_step {
 
     # Try to do tidying if the tidy mode has been specified and it exists
     if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidy"}) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidying ".get_step_name($stepid));
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Tidying ".$self -> get_step_name($theme, $module, $stepid));
 
         die "FATAL: Unable to run htmltidy: tidy does not exist at ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"}."\n"
             if(!-e $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidycmd"});
 
-        my $name = get_step_name($stepid);
+        my $name = $self -> get_step_name($theme, $module, $stepid);
 
         # make a backup if we're running in debug mode
         `$self->{config}->{paths}->{cp} -f $name $name.orig` if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidybackup"});
