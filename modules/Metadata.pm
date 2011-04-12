@@ -290,7 +290,10 @@ sub load_metadata {
 
     # If the xml file exists, attempt to load it
     if(-e "$srcdir/metadata.xml") {
-        eval { $data = XMLin("$srcdir/metadata.xml", KeepRoot => 1, ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective' ]); };
+        eval { $data = XMLin("$srcdir/metadata.xml", 
+                             KeepRoot => 1, 
+                             ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
+                             KeyAttr => {step => 'title', module => 'name', theme => 'name'}); };
 
         die "FATAL: Unable to parse $name metadata.xml file. Errors were:\n$@\n" if($@);
 
