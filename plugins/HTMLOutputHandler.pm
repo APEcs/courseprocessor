@@ -29,6 +29,7 @@ package HTMLOutputHandler;
 use strict;
 use base qw(Plugin); # This class extends Plugin
 
+use Carp;
 use Cwd qw(getcwd chdir);
 use File::Path qw(make_path);
 use ImageTools;
@@ -172,7 +173,10 @@ sub process {
 
         # Skip themes that should not be included
         if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"}) {
-            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Theme $theme excluded by filtering rules.");
+            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, 
+                                         "Theme '".
+                                         $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}.
+                                         "' excluded by filter rules.");
 
             # Nuke skipped content from the destination.
             `$self->{config}->{paths}->{rm} -rf $fulltheme` unless($self -> {"config"} -> {"Processor"} -> {"debug"});
@@ -191,7 +195,12 @@ sub process {
 
                 # Determine whether the module will be included in the course
                 if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"}) {
-                    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Module $theme excluded by filtering rules.");
+                    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, 
+                                                 "Module '".
+                                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}.
+                                                 "' (in theme '".
+                                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}.
+                                                 "') excluded by filter rules.");
 
                     # Nuke skipped content from the destination
                     `$self->{config}->{paths}->{rm} -rf $fullmodule` unless($self -> {"config"} -> {"Processor"} -> {"debug"});
@@ -209,11 +218,18 @@ sub process {
                     my $maxstep = get_maximum_stepid($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module});
                             
                     # Process each step stored in the metadata
-                    foreach my $stepid (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"}})) {
+                    foreach my $stepid (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"}})) {
                         
                         # Step exclusion has already been determined by the preprocessor, so we can just check that
-                        if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"}) {
-                            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Step $stepid excluded by filtering rules.");
+                        if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"}) {
+                            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, 
+                                                         "Step '".
+                                                         $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"}.
+                                                         "' (in '".
+                                                         $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}.
+                                                         "' -> '".
+                                                         $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}.
+                                                         "') excluded by filter rules.");
 
                             my $nukename = path_join($fullmodule, "node".lead_zero($stepid).".html");
                             `$self->{config}->{paths}->{rm} -f $nukename` unless($self -> {"config"} -> {"Processor"} -> {"debug"});
@@ -314,11 +330,83 @@ sub get_step_name {
     my $module = shift;
     my $stepid = shift;
 
+    # The preprocessor strips leading zeros from step ids before storing the step 
+    # data, so make sure we do that here too, otherwise we could have problems here
+    $stepid =~ s/^0?(\d+)$/$1/;
+
     # Work out what the step's output ID is, and die if it is not valid
-    my $outid = $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"}; 
-    die "FATAL: Attempt to access step in $theme/$module with stepid $stepid when step is excluded from output.\n" if(!$outid);
+    my $outid = $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"}; 
+    confess "FATAL: Attempt to access step in $theme/$module with stepid $stepid when step is excluded from output.\n" if(!$outid);
 
     return "step".lead_zero($outid).".html";
+}
+
+
+## @method $ get_prev_stepname($theme, $module, $stepid)
+# Determine the name of the step before the specified step. This will obtain the step
+# name for the previous step if there is one, or simply return undef if the specified
+# id corresponds to the first step in the module.
+#
+# @param  theme  The name of the theme the step is in.
+# @param module The module the step is in.
+# @param stepid The id of the step to find the previous for.
+# @return The step filename in the form 'stepXX.html'
+sub get_prev_stepname {
+    my $self = shift;
+    my $theme  = shift;
+    my $module = shift;
+    my $stepid = shift;
+
+    # The preprocessor strips leading zeros from step ids before storing the step 
+    # data, so make sure we do that here too, otherwise we could have problems here
+    $stepid =~ s/^0?(\d+)$/$1/;
+
+    # search for a previous step with with an output_id
+    --$stepid;
+    while($stepid > 0) {
+        return $self -> get_step_name($theme, $module, $stepid)
+            if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"});
+
+        --$stepid;
+    }
+
+    # Get here and there is no previous with an output id, so this must be the first step!
+    return undef;
+}
+
+
+## @method $ get_next_stepname($theme, $module, $stepid, $maxstep)
+# Determine the name of the step after the specified step. This will obtain the step
+# name for the next step if there is one, or simply return undef if the specified
+# id corresponds to the last step in the module.
+#
+# @param theme   The name of the theme the step is in.
+# @param module  The module the step is in.
+# @param stepid  The id of the step to find the next for.
+# @param maxstep The id of the last step in the module.
+# @return The step filename in the form 'stepXX.html'
+sub get_next_stepname {
+    my $self    = shift;
+    my $theme   = shift;
+    my $module  = shift;
+    my $stepid  = shift;
+    my $maxstep = shift;
+
+    # The preprocessor strips leading zeros from step ids before storing the step 
+    # data, so make sure we do that here too, otherwise we could have problems here
+    $stepid =~ s/^0?(\d+)$/$1/;
+
+    # search for a next step with with an output_id
+    ++$stepid;
+    while($stepid <= $maxstep) {
+        return $self -> get_step_name($theme, $module, $stepid)
+            if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"});
+
+        ++$stepid;
+    }
+
+    # Get here and there is no next with an output id, so this must be the last step!
+    return undef;
 }
 
 
@@ -334,13 +422,21 @@ sub get_maximum_stepid {
     # We could try some kind of fancy sort trick here, but frankly anything
     # is going to be slower than a simple scan (potentially O(NlogN) as opposed
     # to O(N)
-    my $maxid = 0;
-    foreach my $stepid (keys(%{$module -> {"step"}})) {
-        $maxid = $module -> {"step"} -> {$stepid} -> {"output_id"} if(defined($module -> {"step"} -> {$stepid} -> {"output_id"}) &&
-                                                                      $module -> {"step"} -> {$stepid} -> {"output_id"} > $maxid);
+    my ($maxid, $maxoutid) = (0, 0);
+    foreach my $stepid (keys(%{$module -> {"steps"}})) {
+        # We need to record the ID of the step if it is later in the step list AND has
+        # an output id set, otherwise we can ignore it.
+        if(defined($module -> {"steps"} -> {$stepid} -> {"output_id"}) &&
+           $module -> {"steps"} -> {$stepid} -> {"output_id"} > $maxid) {
+            $maxid = $stepid;
+            $maxoutid = $module -> {"steps"} -> {$stepid} -> {"output_id"};
+        }
     }
     
-    return $maxid || undef;
+    return $maxid if($maxid);
+
+    # Get here and there are no steps ($maxid is 0) so return undef to avoid confusion
+    return undef;
 }
 
 
@@ -802,25 +898,28 @@ sub build_navlinks {
     my $level     = shift;
     my $fragments = {};
     
-    if($stepid > 1) {
+    my $prevstep = $self -> get_prev_stepname($theme, $module, $stepid);
+    my $nextstep = $self -> get_next_stepname($theme, $module, $stepid, $maxstep);
+
+    if($prevstep) {
         $fragments -> {"button"} -> {"previous"} = $self -> {"template"} -> load_template("theme/module/previous_enabled.tem",
-                                                                                          {"***prevlink***" => $self -> get_step_name($theme, $module, $stepid - 1),
+                                                                                          {"***prevlink***" => $prevstep,
                                                                                            "***level***"    => $level});
 
         $fragments -> {"link"} -> {"previous"}   = $self -> {"template"} -> load_template("theme/module/link_prevstep.tem",
-                                                                                          {"***prevstep***" => $self -> get_step_name($theme, $module, $stepid - 1)});
+                                                                                          {"***prevstep***" => $prevstep});
     } else {
         $fragments -> {"button"} -> {"previous"} = $self -> {"template"} -> load_template("theme/module/previous_disabled.tem",
                                                                                           {"***level***"    => $level});
         $fragments -> {"link"} -> {"previous"}   = "";
     }
 
-    if($stepid < $maxstep) {
+    if($nextstep) {
         $fragments -> {"button"} -> {"next"}     = $self -> {"template"} -> load_template("theme/module/next_enabled.tem",
-                                                                                          {"***nextlink***" => $self -> get_step_name($theme, $module, $stepid + 1),
+                                                                                          {"***nextlink***" => $nextstep,
                                                                                            "***level***"    => $level});
         $fragments -> {"link"} -> {"next"}       = $self -> {"template"} -> load_template("theme/module/link_nextstep.tem",
-                                                                                          {"***nextstep***" => $self -> get_step_name($$theme, $module, stepid + 1)});
+                                                                                          {"***nextstep***" => $nextstep});
     } else {
         $fragments -> {"button"} -> {"next"}     = $self -> {"template"} -> load_template("theme/module/next_disabled.tem",
                                                                                           {"***level***"    => $level});
@@ -907,13 +1006,13 @@ sub build_index_modules {
 
         # Build the list of steps in the module.
         my $steps = "";
-        foreach my $stepid (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"}})) {
+        foreach my $stepid (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"}})) {
             # Skip steps that should not be included
-            next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"});
+            next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"});
 
             $steps .= $self -> {"template"} -> load_template($prefix."index_step.tem",
                                                              {"***url***"   => path_join($themeprefix, $module, $self -> get_step_name($theme, $module, $stepid)),
-                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}});
+                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"}});
         }
 
         # Generate the entry for the module.
@@ -1340,20 +1439,20 @@ sub build_step_dropdowns {
 
     # Process the list of steps for this module, sorted by numeric order. Steps are stored using a numeric
     # step id (not 'nodeXX.html' as they were in < 3.7)
-    foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"}})) {
+    foreach my $step (sort numeric_order keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"}})) {
         # Skip steps with no output id
-        next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"output_id"});
+        next if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$step} -> {"output_id"});
 
         $stepdrop .= $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
                                                             { "***name***"  => $self -> get_step_name($theme, $module, $step),
-                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$step} -> {"title"}});
+                                                              "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$step} -> {"title"}});
     }
      
     die "FATAL: No steps stored for \{$theme\} -> \{$module\} -> \{steps\}\n" if(!$stepdrop);
 
     # and store the partially-processed dropdown
-    $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} = $self -> {"template"} -> load_template("theme/module/stepdrop.tem",
-                                                                                                                                    {"***entries***" => $stepdrop });
+    $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} = $self -> {"template"} -> load_template("theme/module/stepdrop.tem",
+                                                                                                                                     {"***entries***" => $stepdrop });
 }
 
 
@@ -1499,18 +1598,18 @@ sub get_step_dropdown {
     # set up a chunk to use as an anchor in the menu
     my $anchor = $self -> {"template"} -> load_template("theme/module/stepdrop-entry.tem",
                                                         { "***name***"  => $self -> get_step_name($theme, $module, $stepid),
-                                                          "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"} });
+                                                          "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"} });
 
     # this chunk will replace the above
     my $replace = $self -> {"template"} -> load_template("theme/module/stepdrop-entry-current.tem",
                                                          { "***name***"    => $self -> get_step_name($theme, $module, $stepid),
-                                                           "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"} });
+                                                           "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"} });
     
     die "FATAL: Unable to open anchor template stepdrop-entry.tem: $!"  if(!$anchor);
     die "FATAL: Unable to open replace template stepdrop-entry.tem: $!" if(!$replace);
 
     # Create a copy of the step dropdown so it can be modified
-    my $dropdown = $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"};
+    my $dropdown = $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"};
 
     # replace the current step
     $dropdown =~ s/\Q$anchor\E/$replace/;
@@ -1710,6 +1809,8 @@ sub preprocess {
                                 or die "FATAL: Unable to open step file '$fullmodule/$step': $!\n";
 
                             my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}im;
+                        
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Checking whether '$title' is should be included... ");
 
                             # If we have a step entry in the metadata, check whether this step will be excluded
                             # (it will be excluded if the module is, or the step is listed in the metadata and
@@ -1718,6 +1819,8 @@ sub preprocess {
                                 ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} &&
                                  $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$title} &&
                                  $self -> {"filter"} -> exclude_resource($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$title}));
+
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Filtering completed, step will ".($exclude_step ? "not" : "")." be included");
 
                             # Record the locations of any anchors in the course
                             if(!$exclude_step) {
@@ -1751,12 +1854,15 @@ sub preprocess {
                             # record the step details for later generation steps, if necessary
                             if(!$exclude_step) {
                                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording $title step $stepid as $theme -> $module -> steps -> $step");
-                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"title"}     = $title;
-                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}  = $step;
-                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"output_id"} = lead_zero(++$outstep);
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"}     = $title;
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"}  = $step;
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"} = lead_zero(++$outstep);
 
                                 # Increment the step count for later progress display
                                 ++$self -> {"stepcount"};
+                            } else {
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"}            = $title;
+                                $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"exclude_resource"} = 1;
                             }
 
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");                               
@@ -2084,8 +2190,8 @@ sub process_step {
     my $laststep  = shift;
 
     # Load the step content
-    my $content = load_file($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"})
-        or die "FATAL: Unable to open step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."': $!\n";
+    my $content = load_file($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"})
+        or die "FATAL: Unable to open step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"}."': $!\n";
     
     # extract the bits we're interested in...
     # IMPORTANT: This code has been modified from 3.6 behaviour to not strip trailing <hr>s out of
@@ -2094,7 +2200,7 @@ sub process_step {
     my ($title, $body) = $content =~ m|<title>\s*(.*?)\s*</title>.*<body.*?>\s*(.*?)\s*</body>|si;
 
     # We need title and body parts
-    die "FATAL: Unable to read body from step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"step"} -> {$stepid} -> {"filename"}."'\n" 
+    die "FATAL: Unable to read body from step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"}."'\n" 
         if(!$title || !$body);
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Obtained body for step $stepid, title is $title. Processing body.");
