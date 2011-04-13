@@ -65,6 +65,9 @@
 	line-height: 1.3em;
 }
 
+dt.blue {
+	background-image:url(../framework-images/module/bullet-blue.gif);
+}
 dt.green {
 	background-image:url(../framework-images/module/bullet-green.gif);
 }
