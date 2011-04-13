@@ -102,6 +102,9 @@
 	border-bottom: 1px solid #CCC;
 }
 
+#navmenus li#menu-modules span.blue {
+	background: url(../framework-images/module/bullet-blue.gif) no-repeat 0 50%;
+}
 
 /* Menu bullets - green */
 #navmenus li#menu-modules span.green {
