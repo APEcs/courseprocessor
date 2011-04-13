@@ -104,6 +104,7 @@
 
             <h1 class="main">***title***</h1>
             <div id="content">
+            ***outjectives***
             ***data***
             </div><!-- id="content" -->
             <div class="clearer"></div>
