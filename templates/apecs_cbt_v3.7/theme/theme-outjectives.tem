@@ -79,7 +79,7 @@
                         <li><a href="../frontpage.html" title="Links to the front page">Home</a></li>
                         <li><span class="accesshide">/ </span>
                             <span class="sep">&#x25BA;</span>
-                            <a href="../courseindex.html" title="Links to the list of themes for the course">***title***</a>
+                            <a href="../courseindex.html" title="Links to the list of themes for the course">***themetitle***</a>
                         </li>
                         <li class="current"><span class="accesshide">/ </span>
                             <span class="sep">&#x25BA;</span>
