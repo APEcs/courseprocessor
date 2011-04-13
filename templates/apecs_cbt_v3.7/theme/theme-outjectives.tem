@@ -12,7 +12,6 @@
     <script type="text/javascript" src="../framework-javascript/core.js"></script>
     <script language="javascript" type="text/javascript">
     <!--
-        updateThemeView();
         setLastViewedPage(2);
     -->
     </script>
@@ -38,7 +37,7 @@
     <link href="../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
 
 </head>
-<body id="thememap" onload="initializeThemeIndexPage();">
+<body id="themeindex" class="index" onload="initializeThemeIndexPage();">
 <a tabindex="1" href="#content" class="accesshide"><img src="../framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>
 <div id="page">
     <div id="header">
@@ -102,9 +101,9 @@
         <div class="middle-left"><div class="middle-right"><div class="middle-center">
 
             <h1 class="main">***title***</h1>
-            <div id="content">
+            <div id="content" class="left">
             ***themeoutcomes***
-            ***themeobjectives****
+            ***themeobjectives***
             ***modblock***
             </div><!-- id="content" -->
             <div class="clearer"></div>
