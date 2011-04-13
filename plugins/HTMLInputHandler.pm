@@ -434,7 +434,10 @@ sub read_latex_file {
 
     # Load the generated content, hopefully it'll always end up in node2.
     my $content = load_file("$latexdir/node2.html");
-    die "FATAL: Unable to read content from $latexdir/node2.html: $!\n This Should Not Happen! Check the output from latex2html to determine why this\nfailed. In particular, check for things like nested \$s in maths blocks." if(!$content);
+    die "FATAL: Unable to read content from $latexdir/node2.html: $!\n".
+        "This Should Not Happen! Check the output from latex2html to determine why this failed.\n".
+        "In particular, check for things like nested \$s in maths blocks." 
+        if(!$content);
     
     # extract the body...
     my ($body) = $content =~ /<body.*?>\s*(.*?)\s*(?:<br>)?\s*<hr>\s*<\/body>/si;

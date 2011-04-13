@@ -999,9 +999,12 @@ sub build_index_modules {
 
     # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
-                               if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+                               if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
+                                  !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
 
-                           return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"};
+                           return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} 
+                                   <=> 
+                                   $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                          }
                          keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
 
@@ -1146,9 +1149,12 @@ sub write_course_textindex {
 
     # Obtain a sorted list of theme names
     my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
-                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
+                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) ||
+                                   !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
 
-                            return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"};
+                            return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} 
+                                    <=> 
+                                    $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"});
                           }
                           keys(%{$self -> {"mdata"} -> {"themes"}});
     
@@ -1218,9 +1224,12 @@ sub write_course_index {
 
         # We need a sorted list of themes...
         my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
-                                    if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
+                                    if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) ||
+                                       !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
 
-                                return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"};
+                                return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} 
+                                        <=>
+                                        $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"});
                               }
                               keys(%{$self -> {"mdata"} -> {"themes"}});
     
@@ -1402,9 +1411,12 @@ sub build_theme_dropdowns {
     
     # Generate a sorted list of the themes stored in the metadata
     my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
-                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) or !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
+                                if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) ||
+                                   !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
                             
-                            return $self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"};
+                            return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}
+                                    <=> 
+                                    $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"});
                           }
                           keys(%{$self -> {"mdata"} -> {"themes"}});
 
@@ -1484,9 +1496,12 @@ sub build_module_dropdowns {
     my $theme = shift;
 
     my @modulenames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b" 
-                                  if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+                                  if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
+                                     !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                                   
-                              return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"};
+                              return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} 
+                                      <=> 
+                                      $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                             }
                             keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
 
@@ -2247,9 +2262,12 @@ sub write_theme_outjectives {
 
     # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
-                               if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+                               if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
+                                  !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
 
-                           return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"};
+                           return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}
+                                   <=> 
+                                   $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                          }
                          keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
 
