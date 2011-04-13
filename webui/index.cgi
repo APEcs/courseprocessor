@@ -941,6 +941,8 @@ sub build_stage5_finish {
     my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
+    my $timeout = $sysvars -> {"template"} -> humanise_seconds($sysvars -> {"settings"} -> {"config"} -> {"session_length"});
+
     # Now generate the title, message.
     my $title    = $sysvars -> {"template"} -> replace_langvar("FINISH_TITLE", $subcourse);
     my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("FINISH_TITLE", $subcourse),
@@ -951,7 +953,7 @@ sub build_stage5_finish {
                                                                                                                              "***lccourse***"    => $subcourse -> {"***lccourse***"},
                                                                                                                              "***previewurl***"  => $preview,
                                                                                                                              "***downloadurl***" => $download,
-                                                                                                                             "***timeout***"     => $sysvars -> {"template"} -> humanise_seconds($sysvars -> {"settings"} -> {"config"} -> {"session_length"})}));
+                                                                                                                             "***timeout***"     => $timeout}));
     return ($title, $message);    
 }
 
