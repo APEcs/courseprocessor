@@ -216,10 +216,15 @@ sub process {
 
                     # Determine what the maximum step id in the module is
                     my $maxstep = get_maximum_stepid($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module});
+
+                    # If the module has objectives or outcomes, write the outcomes/objectives page first
+                    $self -> write_module_outjectives($theme, $module, $maxstep) if($self -> has_outjectives($theme, $module));
                             
                     # Process each step stored in the metadata
                     foreach my $stepid (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"}})) {
-                        
+                        # Skip step id 0 (the objectives/outcomes page)
+                        next if(!$stepid);
+
                         # Step exclusion has already been determined by the preprocessor, so we can just check that
                         if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"}) {
                             $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, 
@@ -363,7 +368,7 @@ sub get_prev_stepname {
 
     # search for a previous step with with an output_id
     --$stepid;
-    while($stepid > 0) {
+    while($stepid >= 0) {
         return $self -> get_step_name($theme, $module, $stepid)
             if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"});
 
@@ -1800,6 +1805,21 @@ sub preprocess {
                         my @sortedsteps = sort step_sort @steps;
 
                         my $outstep = 0;
+
+                        # If we have any objectives or outcomes for this module, we need to finagle that into the data
+                        if($self -> has_outjectives($theme, $module)) {
+                            # Work out an appropriate title based on the presence or absence of outcomes and objectives
+                            my $title = $self -> has_outcomes($theme, $module) ? "Outcomes" : "";
+                            $title .= ($self -> has_objectives($theme, $module) ? ($title ? " and Objectives" : "Objectives") : "");
+
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Recording page for objectives/outcomes as stepid 0");
+                            $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {0} -> {"title"}     = $title;
+                            $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {0} -> {"output_id"} = lead_zero(++$outstep);
+
+                            # Increment the step count for later progress display
+                            ++$self -> {"stepcount"};
+                        }
+
                         foreach my $step (@sortedsteps) {
                             my ($stepid) = $step =~ /^node0?(\d+).html/;
 
@@ -1965,6 +1985,209 @@ sub cleanup_media {
         } else {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Media file $filename is in use, retaining.");
         }
+    }
+}
+
+
+# ============================================================================
+#  Objectives/Outcomes
+#  
+
+## @method $ has_outjectives($theme, $module, $type)
+# Determine whether the specified module (or theme if the module is not specified)
+# has objectives or outcomes set. If the optional type argument is not specified,
+# this will return true if the module (or theme) has either objectives or outcomes 
+# set. If the type is "objective", this will return true if the module (or theme) 
+# has objectives, and if it is "outcome" this will return true if the module (or
+# theme) has outcomes set.
+#
+# @param theme  The theme the module resides in, or the theme to check for objectives/outcomes.
+# @param module The module to check for objectives/outcomes. If undef, the theme is checked instead.
+# @param type   The type to check for, must be undef, 'objective', or 'outcome'
+# @return true if the module (or theme) has the appropriate objectives or outcomes 
+#         set, false otherwise.
+sub has_outjectives {
+    my $self   = shift;
+    my $theme  = shift;
+    my $module = shift;
+    my $type   = shift;
+
+    # If we have no type, we want to know if either is set...
+    if(!$type) {
+        return $self -> has_outjectives($theme, $module, "objective") || $self -> has_outjectives($theme, $module, "outcome");
+
+    # Otherwise, we need to examine the appropriate hash bits
+    } else {
+        
+        # Work out the parent block for the type we're interested in
+        my $parent = $type."s";
+
+        # Grab a reference to the module or theme to avoid painful repetition...
+        my $resref = $module ? $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} 
+                             : $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"};
+
+        # Do we actually have any entries for the requested type?
+        return ($resref -> {$parent} && $resref -> {$parent} -> {$type} && 
+                (ref($resref -> {$parent} -> {$type}) eq "ARRAY") &&
+                scalar(@{$resref -> {$parent} -> {$type}}));
+    }
+}
+
+
+## @method $ has_objectives($theme, $module)
+# A convenience wrapper for has_outjectives() to make checking for objectives 
+# more readable.
+#
+# @param theme  The theme the module resides in, or the theme to check for objectives.
+# @param module The module to check for objectives. If undef, the theme is checked instead.
+# @return true if the module (or theme if module is not set) has objectives, false otherwise.
+sub has_objectives {
+    my $self     = shift;
+    my $theme    = shift;
+    my $module   = shift;
+
+    return $self -> has_outjectives($theme, $module, "objective");
+}
+
+
+## @method $ has_outcomes($theme, $module)
+# A convenience wrapper for has_outjectives() to make checking for outcomes
+# more readable.
+#
+# @param theme  The theme the module resides in, or the theme to check for outcomes.
+# @param module The module to check for outcomes. If undef, the theme is checked instead.
+# @return true if the module (or theme if module is not set) has objectives, false otherwise.
+sub has_outcomes {
+    my $self     = shift;
+    my $theme    = shift;
+    my $module   = shift;
+
+    return $self -> has_outjectives($theme, $module, "outcome");
+}
+    
+
+## @method $ make_outjective_list($theme, $module, $type, $template)
+# Generate a list of objectives or outcomes set for the specified theme or module.
+# This will examine the objectives or outcomes (depending on the value in 'type')
+# for the specified module or theme (if module is not specified) and create a string
+# by applying the provided template to each entry and concatenating the results.
+#
+# @param theme    The theme the module resides in, or the theme to generate a list for if module is not set.
+# @param module   The module to generate an objective/outcome list for. If undef, the theme is used instead.
+# @param type     The type of list, allowed values are 'objective' or 'outcome'.
+# @param template The template to apply to each entry.
+# @return A string containing the objectives or outcomes for the specified module or theme, or 
+#         an empty string if there are no appropriate entries available.
+sub make_outjective_list {
+    my $self     = shift;
+    my $theme    = shift;
+    my $module   = shift;
+    my $type     = shift;
+    my $template = shift;
+    my $result   = "";
+
+    # Work out the parent block for the type we're interested in
+    my $parent = $type."s";
+
+    # Grab a reference to the module or theme to avoid painful repetition...
+    my $resref = $module ? $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} 
+                         : $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"};
+
+    # Do we actually have any entries for the requested type? Working this out safely is a bit messy...
+    if($resref -> {$parent} && $resref -> {$parent} -> {$type} && 
+       (ref($resref -> {$parent} -> {$type}) eq "ARRAY") &&
+       scalar(@{$resref -> {$parent} -> {$type}})) {
+        
+        # We have entries, make a string by catting the result of pushing them into the template.
+        foreach my $entry (@{$resref -> {$parent} -> {$type}}) {
+            $result .= $self -> {"template"} -> process_template($template, {"***entry***" => $entry});
+        }
+    }
+
+    return $result;
+}
+    
+
+## @method void write_module_outjectives($theme, $module, $laststep)
+# Generate a step-like page containing the objectives and outcomes for the current
+# module. 
+#
+# @param theme  The theme the module is in.
+# @param module The module to write the objectives and outcome step for.
+# @param laststep The ID of the last step that will be generated in the module.
+# @note This assumes that the module is the current working directory!
+sub write_module_outjectives {
+    my $self     = shift;
+    my $theme    = shift;
+    my $module   = shift;
+    my $laststep = shift;
+
+    # Preload a couple of templates to make life easier
+    my $objective = $self -> {"template"} -> load_template("theme/module/objective.tem");
+    my $outcome   = $self -> {"template"} -> load_template("theme/module/outcome.tem");
+
+    # Do we have any objectives to add to the page?
+    my $objs = $self -> make_outjective_list($theme, $module, "objective", $objective);
+    
+    # And any outcomes?
+    my $outs = $self -> make_outjective_list($theme, $module, "outcome", $outcome);
+
+    # If we have either, push them into their container templates
+    $objs = $self -> {"template"} -> load_template("theme/module/objectives.tem", {"***objectives***" => $objs})
+        if($objs);
+
+    $outs = $self -> {"template"} -> load_template("theme/module/outcomes.tem", {"***outcomes***" => $outs})
+        if($outs);
+
+    # Finally, shove everything into the page if we have something to do
+    if($objs || $outs) {
+        # content please!
+        my $body = $self -> {"template"} -> load_template("theme/module/outjectives.tem", {"***objectives***" => $objs,
+                                                                                           "***outcomes***"   => $outs});
+
+        # Build the navigation data we need for the controls
+        my $navhash = $self -> build_navlinks($theme, $module, 0, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
+
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing ".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {"0"} -> {"title"}." page for '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}."'");
+
+        save_file($self -> get_step_name($theme, $module, 0), # Step 0 is reserved for outcomes and objectives.
+                  $self -> {"template"} -> load_template("theme/module/step.tem",
+                                                         {# Basic content
+                                                             "***title***"         => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {"0"} -> {"title"},
+                                                             "***body***"          => $body,
+
+                                                             # Navigation buttons
+                                                             "***previous***"      => $navhash -> {"button"} -> {"previous"},
+                                                             "***next***"          => $navhash -> {"button"} -> {"next"},
+                                                             
+                                                             # Header <link> elements
+                                                             "***startlink***"     => $navhash -> {"link"} -> {"first"},
+                                                             "***prevlink***"      => $navhash -> {"link"} -> {"previous"},
+                                                             "***nextlink***"      => $navhash -> {"link"} -> {"next"},
+                                                             "***lastlink***"      => $navhash -> {"link"} -> {"last"},
+
+                                                             # Module complexity (difficulty is uc(level) for readability)
+                                                             "***level***"         => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
+                                                             "***difficulty***"    => ucfirst($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"}),
+
+                                                             # theme/module for title and breadcrumb
+                                                             "***themename***"     => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"},
+                                                             "***modulename***"    => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
+
+                                                             # Dropdowns in the menu bar
+                                                             "***themedrop***"     => $self -> get_theme_dropdown($theme, "step"),
+                                                             "***moduledrop***"    => $self -> {"dropdowns"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"modules"},
+                                                             "***stepdrop***"      => $self -> get_step_dropdown($theme, $module, "0"),
+
+                                                             # Standard stuff
+                                                             "***glosrefblock***"  => $self -> build_glossary_references("module"),
+                                                             "***include***"       => $self -> get_extrahead("step"),
+                                                             "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                         }));
+
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete.");
+    } else {
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "'".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}."' has lost its objectives and outcomes?");
     }
 }
 
