@@ -255,6 +255,10 @@ sub process {
                 } # if(-d $fullmodule) 
             } # foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}}))
 
+            # If we have outcomes or objectives for the current theme, write them.
+            $self -> write_theme_outjectives($theme)
+                if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"has_outjectives"});
+
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing theme index files.");
             $self -> write_theme_index($theme);
             $self -> write_theme_textindex($theme);
@@ -1048,10 +1052,16 @@ sub write_theme_textindex {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Building theme index page for ".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"});
 
+    # load the outjectives template if we have any
+    my $outjectives = "";
+    $outjectives = $self -> {"template"} -> load_template("theme/themeindex-outjectives.tem") 
+        if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"has_outjectives"});
+
     # Write the index.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme, "themeindex.html"),
               $self -> {"template"} -> load_template("theme/themeindex.tem",
                                                      {# Basic content
+                                                      "***outjectives***"  => $outjectives,
                                                       "***data***"         => $self -> build_index_modules($theme, "theme"),
                                                       "***title***"        => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"},
 
@@ -1059,9 +1069,9 @@ sub write_theme_textindex {
                                                       "***themedrop***"    => $self -> get_theme_dropdown($theme, "theme"),
 
                                                       # Standard stuff
-                                                      "***glosrefblock***"  => $self -> build_glossary_references("theme"),
-                                                      "***include***"       => $self -> get_extrahead("theme"),
-                                                      "***version***"       => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                      "***glosrefblock***" => $self -> build_glossary_references("theme"),
+                                                      "***include***"      => $self -> get_extrahead("theme"),
+                                                      "***version***"      => $self -> {"mdata"} -> {"course"} -> {"version"},
                                                      }));
 }
 
@@ -1486,6 +1496,10 @@ sub build_module_dropdowns {
         # skip modules that won't be included in the course
         next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"});
 
+        # The first entry in the dropdown should be the objectives and outcomes, if we have it
+        $moduledrop .= $self -> {"template"} -> load_template("theme/module/moduledrop-outject.tem", {"***title***" => "Outcomes and objectives"})
+            if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"has_outjectives"});
+
         # first create the module dropdown for this module (ie: show all modules in this theme and how they relate)
         foreach my $buildmod (@modulenames) {
             my $relationship = "";
@@ -1777,6 +1791,9 @@ sub preprocess {
             # Store the exclude for later use
             $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"} = $exclude_theme;
 
+            # Check whether the theme has objectives now to make things easier later
+            $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"has_outjectives"} = $self -> has_outjectives($theme);
+
             # Now we need to get a list of modules inside the theme. This looks at the list of modules 
             # stored in the metadata so that we don't need to worry about non-module directoried...
             foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
@@ -1818,6 +1835,13 @@ sub preprocess {
 
                             # Increment the step count for later progress display
                             ++$self -> {"stepcount"};
+
+                            # Mark the theme "has outjectives" marker. This way, even if there are no theme-level outcomes
+                            # or objectives, we know to process the theme-level outjectives stuff without going through the
+                            # modules all over again. This may be redundant - the theme-level check above may have set this,
+                            # or it may have been set by an earlier module in this theme, but it will only ever be set to true,
+                            # never to fals, here so it doesn't overly matter that much...
+                            $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"has_outjectives"} = 1;
                         }
 
                         foreach my $step (@sortedsteps) {
@@ -2194,6 +2218,93 @@ sub write_module_outjectives {
     } else {
         $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "'".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}."' has lost its objectives and outcomes?");
     }
+}
+
+
+## @method void write_theme_outjectives($theme)
+# Generate an index-like page containing the objectives and outcomes for the current
+# theme (and its modules if they have any objectives or outcomes set). 
+#
+# @param theme  The theme to generate outcomes/objectives for.
+sub write_theme_outjectives {
+    my $self  = shift;
+    my $theme = shift;
+
+    # Preload templates for speed later
+    my $themeobjtem  = $self -> {"template"} -> load_template("theme/theme-objective.tem");
+    my $themeouttem  = $self -> {"template"} -> load_template("theme/theme-outcome.tem");
+    my $modobjtem    = $self -> {"template"} -> load_template("theme/module-objective.tem");
+    my $modobjstem   = $self -> {"template"} -> load_template("theme/module-objectives.tem");
+    my $modouttem    = $self -> {"template"} -> load_template("theme/module-outcome.tem");
+    my $modoutstem   = $self -> {"template"} -> load_template("theme/module-outcomes.tem");
+    my $moduletem    = $self -> {"template"} -> load_template("theme/module-outjectives.tem");
+
+    # Do we have any theme-level objectives?
+    my $themeobjs = $self -> make_outjective_list($theme, undef, "objective", $themeobjtem);
+    
+    # And any theme-level outcomes?
+    my $themeouts = $self -> make_outjective_list($theme, undef, "outcome"  , $themeouttem);
+
+    # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
+    my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
+                               if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} or !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+
+                           return $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} <=> $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"};
+                         }
+                         keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
+
+    # Go through the modules, in index order, and build up the module outjectives stuff
+    my $modoutjects = "";
+    foreach my $module (@modnames) {
+        # Does the module have any outcomes or objectives set?
+        if($self -> has_outjectives($theme, $module)) {
+            # Yes, obtain the lists...
+            my $modobjs = $self -> make_outjective_list($theme, $module, "objective", $modobjtem);
+            my $modouts = $self -> make_outjective_list($theme, $module, "outcome"  , $modouttem);
+
+            $modobjs = $self -> {"template"} -> process_template($modobjstem, {"***objectives***" => $modobjs})
+                if($modobjs);
+            
+            $modouts = $self -> {"template"} -> process_template($modoutstem, {"***outcomes***" => $modouts})
+                if($modouts);
+
+            # If we have either (we should, but best be sure), shove them into the appropriate block
+            if($modobjs || $modouts) {
+                # We can reuse the step 0 title for this, as that should already tell us whether we have objectives, outcomes, or both
+                my $types = $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {"0"} -> {"title"};
+
+                $modoutjects .= $self -> {"template"} -> process_template($moduletem, {"***types***"      => $types,
+                                                                                       "***name***"       => $module,
+                                                                                       "***title***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
+                                                                                       "***level***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"},
+                                                                                       "***outcomes***"   => $modouts,
+                                                                                       "***objectives***" => $modobjs});
+            }
+        }
+    }
+    
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing outcomes and objectives page for '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}."'");
+
+    # Write the outjectives page...
+    save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme, "outjectives.html"),
+              $self -> {"template"} -> load_template("theme/theme-outjectives.tem",
+                                                     {# Basic content
+                                                      "***themetitle***"      => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"},
+                                                      "***title***"           => "Outcomes and Objectives",
+                                                      "***themeoutcomes***"   => $themeouts,
+                                                      "***themeobjectives***" => $themeobjs,
+                                                      "***modblock***"        => $modoutjects,
+
+                                                      # Dropdown in the menu bar
+                                                      "***themedrop***"       => $self -> get_theme_dropdown($theme, "theme"),
+
+                                                      # Standard stuff
+                                                      "***glosrefblock***"    => $self -> build_glossary_references("theme"),
+                                                      "***include***"         => $self -> get_extrahead("theme"),
+                                                      "***version***"         => $self -> {"mdata"} -> {"course"} -> {"version"},
+                                                     }));
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing complete.");
 }
 
 
