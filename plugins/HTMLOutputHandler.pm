@@ -2148,7 +2148,12 @@ sub write_module_outjectives {
         # Build the navigation data we need for the controls
         my $navhash = $self -> build_navlinks($theme, $module, 0, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
 
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing ".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {"0"} -> {"title"}." page for '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}."'");
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, 
+                                     "Writing ".
+                                     $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {"0"} -> {"title"}.
+                                     " page for '".
+                                     $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}.
+                                     "'");
 
         save_file($self -> get_step_name($theme, $module, 0), # Step 0 is reserved for outcomes and objectives.
                   $self -> {"template"} -> load_template("theme/module/step.tem",
