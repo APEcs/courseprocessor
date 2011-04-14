@@ -2260,6 +2260,13 @@ sub write_theme_outjectives {
     # And any theme-level outcomes?
     my $themeouts = $self -> make_outjective_list($theme, undef, "outcome"  , $themeouttem);
 
+    # Push the theme objectives and outcomes into container templates if needed
+    $themeobjs = $self -> {"template"} -> load_template("theme/theme-objectives.tem", {"***objectives***" => $themeobjs})
+        if($themeobjs);
+
+    $themeouts = $self -> {"template"} -> load_template("theme/theme-outcomes.tem", {"***outcomes***" => $themeouts})
+        if($themeouts);
+
     # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
                                if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
