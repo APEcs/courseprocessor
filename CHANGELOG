@@ -1,3 +1,22 @@
+Version 3.8.2
+=============
+
+Bug files:
+  - serious problems with step filtering addressed (previously step filtering
+    could have caused gaps in step numbering, breaking normal navigation). 
+    Complete overhaul of step numbering system implemented.
+
+  - empty front page message caused erroneous HASH address display in generated
+    front page.
+
+  - code-level readability improvements.
+
+Additions:
+  - support for objectives and outcomes added.
+ 
+  - documentation for <outcomes>, <outcome>, <objectives>, and <objective>
+    metadata elements added.
+
 Version 3.8
 ===========
 
