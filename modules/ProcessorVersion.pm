@@ -7,8 +7,8 @@ our @ISA       = qw(Exporter);
 our @EXPORT    = qw(get_version);
 
 my $wiki2course = "1.18 (23 March 2011)";
-my $processor   = "3.8 (23 March 2011)";
-my $release     = "3.8";
+my $processor   = "3.8.2 (15 April 2011)";
+my $release     = "3.8.2";
 
 sub get_version {
     my $mode = shift;
