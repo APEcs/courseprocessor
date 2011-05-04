@@ -77,6 +77,9 @@ sub ttf_string_calcsize {
     my $self = shift;
     my ($fontname, $colour, $strings, $reqsize, $linespacing) = @_;
 
+    die "Incorrect argument to ttf_string_calcsize - strings must be arrayref"
+        unless(ref($strings) eq "ARRAY");
+
     # Set a vaguely sane default for line spacing if needed
     $linespacing = 0.4 if(!defined($linespacing));
 
