@@ -12,7 +12,7 @@ Bug files:
   - code-level readability improvements.
 
 Additions:
-  - support for objectives and outcomes added.
+  - [bug 7] support for objectives and outcomes added.
  
   - documentation for <outcomes>, <outcome>, <objectives>, and <objective>
     metadata elements added.

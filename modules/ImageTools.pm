@@ -238,7 +238,8 @@ sub ttf_string_wrap {
         my @strings = split /\|/, $wstring;
 
         # Will the string fit into the space needed?
-        $sdata = $self -> ttf_string_calcsize($fontname, $colour, \@strings, $minsize, $linespacing);
+        $sdata = $self -> ttf_string_calcsize($fontname, $colour, \@strings, $minsize, $linespacing)
+            or die "Unable to calculate size for $wstring!\n";
     
         # If it won't fit in the width, we need to wrap it (height will be handled for us, but that should
         # never be an issue in normal situations anyway)
