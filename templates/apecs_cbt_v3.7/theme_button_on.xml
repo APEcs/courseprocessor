@@ -1,5 +1,5 @@
 <?xml version='1.0' standalone='yes'?>
-<image base="theme_button_on.png" basex="0" basey="0" width="256" height="64">
+<basicimage base="theme_button_on.png" basex="0" basey="0" width="256" height="64">
     <colours>
         <colour name="white">#FFFFFF</colour>
     </colours>
@@ -9,5 +9,5 @@
     <elements>
         <element type="text" name="title" font="arialbd" colour="white" x="128" y="32" width="240" height="50" size="20" minsize="11">***theme_title***</element>
     </elements>
-</image>
+</basicimage>
 
