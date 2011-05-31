@@ -326,6 +326,52 @@ sub allocate_colours {
 }
 
 
+## @method void copy_fragment($back, $frag, $image)
+# Copy a fragment of the back image to the working image. This will copy a piece
+# of the back image to the working image using the contents of the specified
+# fragment to determine the source location and size, the destination location,
+# and whether the fragment copy is repeated in the x, y, or both.
+#
+# @param back  The back image, the source of the fragment to copy.
+# @param frag  A hash describing the fragment to copy.
+# @param image The image to copy the fragment into.
+sub copy_fragment {
+    my $self  = shift;
+    my $back  = shift;
+    my $frag  = shift;
+    my $image = shift;
+
+    # Work out start values...
+    my ($dsx, $dsy) = ($frag -> {"dx"}, $frag -> {"dy"});
+
+    # fix up any 'max'es in there
+    $dsx = $image -> width  - $frag -> {"width"}  if($dsx eq "max");
+    $dsy = $image -> height - $frag -> {"height"} if($dsy eq "max");
+
+    # Now work out end values
+    my ($dex, $dey) = ($dsx, $dsy);
+    if($frag -> {"repeat"} eq "x") {
+        $dex = $image -> width - $frag -> {"width"};
+    } elsif($frag -> {"repeat"} eq "y") {
+        $dey = $image -> height - $frag -> {"height"};
+    } elsif($frag -> {"repeat"} eq "both") {
+        $dex = $image -> width - $frag -> {"width"};
+        $dey = $image -> height - $frag -> {"height"};
+    }
+
+    # Do the copy, for non-repeating images, the whiles will only
+    # execute the once...
+    while($dsy <= $dey) {
+        while($dsx <= $dsx) {
+            $image -> copy($back, $dsx, $dsy, $frag -> {"sx"}, $frag -> {"sy"}, $frag -> {"width"}, $frag -> {"height"});
+
+            $dsx += $frag -> {"width"};
+        }
+        $dsy += $frag -> {"height"};
+    }
+}
+
+
 ## @method @ get_elasticlabel_size($render, $label)
 # Attempt to calculate the optimal size and font size for the specified lable string. This will
 # try to fit the label into the preferred size, wrapping the string, reducing to font, and
@@ -517,9 +563,9 @@ sub render_basicimage {
 #        <font name="arialbd">/usr/share/fonts/corefonts/arialbd.ttf</font>
 #    </fonts>
 #    <backimg name="green_button_base.png" width="256" height="64">
-#        <fragment name="back" sx="5"   sy="5" dx="0"   dy="0" width="5" height="5" repeat="x,y"  priority="1" />
-#        <fragment name="tl"   sx="0"   sy="0" dx="0"   dy="0" width="5" height="5" repeat="none" priority="3" />
-#        <fragment name="t"    sx="5"   sy="0" dx="5"   dy="0" width="5" height="5" repeat="x"    priority="2" />
+#        <fragment name="back" sx="5"   sy="5" width="5" height="5" repeat="x,y" priority="1" />
+#        <fragment name="tl"   sx="0"   sy="0" dx="0" dy="0" width="5" height="5" repeat="none" priority="3" />
+#        <fragment name="t"    sx="5"   sy="0" dy="0" width="5" height="5" repeat="x"    priority="2" />
 #        <fragment name="tr"   sx="250" sy="0" dx="max" dy="0" width="5" height="5" repeat="none" priority="3" />
 #        ... etc...
 #    </backimg>
@@ -593,21 +639,21 @@ sub render_elasicbutton {
 }
 
 
-## @method $ render_hash($output, $render)
+## @method $ render_hash($render, $output)
 # Generate an image using the rules specified in the provided render control hash. This
 # will use the contents of the supplied render control hash to determine the size and
 # contents of the image written to output. Please see the processor documentation in the
 # development wiki for details regarding the contents of the render control hash.
 #
+# @param render The render control hash containing the directives used to generate the image.
 # @param output The name of the file to write the generated image to. If this is undef,
 #               the image is returned rather than saved.
-# @param render The render control hash containing the directives used to generate the image.
 # @return undef (or a reference to an image if output is undef) on success, otherwise
 #         a string containing an error message.
 sub render_hash {
     my $self   = shift;
-    my $output = shift;
     my $render = shift;
+    my $output = shift;
     my $image;
 
     # We only have one root key in the render hash (if we have more, it gets ignored anyway)
@@ -684,7 +730,7 @@ sub load_render_xml {
     my $render = $self -> load_xml($xmlname, $replhash);
     return "Unable to load xml file" if(!$render);
 
-    return $self -> render_hash($output, $render);
+    return $self -> render_hash($render, $output);
 }
 
 
