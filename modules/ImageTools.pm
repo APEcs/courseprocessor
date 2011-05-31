@@ -263,25 +263,26 @@ sub ttf_string_wrap {
 }
 
 
-## @method $ render_text($image, $render, $elemdata)
+## @method $ render_text($image, $colref, $fontref, $elemdata)
 # Render a text element onto the specified image. This uses the settings in the given
 # elemdata hash, in combination with data stored in the render hash, to generate a
 # text string on the specified image.
 #
 # @param image    The image to render the text onto.
-# @param render   A reference to the current render hash. This is needed for font and colour lookups.
+# @param colref   A reference to a hash of colours available for rendering.
+# @param fontref  A reference to a hash of fonts available for rendering.
 # @param elemdata A hash ref containing the information about the text to render.
 # @return A string containing an error message on error, or undef on success.
 sub render_text {
     my $self   = shift;
-    my ($image, $render, $elemdata) = @_;
+    my ($image, $colref, $fontref, $elemdata) = @_;
 
     # Strip any leading or trailing whitespace
     $elemdata -> {"content"} =~ s/^\s*(.*?)\s*$/$1/;
 
     return $self -> ttf_string_wrap($image,
-                                    $render -> {"image"} -> {"fonts"} -> {"font"} -> {$elemdata -> {"font"}} -> {"content"},
-                                    $render -> {"image"} -> {"colours"} -> {"colour"} -> {$elemdata -> {"colour"}} -> {"data"},
+                                    $fontref  -> {"font"} -> {$elemdata -> {"font"}} -> {"content"},
+                                    $colref   -> {"colour"} -> {$elemdata -> {"colour"}} -> {"data"},
                                     $elemdata -> {"content"},
                                     $elemdata -> {"x"}    , $elemdata -> {"y"},
                                     $elemdata -> {"size"} , $elemdata -> {"minsize"},
@@ -290,96 +291,38 @@ sub render_text {
 }
 
 
-## @method $ render_basicimage($render)
-# Render a basic image using the rules specified in the provided render control hash.
-# This will create an image with a fixed width and height, and a single background
-# graphic. It can be used to generate course map buttons and other regular, simple
-# graphics that do not require resizing of the image to its contents.
+## @method $ allocate_colours($image, $colref)
+# Allocate the colours used by a render hash. This will go through the entries inside
+# the provided colours hash, allocating colours in the provided image for each.
 #
-# A sample xml description that will result in a button when converted to a hash and
-# passed to this function:
-#
-# <basicimage base="theme_button_off.png" basex="0" basey="0" width="256" height="64">
-#    <colours>
-#        <colour name="white">#FFFFFF</colour>
-#    </colours>
-#    <fonts>
-#        <font name="arialbd">/usr/share/fonts/corefonts/arialbd.ttf</font>
-#    </fonts>
-#    <elements>
-#        <element type="text" name="title" font="arialbd" colour="white" x="128" y="32" width="240" height="50" size="20" minsize="11">
-#        Button Text
-#        </element>
-#    </elements>
-#</basicimage>
-#
-# @param render A reference to a render control hash containing the directives used to generate the image.
-# @return A reference to an image on success, otherwise an error message.
-sub render_basicimage {
+# @param image  The image to allocate colours in.
+# @param colref A reference to a hash of colours.
+# @return undef on success, an error message otherwise.
+sub allocate_colours {
     my $self   = shift;
-    my $render = shift;
-
-    die "FATAL: Unable to create $output: image width or height can not be 0\n".Data::Dumper -> Dump([$render])
-        if(!$render -> {"basicimage"} -> {"width"} || !$render -> {"basicimage"} -> {"height"});
-
-    my $image = GD::Image -> new($render -> {"basicimage"} -> {"width"}, $render -> {"basicimage"} -> {"height"}, 1)
-        or return "Unable to create new image.";
-
-    # If we have a base image, load and blit it
-    if($render -> {"basicimage"} -> {"base"}) {
-        # Unless the base appears absolute, we need to prepend the template base directory
-        $render -> {"basicimage"} -> {"base"} = path_join($self -> {"template"} -> {"templatedir"}, $render -> {"basicimage"} -> {"base"})
-            unless($render -> {"basicimage"} -> {"base"} =~ m|^/|);
-
-        # does the file exist?
-        return "Unable to load base image ".$render -> {"basicimage"} -> {"base"}.": file does not exist." unless(-f $render -> {"basicimage"} -> {"base"});
-
-        # Okay, load and get the image size
-        my $baseimg = GD::Image -> new($render -> {"basicimage"} -> {"base"})
-            or return "Unable to load base image.";
-
-        my ($basew, $baseh) = $baseimg -> getBounds();
-
-        die "FATAL: Unable to create $output: base image width or height can not be 0\n"
-            if(!$basew || !$baseh);
-
-        # Copy into the working image
-        $image -> copy($baseimg, $render -> {"basicimage"} -> {"basex"} || 0, $render -> {"basicimage"} -> {"basey"} || 0,
-                       0, 0, $basew, $baseh);
-    }
+    my $image  = shift;
+    my $colref = shift;
 
     # now we need to process the colour hash, allocating colours as necessary.
-    foreach my $col (keys(%{$render -> {"basicimage"} -> {"colours"} -> {"colour"}})) {
+    foreach my $col (keys(%{$colref -> {"colour"}})) {
         # pull the RGB out
-        my @vals = $render -> {"basicimage"} -> {"colours"} -> {"colour"} -> {$col} -> {"content"} =~ /([a-fA-F0-9]{2})/g;
+        my @vals = $colref -> {"colour"} -> {$col} -> {"content"} =~ /([a-fA-F0-9]{2})/g;
 
-        return "Malformed colour ($col) specified in image metadata: ".$render -> {"basicimage"} -> {"colours"} -> {"colour"} -> {$col} -> {"content"}
+        return "Malformed colour ($col) specified in image metadata: ".$colref -> {"colour"} -> {$col} -> {"content"}
             unless(defined($vals[0]) && defined($vals[1]) && defined($vals[2]));
 
         # Do the allocate...
-        $render -> {"basicimage"} -> {"colours"} -> {"colour"} -> {$col} -> {"data"} = $image -> colorAllocateAlpha(hex($vals[0]),
-                                                                                                                    hex($vals[1]),
-                                                                                                                    hex($vals[2]),
-                                                                                                                    hex($vals[3] || 0));
+        $colref -> {"colour"} -> {$col} -> {"data"} = $image -> colorAllocateAlpha(hex($vals[0]),
+                                                                                   hex($vals[1]),
+                                                                                   hex($vals[2]),
+                                                                                   hex($vals[3] || 0));
         # bomb if the result was -1
         return "Unable to allocate colour $col for drawing"
-            if($render -> {"basicimage"} -> {"colours"} -> {"colour"} -> {$col} -> {"data"} == -1);
+            if($colref -> {"colour"} -> {$col} -> {"data"} == -1);
     }
 
-    # Now process each of the elements
-    my $error;
-    foreach my $element (keys(%{$render -> {"basicimage"} -> {"elements"} -> {"element"}})) {
-        my $elemdata = $render -> {"basicimage"} -> {"elements"} -> {"element"} -> {$element};
-
-        if($elemdata -> {"type"} eq "text") {
-            $error = $self -> render_text($image, $render, $elemdata);
-        }
-
-        # Did we have any problems? If so, give up now.
-        return $error if($error);
-    }
-
-    return $image;
+    # All processed fine, return undef.
+    return undef;
 }
 
 
@@ -411,9 +354,10 @@ sub get_elasticlabel_size {
                           0.4;
 
     # replace | with spaces in the label contents before we do anything else, so we have a single line,
-    # and compress repeated spaces to a single space
+    # compress repeated spaces to a single space, and remove leading and trailing whitespace.
     $label =~ s/\|/ /g;
     $label =~ s/\s+/ /g;
+    $label =~ s/^\s*(.*?)\s*$/$1/;
 
     my $sdata; # somewhere to store size data while we work
 
@@ -475,6 +419,87 @@ sub get_elasticlabel_size {
 }
 
 
+## @method $ render_basicimage($render)
+# Render a basic image using the rules specified in the provided render control hash.
+# This will create an image with a fixed width and height, and a single background
+# graphic. It can be used to generate course map buttons and other regular, simple
+# graphics that do not require resizing of the image to its contents.
+#
+# A sample xml description that will result in a button when converted to a hash and
+# passed to this function:
+#
+# <basicimage base="theme_button_off.png" basex="0" basey="0" width="256" height="64">
+#    <colours>
+#        <colour name="white">#FFFFFF</colour>
+#    </colours>
+#    <fonts>
+#        <font name="arialbd">/usr/share/fonts/corefonts/arialbd.ttf</font>
+#    </fonts>
+#    <elements>
+#        <element type="text" name="title" font="arialbd" colour="white" x="128" y="32" width="240" height="50" size="20" minsize="11">
+#        Button Text
+#        </element>
+#    </elements>
+#</basicimage>
+#
+# @param render A reference to a render control hash containing the directives used to generate the image.
+# @return A reference to an image on success, otherwise an error message.
+sub render_basicimage {
+    my $self   = shift;
+    my $render = shift;
+
+    die "FATAL: Unable to create $output: image width or height can not be 0\n".Data::Dumper -> Dump([$render])
+        if(!$render -> {"basicimage"} -> {"width"} || !$render -> {"basicimage"} -> {"height"});
+
+    my $image = GD::Image -> new($render -> {"basicimage"} -> {"width"}, $render -> {"basicimage"} -> {"height"}, 1)
+        or return "Unable to create new image.";
+
+    # If we have a base image, load and blit it
+    if($render -> {"basicimage"} -> {"base"}) {
+        # Unless the base appears absolute, we need to prepend the template base directory
+        $render -> {"basicimage"} -> {"base"} = path_join($self -> {"template"} -> {"templatedir"}, $render -> {"basicimage"} -> {"base"})
+            unless($render -> {"basicimage"} -> {"base"} =~ m|^/|);
+
+        # does the file exist?
+        return "Unable to load base image ".$render -> {"basicimage"} -> {"base"}.": file does not exist." unless(-f $render -> {"basicimage"} -> {"base"});
+
+        # Okay, load and get the image size
+        my $baseimg = GD::Image -> new($render -> {"basicimage"} -> {"base"})
+            or return "Unable to load base image.";
+
+        my ($basew, $baseh) = $baseimg -> getBounds();
+
+        die "FATAL: Unable to create $output: base image width or height can not be 0\n"
+            if(!$basew || !$baseh);
+
+        # Copy into the working image
+        $image -> copy($baseimg, $render -> {"basicimage"} -> {"basex"} || 0, $render -> {"basicimage"} -> {"basey"} || 0,
+                       0, 0, $basew, $baseh);
+    }
+
+    my $result = $self -> allocate_colours($image, $render -> {"basicimage"} -> {"colours"});
+    return $result if($result);
+
+    # Now process each of the elements
+    my $error;
+    foreach my $element (keys(%{$render -> {"basicimage"} -> {"elements"} -> {"element"}})) {
+        my $elemdata = $render -> {"basicimage"} -> {"elements"} -> {"element"} -> {$element};
+
+        if($elemdata -> {"type"} eq "text") {
+            $error = $self -> render_text($image,
+                                          $render -> {"basicimage"} -> {"colours"},
+                                          $render -> {"basicimage"} -> {"fonts"},
+                                          $elemdata);
+        }
+
+        # Did we have any problems? If so, give up now.
+        return $error if($error);
+    }
+
+    return $image;
+}
+
+
 ## @method $ render_elasicbutton($render)
 # Render a button that attempts to size itself to fit its contents. This is considerably
 # more complicated than render_basicimage(), as it needs to preform multiple iterative steps
@@ -492,9 +517,10 @@ sub get_elasticlabel_size {
 #        <font name="arialbd">/usr/share/fonts/corefonts/arialbd.ttf</font>
 #    </fonts>
 #    <backimg name="green_button_base.png" width="256" height="64">
-#        <fragment name="tl" sx="0" sy="0" dx="0" dy="0" width="5" height="5" repeat="none" />
-#        <fragment name="t"  sx="5" sy="0" dx="5" dy="0" width="5" height="5" repeat="x" />
-#        <fragment name="tr" sx="250" sy="0" dx="max" dy="0" width="5" height="5" repeat="none" />
+#        <fragment name="back" sx="5"   sy="5" dx="0"   dy="0" width="5" height="5" repeat="x,y"  priority="1" />
+#        <fragment name="tl"   sx="0"   sy="0" dx="0"   dy="0" width="5" height="5" repeat="none" priority="3" />
+#        <fragment name="t"    sx="5"   sy="0" dx="5"   dy="0" width="5" height="5" repeat="x"    priority="2" />
+#        <fragment name="tr"   sx="250" sy="0" dx="max" dy="0" width="5" height="5" repeat="none" priority="3" />
 #        ... etc...
 #    </backimg>
 #    <label name="label" font="arialbd" colour="white" minsize="11" size="20">
@@ -508,13 +534,62 @@ sub render_elasicbutton {
     my $self   = shift;
     my $render = shift;
 
-    # Make life easier....
-    my $label  = $render -> {"label"} -> {"contents"};
+    # Work out the 'optimal' label size, and the size of the image needed to show it.
+    my ($label, $shash, $fontsize, $width, $height) = $self -> get_elasticlabel_size($render, $render -> {"elasticbutton"} -> {"label"} -> {"contents"});
 
+    # Did we successfully get a size? If not, bomb.
+    return undef if(!defined($label));
 
+    # Make sure that the padding is included
+    my ($xremain, $yremain) = ($width  - $shash -> {"_"} -> {"maxwide"}, $height - $shash -> {"_"} -> {"sumhigh"});
+    $width  += ($render -> {"elasticbutton"} -> {"padding"} - $xremain) if($xremain < $render -> {"elasticbutton"} -> {"padding"});
+    $height += ($render -> {"elasticbutton"} -> {"padding"} - $yremain) if($yremain < $render -> {"elasticbutton"} -> {"padding"});
 
+    # Now we can start making the image...
+    my $image = GD::Image -> new($width, $height, 1)
+        or return "Unable to create new image.";
 
+    # If we have a backimg, process it
+    if($render -> {"backimg"}) {
+        my $backimg = GD::Image -> new($render -> {"backimg"} -> {"name"})
+            or return "Unable to load background image for elastic button: $!";
 
+        # We have the image, double-check that the dimensions match
+        return "Background image size mismatch. Abordting for safety"
+            if($backimg -> width != $render -> {"backimg"} -> {"width"} || $backimg -> height != $render -> {"backimg"} -> {"height"});
+
+        # Dimensions match, process the fragments.
+        my @frags = sort  { die "Attempt to sort fragment without priority while comparing $a and $b"
+                               if(!$render -> {"elasticbutton"} -> {"backimg"} -> {"fragment"} -> {$a} -> {"priority"} ||
+                                  !$render -> {"elasticbutton"} -> {"backimg"} -> {"fragment"} -> {$a} -> {"priority"});
+
+                           return ($render -> {"elasticbutton"} -> {"backimg"} -> {"fragment"} -> {$a} -> {"priority"}
+                                   <=>
+                                   $render -> {"elasticbutton"} -> {"backimg"} -> {"fragment"} -> {$b} -> {"priority"});
+                         }
+                         keys(%{$render -> {"elasticbutton"} -> {"backimg"} -> {"fragment"}});
+        foreach my $frag (@frags) {
+            my $fragdata = $render -> {"backimg"} -> {"fragment"} -> {$frag};
+            $self -> copy_fragment($backimg, $fragdata, $image);
+        }
+    }
+
+    # Get the colours we need...
+    my $result = $self -> allocate_colours($image, $render -> {"elasticimage"} -> {"colours"});
+    return $result if($result);
+
+    # Now do label rendering
+    $self -> ttf_string_centred($image,
+                                $render -> {"elasticimage"} -> {"fonts"} -> {"font"} -> {$render -> {"elasticimage"} -> {"label"} -> {"font"}} -> {"content"},
+                                $render -> {"elasticimage"} -> {"colours"} -> {"colour"} -> {$render -> {"elasticimage"} -> {"label"} -> {"colour"}} -> {"data"},
+                                $label,
+                                $width / 2, $height / 2,
+                                $fontsize,
+                                $render -> {"elasticimage"} -> {"label"} -> {"minsize"},
+                                $width, $height,
+                                $render -> {"elasticimage"} -> {"label"} -> {"linespacing"});
+    # Should be it all
+    return $image;
 }
 
 
@@ -524,9 +599,11 @@ sub render_elasicbutton {
 # contents of the image written to output. Please see the processor documentation in the
 # development wiki for details regarding the contents of the render control hash.
 #
-# @param output The name of the file to write the generated image to.
+# @param output The name of the file to write the generated image to. If this is undef,
+#               the image is returned rather than saved.
 # @param render The render control hash containing the directives used to generate the image.
-# @return undef on success, otherwise a string containing an error message.
+# @return undef (or a reference to an image if output is undef) on success, otherwise
+#         a string containing an error message.
 sub render_hash {
     my $self   = shift;
     my $output = shift;
@@ -539,12 +616,15 @@ sub render_hash {
 
     if($type eq "basicimage") {
         $image = $self -> render_basicimage($render);
+    } elsif($type eq "elasticbutton") {
+        $image = $self -> render_elasicbutton($render);
     } else {
         return "Unsupported render type in hash.";
     }
 
-    # If the image is not a hash ref, it must be an error message
-    return $image if(ref($image) ne "HASH");
+    # If the image is not a hash ref, it must be an error message... unless we have
+    # no output string, in which case it needs to be returned anyway
+    return $image if(ref($image) ne "HASH" || !defined($output));
 
     # Save the generated image to the specified file as png
     open(IMG, "> $output")
@@ -577,7 +657,7 @@ sub load_xml {
     my $xmlstr = $self -> {"template"} -> load_template($xmlname, $replhash);
 
     # Parse it into a usable format. This will die on parse errors...
-    my $xmldata = XMLin($xmlstr, KeepRoot => 1, ForceArray => ["element", "font", "colour"], ForceContent => 1);
+    my $xmldata = XMLin($xmlstr, KeepRoot => 1, ForceArray => ["fragment", "element", "font", "colour"], ForceContent => 1);
 
     return $xmldata;
 }
@@ -591,8 +671,10 @@ sub load_xml {
 # @param xmlname  The name of the xml file to load from the template hierarchy.
 # @param replhash A reference to a hash of key-value pairs that will be used to replace
 #                 markers in the xml.
-# @param output The name of the file to write the generated image to.
-# @return undef on success, otherwise an error message.
+# @param output The name of the file to write the generated image to. If undef, the
+#               image is returned rather than undef.
+# @return undef (or a reference to an image, if output is undef) on success,
+#         otherwise an error message.
 sub load_render_xml {
     my $self     = shift;
     my $xmlname  = shift;
