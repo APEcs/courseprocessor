@@ -253,7 +253,7 @@ sub ttf_string_wrap {
         }
 
     # keep going until the string fits, or we hit the line limit
-    } while(($sdata -> {"_"} -> {"maxwide"} > $maxwidth) && ($lines < $self -> {"line_limit"}));
+    } while(($sdata -> {"_"} -> {"maxwide"} > $maxwidth) && ($lines <= $self -> {"line_limit"}));
 
     # Bomb if we hit the split limit
     return "Unable to wrap text into the available space. Line limit exceeded." if($lines >= $self -> {"line_limit"});
