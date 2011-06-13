@@ -153,10 +153,10 @@ if($mode eq "zipwrapper") {
         my $data = load_file($logfile);
 
         print $out -> header(-type => 'text/plain');
-        $data =~ s|\n|<br />\n|g; # explicitly force newlines
-        $data =~ s|$outbase||g;   # remove scary/path exposing output
         $data =~ s|<|&lt;|g;
         $data =~ s|>|&gt;|g;
+        $data =~ s|\n|<br />\n|g; # explicitly force newlines
+        $data =~ s|$outbase||g;   # remove scary/path exposing output
 
         # If we have colourisation enabled, do some
         if($settings -> {"config"} -> {"colour_progress"}) {
