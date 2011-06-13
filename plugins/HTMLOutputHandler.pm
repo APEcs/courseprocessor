@@ -1196,10 +1196,11 @@ sub write_course_index {
     my $self = shift;
     my $body;
 
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing course index: determining whether a set map has been provided.");
     # Does the course explicity provide a course map?
     if($self -> {"mdata"} -> {"course"} -> {"maps"} &&
-       $self -> {"mdata"} -> {"course"} -> {"map"} &&
-       scalar($self -> {"mdata"} -> {"course"} -> {"map"})) {
+       $self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"} &&
+       scalar($self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"})) {
 
         foreach my $map (@{$self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"}}) {
             # Skip maps that should not be included
@@ -1214,8 +1215,9 @@ sub write_course_index {
 
         # Better scan the text for media to retain
         $self -> scan_step_media($body);
+    } else {
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "No maps specified at all. Generating map.");
     }
-
 
     # If we get here with no body set, either the user has not specified any
     # or all the specified maps failed filtering checks
