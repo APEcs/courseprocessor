@@ -48,7 +48,7 @@ sub new {
     my $class    = ref($invocant) || $invocant;
 
     my $self = {
-        "line_limit" => 2,
+        "line_limit" => 3,
          @_,
     };
 
@@ -81,7 +81,7 @@ sub ttf_string_calcsize {
         unless(ref($strings) eq "ARRAY");
 
     # Set a vaguely sane default for line spacing if needed
-    $linespacing = 0.4 if(!defined($linespacing));
+    $linespacing = 0.5 if(!defined($linespacing));
 
     # We need to store stats in here, as well as the string dimensions,
     # so use "_" as the name for the maximums storage hash
@@ -151,7 +151,7 @@ sub ttf_string_centred {
     my ($image, $fontname, $colour, $string, $cx, $cy, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing) = @_;
 
     # Set a vaguely sane default for line spacing if needed
-    $linespacing = 0.4 if(!defined($linespacing));
+    $linespacing = 0.5 if(!defined($linespacing));
 
     # Now, the string we've been given might contain | which indicates that the line should be split
     # so, convert the string into an array of substrings...
@@ -229,7 +229,7 @@ sub ttf_string_wrap {
     my ($image, $fontname, $colour, $string, $cx, $cy, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing) = @_;
 
     # Set a vaguely sane default for line spacing if needed
-    $linespacing = 0.4 if(!defined($linespacing));
+    $linespacing = 0.5 if(!defined($linespacing));
 
     # Start off with the string 'as is'
     my $wstring = $string;
@@ -256,7 +256,7 @@ sub ttf_string_wrap {
     } while(($sdata -> {"_"} -> {"maxwide"} > $maxwidth) && ($lines <= $self -> {"line_limit"}));
 
     # Bomb if we hit the split limit
-    return "Unable to wrap text into the available space. Line limit exceeded." if($lines >= $self -> {"line_limit"});
+    return "Unable to wrap text into the available space. Line limit exceeded." if($lines > $self -> {"line_limit"});
 
     # Okay, get here and wstring contains the wrapped string, so draw it
     return $self -> ttf_string_centred($image, $fontname, $colour, $wstring, $cx, $cy, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing);
@@ -348,26 +348,42 @@ sub copy_fragment {
     $dsx = $image -> width  - $frag -> {"width"}  if($dsx eq "max");
     $dsy = $image -> height - $frag -> {"height"} if($dsy eq "max");
 
+    # If the destination values are negative, they are relative to the bottom/right
+    $dsx = $image -> width + $dsx  if($dsx < 0);
+    $dsy = $image -> height + $dsy if($dsy < 0);
+
     # Now work out end values
-    my ($dex, $dey) = ($dsx, $dsy);
-    if($frag -> {"repeat"} eq "x") {
-        $dex = $image -> width - $frag -> {"width"};
-    } elsif($frag -> {"repeat"} eq "y") {
+    my ($dex, $dey) = ($frag -> {"ex"}, $frag -> {"ey"});
+
+    # If the ex/ey values were negative, they're relative to the bottom/right of
+    # the image, so convert them
+    $dex = $image -> width + $dex  if(defined($dex) && $dex < 0);
+    $dey = $image -> height + $dey if(defined($dey) && $dey < 0);
+
+    # Now work out end points if we don't have them manually specified.
+    if($frag -> {"repeat"} eq "x" && !defined($dex)) {
+        $dex = $image -> width  - $frag -> {"width"};
+    } elsif($frag -> {"repeat"} eq "y" && !defined($dey)) {
         $dey = $image -> height - $frag -> {"height"};
     } elsif($frag -> {"repeat"} eq "both") {
-        $dex = $image -> width - $frag -> {"width"};
-        $dey = $image -> height - $frag -> {"height"};
+        $dex = $image -> width  - $frag -> {"width"}  unless(defined($dex));
+        $dey = $image -> height - $frag -> {"height"} unless(defined($dey));
+    } else {
+        $dex = $dsx unless(defined($dex));
+        $dey = $dsy unless(defined($dey));
     }
 
     # Do the copy, for non-repeating images, the whiles will only
     # execute the once...
-    while($dsy <= $dey) {
-        while($dsx <= $dsx) {
-            $image -> copy($back, $dsx, $dsy, $frag -> {"sx"}, $frag -> {"sy"}, $frag -> {"width"}, $frag -> {"height"});
+    my ($xpos, $ypos) = ($dsx, $dsy);
+    while($ypos <= $dey) {
+        while($xpos <= $dex) {
+            $image -> copy($back, $xpos, $ypos, $frag -> {"sx"}, $frag -> {"sy"}, $frag -> {"width"}, $frag -> {"height"});
 
-            $dsx += $frag -> {"width"};
+            $xpos += $frag -> {"width"};
         }
-        $dsy += $frag -> {"height"};
+        $ypos += $frag -> {"height"};
+        $xpos = $dsx;
     }
 }
 
@@ -397,7 +413,7 @@ sub get_elasticlabel_size {
     # Linespacing is needed if we wrap...
     my $linespacing = defined($render -> {"elasticbutton"} -> {"label"} -> {"linespacing"}) ?
                           $render -> {"elasticbutton"} -> {"label"} -> {"linespacing"} :
-                          0.4;
+                          0.5;
 
     # replace | with spaces in the label contents before we do anything else, so we have a single line,
     # compress repeated spaces to a single space, and remove leading and trailing whitespace.
@@ -438,12 +454,12 @@ sub get_elasticlabel_size {
 
                 # If the string didn't fit into the width, but it did fit the height, wrap it
                 } elsif($sdata -> {"_"} -> {"maxwide"} > $pwidth && $sdata -> {"_"} -> {"sumhigh"} <= $pheight) {
-                    $Text::Wrap::columns   = length($string) / ++$lines;
+                    $Text::Wrap::columns   = length($workstring) / ++$lines;
                     $workstring = wrap("", "", $label);
                 }
 
             # keep going until the string fits the width, or we overflow the height
-            } while($sdata -> {"_"} -> {"maxwide"} > $pwidth || $sdata -> {"_"} -> {"sumhigh"} > $pheight);
+            } while($sdata -> {"_"} -> {"maxwide"} > $pwidth && $sdata -> {"_"} -> {"sumhigh"} <= $pheight);
 
             # reduce the font size a notch
             --$fontsize;
@@ -494,7 +510,7 @@ sub render_basicimage {
     my $self   = shift;
     my $render = shift;
 
-    die "FATAL: Unable to create $output: image width or height can not be 0\n".Data::Dumper -> Dump([$render])
+    die "FATAL: Unable to create image: image width or height can not be 0\n".Data::Dumper -> Dump([$render])
         if(!$render -> {"basicimage"} -> {"width"} || !$render -> {"basicimage"} -> {"height"});
 
     my $image = GD::Image -> new($render -> {"basicimage"} -> {"width"}, $render -> {"basicimage"} -> {"height"}, 1)
@@ -515,7 +531,7 @@ sub render_basicimage {
 
         my ($basew, $baseh) = $baseimg -> getBounds();
 
-        die "FATAL: Unable to create $output: base image width or height can not be 0\n"
+        die "FATAL: Unable to create image: base image width or height can not be 0\n"
             if(!$basew || !$baseh);
 
         # Copy into the working image
@@ -581,10 +597,10 @@ sub render_elasicbutton {
     my $render = shift;
 
     # Work out the 'optimal' label size, and the size of the image needed to show it.
-    my ($label, $shash, $fontsize, $width, $height) = $self -> get_elasticlabel_size($render, $render -> {"elasticbutton"} -> {"label"} -> {"contents"});
+    my ($label, $shash, $fontsize, $width, $height) = $self -> get_elasticlabel_size($render, $render -> {"elasticbutton"} -> {"label"} -> {"content"});
 
     # Did we successfully get a size? If not, bomb.
-    return undef if(!defined($label));
+    return "Unable to generate button size for requested string" if(!defined($label));
 
     # Make sure that the padding is included
     my ($xremain, $yremain) = ($width  - $shash -> {"_"} -> {"maxwide"}, $height - $shash -> {"_"} -> {"sumhigh"});
@@ -595,14 +611,19 @@ sub render_elasicbutton {
     my $image = GD::Image -> new($width, $height, 1)
         or return "Unable to create new image.";
 
+    $image -> alphaBlending(0); # turn off blending, as we need to preserve alpha.
+
     # If we have a backimg, process it
-    if($render -> {"backimg"}) {
-        my $backimg = GD::Image -> new($render -> {"backimg"} -> {"name"})
+    if($render -> {"elasticbutton"} -> {"backimg"}) {
+        $render -> {"elasticbutton"} -> {"backimg"} -> {"name"} = path_join($self -> {"template"} -> {"templatedir"}, $render -> {"elasticbutton"} -> {"backimg"} -> {"name"})
+            unless($render -> {"elasticbutton"} -> {"backimg"} -> {"name"} =~ m|^/|);
+
+        my $backimg = GD::Image -> new($render -> {"elasticbutton"} -> {"backimg"} -> {"name"})
             or return "Unable to load background image for elastic button: $!";
 
         # We have the image, double-check that the dimensions match
         return "Background image size mismatch. Abordting for safety"
-            if($backimg -> width != $render -> {"backimg"} -> {"width"} || $backimg -> height != $render -> {"backimg"} -> {"height"});
+            if($backimg -> width != $render -> {"elasticbutton"} -> {"backimg"} -> {"width"} || $backimg -> height != $render -> {"elasticbutton"} -> {"backimg"} -> {"height"});
 
         # Dimensions match, process the fragments.
         my @frags = sort  { die "Attempt to sort fragment without priority while comparing $a and $b"
@@ -615,25 +636,27 @@ sub render_elasicbutton {
                          }
                          keys(%{$render -> {"elasticbutton"} -> {"backimg"} -> {"fragment"}});
         foreach my $frag (@frags) {
-            my $fragdata = $render -> {"backimg"} -> {"fragment"} -> {$frag};
+            my $fragdata = $render -> {"elasticbutton"} -> {"backimg"} -> {"fragment"} -> {$frag};
             $self -> copy_fragment($backimg, $fragdata, $image);
         }
     }
 
     # Get the colours we need...
-    my $result = $self -> allocate_colours($image, $render -> {"elasticimage"} -> {"colours"});
+    my $result = $self -> allocate_colours($image, $render -> {"elasticbutton"} -> {"colours"});
     return $result if($result);
+
+    $image -> alphaBlending(1); # need alpha back on, or font rendering looks like ass.
 
     # Now do label rendering
     $self -> ttf_string_centred($image,
-                                $render -> {"elasticimage"} -> {"fonts"} -> {"font"} -> {$render -> {"elasticimage"} -> {"label"} -> {"font"}} -> {"content"},
-                                $render -> {"elasticimage"} -> {"colours"} -> {"colour"} -> {$render -> {"elasticimage"} -> {"label"} -> {"colour"}} -> {"data"},
+                                $render -> {"elasticbutton"} -> {"fonts"} -> {"font"} -> {$render -> {"elasticbutton"} -> {"label"} -> {"font"}} -> {"content"},
+                                $render -> {"elasticbutton"} -> {"colours"} -> {"colour"} -> {$render -> {"elasticbutton"} -> {"label"} -> {"colour"}} -> {"data"},
                                 $label,
                                 $width / 2, $height / 2,
                                 $fontsize,
-                                $render -> {"elasticimage"} -> {"label"} -> {"minsize"},
+                                $render -> {"elasticbutton"} -> {"label"} -> {"minsize"},
                                 $width, $height,
-                                $render -> {"elasticimage"} -> {"label"} -> {"linespacing"});
+                                $render -> {"elasticbutton"} -> {"label"} -> {"linespacing"});
     # Should be it all
     return $image;
 }
@@ -670,13 +693,14 @@ sub render_hash {
 
     # If the image is not a hash ref, it must be an error message... unless we have
     # no output string, in which case it needs to be returned anyway
-    return $image if(ref($image) ne "HASH" || !defined($output));
+    return $image if(ref($image) ne "GD::Image" || !defined($output));
 
     # Save the generated image to the specified file as png
     open(IMG, "> $output")
         or return "Unable to open image output file for writing: $!";
     binmode IMG; # shouldn't be needed on linux, but just in case.
-    print IMG $image -> png;
+    $image -> saveAlpha(1);
+    print IMG $image -> png; # make sure alpha is saved
     close(IMG);
 
     return undef;
@@ -701,6 +725,8 @@ sub load_xml {
 
     # load the xml as if it was a normal template
     my $xmlstr = $self -> {"template"} -> load_template($xmlname, $replhash);
+
+    die "XML template load failed: $xmlstr\n" if($xmlstr !~ /^<\?xml/);
 
     # Parse it into a usable format. This will die on parse errors...
     my $xmldata = XMLin($xmlstr, KeepRoot => 1, ForceArray => ["fragment", "element", "font", "colour"], ForceContent => 1);
