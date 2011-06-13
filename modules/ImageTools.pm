@@ -249,7 +249,9 @@ sub ttf_string_wrap {
         if($sdata -> {"_"} -> {"maxwide"} > $maxwidth) {
             $Text::Wrap::columns   = length($string) / ++$lines;
             $Text::Wrap::separator = "|";
-            $wstring = wrap("", "", $string);
+            $wstring = eval { wrap("", "", $string) };
+
+            return "Unable to wrap string: $@" if($@);
         }
 
     # keep going until the string fits, or we hit the line limit

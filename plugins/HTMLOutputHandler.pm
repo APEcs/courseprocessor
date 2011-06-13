@@ -57,7 +57,7 @@ use constant PLUG_DESCRIPTION     => 'HTML output processor';
 
 # ============================================================================
 #  Plugin class override functions
-#   
+#
 
 ## @cmethod $ new(%args)
 # Overridded plugin creator. This will create a new Plugin object, and then set
@@ -73,7 +73,7 @@ sub new {
     # Set the plugin-specific data
     $self -> {"htype"}       = PLUG_TYPE;
     $self -> {"description"} = PLUG_DESCRIPTION;
-    
+
     # Do we have any options specified on the command line?
     if($self -> {"config"} -> {"Processor"} -> {"outargs"}) {
         # If we have an arrayref, join it into a string (each element of the arrayref could contain
@@ -85,7 +85,7 @@ sub new {
         foreach my $arg (@args) {
             # split the arg up, if possible
             my ($key, $val) = $arg =~ /^(\w+)\s*:\s*(.*)$/;
-            
+
             # Store it if we have something
             $self -> {"config"} -> {"HTMLOutputHandler"} -> {$key} = $val if($key && $val);
         }
@@ -115,7 +115,7 @@ sub use_plugin {
     die "FATAL: HTMLOutputHandler has no template selected.\n" if(!$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     # prepend the processor template directory if the template is not absolute
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = path_join($self -> {"path"},"templates",$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}) 
+    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = path_join($self -> {"path"},"templates",$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"})
         if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
 
     # Force the path to be absolute in all situations
@@ -132,7 +132,7 @@ sub use_plugin {
 
 
 ## @method $ process()
-# Run the plugin over the contents of the course data. This will process all 
+# Run the plugin over the contents of the course data. This will process all
 # intermediate files in the course directory into a templated xhtml course cbt.
 sub process {
     my $self   = shift;
@@ -166,14 +166,14 @@ sub process {
         if(!$self -> {"config"} -> {"Processor"} -> {"quiet"} && $self -> {"config"} -> {"Processor"} -> {"verbosity"} == 0);
     my $processed = 0;
 
-    # Go through each theme defined in the metadata, processing its contents into 
+    # Go through each theme defined in the metadata, processing its contents into
     # the output format.
     foreach my $theme (keys(%{$self -> {"mdata"} -> {"themes"}})) {
         my $fulltheme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme);
 
         # Skip themes that should not be included
         if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"}) {
-            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, 
+            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE,
                                          "Theme '".
                                          $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}.
                                          "' excluded by filter rules.");
@@ -188,14 +188,14 @@ sub process {
         # Confirm that the theme is a directory, and check inside for subdirs ($theme is a theme, subdirs are modules)
         if(-d $fulltheme) {
 
-            # Now we need to get a list of modules inside the theme. This looks at the list of modules 
+            # Now we need to get a list of modules inside the theme. This looks at the list of modules
             # stored in the metadata so that we don't need to worry about non-module directoried...
             foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
                 my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
 
                 # Determine whether the module will be included in the course
                 if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"}) {
-                    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, 
+                    $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE,
                                                  "Module '".
                                                  $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"title"}.
                                                  "' (in theme '".
@@ -219,7 +219,7 @@ sub process {
 
                     # If the module has objectives or outcomes, write the outcomes/objectives page first
                     $self -> write_module_outjectives($theme, $module, $maxstep) if($self -> has_outjectives($theme, $module));
-                            
+
                     # Process each step stored in the metadata
                     foreach my $stepid (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"}})) {
                         # Skip step id 0 (the objectives/outcomes page)
@@ -227,7 +227,7 @@ sub process {
 
                         # Step exclusion has already been determined by the preprocessor, so we can just check that
                         if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"}) {
-                            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, 
+                            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE,
                                                          "Step '".
                                                          $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"}.
                                                          "' (in '".
@@ -238,7 +238,7 @@ sub process {
 
                             my $nukename = path_join($fullmodule, "node".lead_zero($stepid).".html");
                             `$self->{config}->{paths}->{rm} -f $nukename` unless($self -> {"config"} -> {"Processor"} -> {"debug"});
-                            
+
                             next;
                         }
 
@@ -252,7 +252,7 @@ sub process {
                     $self -> cleanup_module($fullmodule);
                     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Finished processing $module ($fulltheme/$module).");
 
-                } # if(-d $fullmodule) 
+                } # if(-d $fullmodule)
             } # foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}}))
 
             # If we have outcomes or objectives for the current theme, write them.
@@ -263,7 +263,7 @@ sub process {
             $self -> write_theme_index($theme);
             $self -> write_theme_textindex($theme);
 
-        } else { # if(-d $fulltheme) 
+        } else { # if(-d $fulltheme)
             # Seriously, this should never happen, unless the filesystem has been changed under the processor -
             # the only way we can actually get to check this theme is if metadata has been loaded for it, which
             # can't happen if the theme directory does not exist.
@@ -271,7 +271,7 @@ sub process {
         }
 
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing $theme.");
-    } # foreach my $theme (@themes) 
+    } # foreach my $theme (@themes)
 
     # We need a newline after the progress bar if it is enabled.
     print "\n" if($self -> {"progress"});
@@ -299,13 +299,13 @@ sub process {
 
 # ============================================================================
 #  Utility Code
-#   
+#
 
 ## @fn $ numeric_order()
 # Very simple sort function to ensure that steps are ordered correctly. This will
 # support step ids with leading zeros.
 #
-# @return < 0 if $a is less than $b, 0 if they are the same, >0 if $a is greater than $b. 
+# @return < 0 if $a is less than $b, 0 if they are the same, >0 if $a is greater than $b.
 sub numeric_order {
     return (0 + $a) <=> (0 + $b);
 }
@@ -315,7 +315,7 @@ sub numeric_order {
 # Sort function used to ensure that intermediate format steps are sorted in ascending
 # numeric order.
 #
-# @return < 0 if $a is less than $b, 0 if they are the same, >0 if $a is greater than $b. 
+# @return < 0 if $a is less than $b, 0 if they are the same, >0 if $a is greater than $b.
 sub step_sort {
     my ($aid) = $a =~ /^node0?(\d+).html?$/;
     my ($bid) = $b =~ /^node0?(\d+).html?$/;
@@ -325,7 +325,7 @@ sub step_sort {
 
 
 ## @method $ get_step_name($theme, $module, $stepid)
-# Given a step id, this returns a string containing the canonical filename for the 
+# Given a step id, this returns a string containing the canonical filename for the
 # step. Note that this will ensure that the step number is given a leading zero
 # if the supplied id is less than 10 and it does not already have a leading zero.
 #
@@ -339,12 +339,12 @@ sub get_step_name {
     my $module = shift;
     my $stepid = shift;
 
-    # The preprocessor strips leading zeros from step ids before storing the step 
+    # The preprocessor strips leading zeros from step ids before storing the step
     # data, so make sure we do that here too, otherwise we could have problems here
     $stepid =~ s/^0?(\d+)$/$1/;
 
     # Work out what the step's output ID is, and die if it is not valid
-    my $outid = $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"}; 
+    my $outid = $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"output_id"};
     confess "FATAL: Attempt to access step in $theme/$module with stepid $stepid when step is excluded from output.\n" if(!$outid);
 
     return "step".lead_zero($outid).".html";
@@ -366,7 +366,7 @@ sub get_prev_stepname {
     my $module = shift;
     my $stepid = shift;
 
-    # The preprocessor strips leading zeros from step ids before storing the step 
+    # The preprocessor strips leading zeros from step ids before storing the step
     # data, so make sure we do that here too, otherwise we could have problems here
     $stepid =~ s/^0?(\d+)$/$1/;
 
@@ -401,7 +401,7 @@ sub get_next_stepname {
     my $stepid  = shift;
     my $maxstep = shift;
 
-    # The preprocessor strips leading zeros from step ids before storing the step 
+    # The preprocessor strips leading zeros from step ids before storing the step
     # data, so make sure we do that here too, otherwise we could have problems here
     $stepid =~ s/^0?(\d+)$/$1/;
 
@@ -422,7 +422,7 @@ sub get_next_stepname {
 ## @fn $ get_maximum_stepid($module)
 # Obtain the maximum step id in the supplied module. This examines the metadata for
 # the specified module to determine the maximum output_id for steps in the module.
-# 
+#
 # @param module A reference to the module's metadata hash.
 # @return The maximum step id in the module, or undef if the module has no steps.
 sub get_maximum_stepid {
@@ -441,7 +441,7 @@ sub get_maximum_stepid {
             $maxoutid = $module -> {"steps"} -> {$stepid} -> {"output_id"};
         }
     }
-    
+
     return $maxid if($maxid);
 
     # Get here and there are no steps ($maxid is 0) so return undef to avoid confusion
@@ -468,9 +468,9 @@ sub get_extrahead {
     # work out any prefix we need.
     my $backup;
     if($level eq "step") {
-        $backup = "../../" 
+        $backup = "../../"
     } elsif ($level eq "theme" || $level eq "glossary" || $level eq "resources") {
-        $backup = "../"; 
+        $backup = "../";
     } elsif($level eq "course") {
         $backup = "";
     } else {
@@ -486,12 +486,12 @@ sub get_extrahead {
 
 # ============================================================================
 #  Interlink handling
-#  
+#
 
 ## @method void set_anchor_point($name, $theme, $module, $stepid)
 # Record the position of named anchor points. This is the first step in allowing
 # user-defined links within the material, in that it records the locations of
-# anchor points (similar to anchors in html, but course-wide) so that later 
+# anchor points (similar to anchors in html, but course-wide) so that later
 # code can convert links to those anchors into actual html links. If more than
 # one anchor has the same name, the second anchor with the name encountered by
 # this function will cause the program to die with a fatal error.
@@ -515,21 +515,21 @@ sub set_anchor_point {
         if($self -> {"anchors"} && $self -> {"anchors"} -> {$name});
 
     # Record the location
-    $self -> {"anchors"} -> {$name} = {"theme"  => $theme, 
-                                       "module" => $module, 
+    $self -> {"anchors"} -> {$name} = {"theme"  => $theme,
+                                       "module" => $module,
                                        "stepid" => $stepid};
 }
 
 
 ## @method $ convert_link($anchor, $text, $level)
-# Convert a link to a target into a html hyperlink. This will attempt to locate 
+# Convert a link to a target into a html hyperlink. This will attempt to locate
 # the anchor specified and create a link to it.
 #
 # @param anchor The name of the anchor to be linked to.
 # @param text   The text to use as the link text.
 # @param level  The level at which the link resides. Can be 'theme', or 'step'.
 #               If this is not specified, it defaults to 'step'.
-# @return A HTML link to the specified anchor, or an error message if the anchor 
+# @return A HTML link to the specified anchor, or an error message if the anchor
 #         can not be found.
 sub convert_link {
     my $self   = shift;
@@ -544,7 +544,7 @@ sub convert_link {
     }
 
     my $backup = $level eq "step" ? "../../" : $level eq "theme" ? "../" : die "FATAL: Illegal level specified in convert_link. This should not happen.\n";
-    
+
     return $self -> {"template"} -> load_template("theme/module/link.tem",
                                                   {"***backup***" => $backup,
                                                    "***theme***"  => $targ -> {"theme"},
@@ -557,7 +557,7 @@ sub convert_link {
 
 # ============================================================================
 #  Glossary handling
-#  
+#
 
 ## @fn $ cleanup_term_name($term)
 # Given a term name, convert it into a format suitable for using in html links.
@@ -569,7 +569,7 @@ sub convert_link {
 sub cleanup_term_name {
     my $term = shift;
 
-    # convert the term to a lowercase, space-converted name 
+    # convert the term to a lowercase, space-converted name
     my $key = lc($term);
     $key =~ s/\s/_/g;     # replace spaces with underscores.
 
@@ -583,13 +583,13 @@ sub cleanup_term_name {
 # generate a block with the glossary and references links enabled or disabled depending
 # on whether the global glossary and references hashes contain data.
 #
-# @param level The level to pull the templates from. Should be "course", "theme", "module", 
+# @param level The level to pull the templates from. Should be "course", "theme", "module",
 #              "glossary", or "references".
 # @return A string containing the glossary and reference navigation block.
 sub build_glossary_references {
     my $self       = shift;
     my $level      = shift;
-    
+
     $level = "" if($level eq "course");
     $level = "theme/" if($level eq "theme");
     $level = "theme/module/" if($level eq "module");
@@ -602,15 +602,15 @@ sub build_glossary_references {
     # And construct the block
     return $self -> {"template"} -> load_template($level."glossary_references_block.tem",
                                                   { "***entries***" => $self -> {"template"} -> load_template($level."$name") });
-}  
+}
 
 
 ## @method void set_glossary_point($term, $definition, $theme, $module, $step, $title, $storeref)
-# Record the glossary definitions or references to glossary definitions in steps. This will 
-# store the definition of a glossary term if it has not already been set - if a term has 
+# Record the glossary definitions or references to glossary definitions in steps. This will
+# store the definition of a glossary term if it has not already been set - if a term has
 # been defined once, attempting to redefine it is a fatal error. If the storeref argument is
 # true (or not supplied) the location of the term is stored for later linking from the
-# glossary page, if storeref is false, no location information is stored for the glossary 
+# glossary page, if storeref is false, no location information is stored for the glossary
 # page, even for the definition.
 #
 # @param term       The term name.
@@ -629,8 +629,8 @@ sub set_glossary_point {
 
     # we're actually only interested in the step number, not the name (which is likely to change anyway)
     $step =~ s/^\D+(\d+(.\d+)?).html?$/$1/;
-     
-    # convert the term to a lowercase, space-converted name 
+
+    # convert the term to a lowercase, space-converted name
     my $key = cleanup_term_name($term);
 
     # only need to do the redef check if definition is specified
@@ -731,14 +731,14 @@ sub build_glossary_indexbar {
     my $index = "";
 
     # symbols...
-    $index .= $self -> build_glossary_indexentry("@", "symb.html", $charmap -> {"symb"}, $letter eq "symb"); 
+    $index .= $self -> build_glossary_indexentry("@", "symb.html", $charmap -> {"symb"}, $letter eq "symb");
 
     # ... then numbers...
-    $index .= $self -> build_glossary_indexentry("0-9", "digit.html", $charmap -> {"digit"}, $letter eq "digit"); 
+    $index .= $self -> build_glossary_indexentry("0-9", "digit.html", $charmap -> {"digit"}, $letter eq "digit");
 
     # ... then letters
-    foreach my $char ("a".."z") { 
-        $index .= $self -> build_glossary_indexentry($char, "$char.html", $charmap -> {$char}, $letter eq $char); 
+    foreach my $char ("a".."z") {
+        $index .= $self -> build_glossary_indexentry($char, "$char.html", $charmap -> {$char}, $letter eq $char);
     }
 
     return $self -> {"template"} -> load_template("glossary/indexline.tem", { "***entries***" => $index });
@@ -752,7 +752,7 @@ sub build_glossary_indexbar {
 #
 # @param filename The name of the file to write the page to.
 # @param title    The title of the page.
-# @param letter   The letter that all terms on the page should start with, either a 
+# @param letter   The letter that all terms on the page should start with, either a
 #                 lowercase alphabetic character, 'digit', or 'symb'.
 # @param charmap  A reference to a hash of character to term lists.
 sub write_glossary_file {
@@ -773,11 +773,11 @@ sub write_glossary_file {
 
         # Only generate the entry if we have one or more references to the term (this is necessary
         # as a term may be defined in a filtered step, but never referenced from the rest of the
-        # course, and we don't want to include definitions of terms that don't appear in the 
+        # course, and we don't want to include definitions of terms that don't appear in the
         # generated material at all)
         if($linkrefs && scalar(@$linkrefs)) {
             for(my $i = 0; $i < scalar(@$linkrefs); ++$i) {
-                my $backlink = $linkrefs -> [$i]; 
+                my $backlink = $linkrefs -> [$i];
 
                 $backlinks .= $self -> {"template"} -> load_template("glossary/backlink-divider.tem") if($i > 0);
                 $backlinks .= $self -> {"template"} -> load_template("glossary/backlink.tem",
@@ -795,7 +795,7 @@ sub write_glossary_file {
     } # foreach my $term (@{$charmap -> {$letter}})
 
     # Save the page out.
-    save_file($filename, 
+    save_file($filename,
               $self -> {"template"} -> load_template("glossary/entrypage.tem",
                                                      {"***title***"        => $title,
                                                       "***glosrefblock***" => $self -> build_glossary_references("glossary"),
@@ -821,7 +821,7 @@ sub write_glossary_pages {
         $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "No glossary terms to write");
         return;
     }
-        
+
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary pages.");
 
     my $outdir = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "glossary");
@@ -830,8 +830,8 @@ sub write_glossary_pages {
     if(!-d $outdir) {
         mkdir $outdir
             or die "FATAL: Unable to create glossary directory: $!\n";
-    }   
-    
+    }
+
     # get a list of all the terms
     my @termlist = sort(keys(%{$self -> {"terms"}}));
 
@@ -843,11 +843,11 @@ sub write_glossary_pages {
         # letters go into individual entries...
         if($letter =~ /^[a-z]$/) {
             push(@{$charmap -> {$letter}}, $term);
-            
+
             # numbers all go together...
         } elsif($letter =~ /^\d$/) {
             push(@{$charmap -> {"digit"}}, $term);
-            
+
             # everything else goes in the symbol group
         } else {
             push(@{$charmap -> {"symb"}}, $term);
@@ -863,10 +863,10 @@ sub write_glossary_pages {
 
     # Now numbers...
     $self -> write_glossary_file(path_join($outdir, "digit.html"), "Glossary of terms starting with digits", "digit", $charmap);
-    
+
     # ... and everything else
     $self -> write_glossary_file(path_join($outdir, "symb.html"), "Glossary of terms starting with other characters", "symb", $charmap);
-    
+
     # Finally, we need the index page
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing index.html");
 
@@ -885,10 +885,10 @@ sub write_glossary_pages {
 
 # ============================================================================
 #  Page interlink and index generation code.
-#  
+#
 
 ## @method $ build_navlinks($stepid, $maxstep, $level)
-# Construct the navigation link fragments based on the current position within 
+# Construct the navigation link fragments based on the current position within
 # the module. This creates the steps based on the rule that 1 <= $stepid <= $maxstep
 # and the steps are continuous. As of the changes introduced in 3.7 this can be
 # guaranteed in all courses, regardless of the scheme used by the author.
@@ -906,7 +906,7 @@ sub build_navlinks {
     my $maxstep   = shift;
     my $level     = shift;
     my $fragments = {};
-    
+
     my $prevstep = $self -> get_prev_stepname($theme, $module, $stepid);
     my $nextstep = $self -> get_next_stepname($theme, $module, $stepid, $maxstep);
 
@@ -969,12 +969,12 @@ sub build_dependencies {
         foreach my $entry (sort @{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"}}) {
             # Skip targets that are not included
             next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"exclude_resource"});
-            
+
             $entries .= $self -> {"template"} -> load_template("index_dependency_delimit.tem") if($entries);
             $entries .= $self -> {"template"} -> load_template("index_dependency.tem",
                                                                {"***url***"   => "#$entry",
                                                                 "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$entry} -> {"title"}});
-        }         
+        }
     }
 
     return $self -> {"template"} -> load_template("index_entry_".$mode.".tem", {"***entries***" => $entries});
@@ -982,8 +982,8 @@ sub build_dependencies {
 
 
 ## @method $ build_index_modules($theme, $level)
-# Generate the text index of modules and steps inside the specified theme, ordered by 
-# the indexorder set for each module. This will generate the index body used in the 
+# Generate the text index of modules and steps inside the specified theme, ordered by
+# the indexorder set for each module. This will generate the index body used in the
 # write_theme_textindex() and write_course_textindex() functions.
 #
 # @param theme The theme the index should be generated for.
@@ -995,15 +995,15 @@ sub build_index_modules {
     my $level = shift;
 
     my $prefix      = ($level eq "course" ? "" : "theme/");
-    my $themeprefix = ($level eq "course" ? $theme : ""); 
+    my $themeprefix = ($level eq "course" ? $theme : "");
 
     # grab a list of module names, sorted by module order if we have order info or alphabetically if we don't
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
                                if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
                                   !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
 
-                           return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} 
-                                   <=> 
+                           return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}
+                                   <=>
                                    $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                          }
                          keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
@@ -1057,7 +1057,7 @@ sub write_theme_textindex {
 
     # load the outjectives template if we have any
     my $outjectives = "";
-    $outjectives = $self -> {"template"} -> load_template("theme/themeindex-outjectives.tem") 
+    $outjectives = $self -> {"template"} -> load_template("theme/themeindex-outjectives.tem")
         if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"has_outjectives"});
 
     # Write the index.
@@ -1080,7 +1080,7 @@ sub write_theme_textindex {
 
 
 ## @method void write_theme_index($theme)
-# Write out the contents of the specified theme's 'index.html' file. This will 
+# Write out the contents of the specified theme's 'index.html' file. This will
 # generate the theme-level text index page using the data in the theme's includes
 # or, if no includes are set, an auto-generate theme map.
 #
@@ -1148,16 +1148,16 @@ sub write_course_textindex {
     my $self = shift;
 
     # Obtain a sorted list of theme names
-    my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
+    my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b"
                                 if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) ||
                                    !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
 
-                            return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} 
-                                    <=> 
+                            return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}
+                                    <=>
                                     $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"});
                           }
                           keys(%{$self -> {"mdata"} -> {"themes"}});
-    
+
     # Now we can process all the modules in the theme...
     my $body = "";
     foreach my $theme (@themenames) {
@@ -1189,7 +1189,7 @@ sub write_course_textindex {
 
 
 ## @method void write_course_index()
-# Generate the course map page. This will either automatically generate a series of 
+# Generate the course map page. This will either automatically generate a series of
 # buttons arranged in a table from which users may choose a thing to view, or if the
 # course metadata contains a user-defined map it will use that instead.
 sub write_course_index {
@@ -1214,7 +1214,7 @@ sub write_course_index {
 
         # Better scan the text for media to retain
         $self -> scan_step_media($body);
-    } 
+    }
 
 
     # If we get here with no body set, either the user has not specified any
@@ -1223,16 +1223,16 @@ sub write_course_index {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "No course map specified, or all maps filtered out. Generating map.");
 
         # We need a sorted list of themes...
-        my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
+        my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b"
                                     if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) ||
                                        !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
 
-                                return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"} 
+                                return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}
                                         <=>
                                         $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"});
                               }
                               keys(%{$self -> {"mdata"} -> {"themes"}});
-    
+
         # Build the paths we will need...
         my $relpath = path_join($self -> {"config"} -> {"Processor"} -> {"mediadir"}, "generated");
         my $imgpath = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $relpath);
@@ -1245,20 +1245,20 @@ sub write_course_index {
 
         # Now, for each theme we need to generate on and off buttons, and a html fragment
         my @outlist;
-        foreach my $theme (@themenames) {  
+        foreach my $theme (@themenames) {
             # skip themes we don't need to process
             next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"});
 
             # Buttons first...
-            my $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_off.xml", 
+            my $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_off.xml",
                                                                     {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
                                                                     path_join($imgpath, "cmap_".$theme."_off.png"));
-            die "FATAL: Unable to generate $theme off image: $errors\n" if($errors);
+            die "FATAL: Unable to generate theme '$theme' off image: $errors\n" if($errors);
 
-            $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_on.xml", 
+            $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_on.xml",
                                                                  {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
                                                                  path_join($imgpath, "cmap_".$theme."_on.png"));
-            die "FATAL: Unable to generate $theme off image: $errors\n" if($errors);
+            die "FATAL: Unable to generate theme '$theme' on image: $errors\n" if($errors);
 
             # the span has to be handled later, as at this point we can't assume that
             # scalar(@themenames) is the number of themes that will end up generated.
@@ -1276,16 +1276,16 @@ sub write_course_index {
         # to lay the content out. We favour a single cell on the first row when there are
         # an odd number of rows.
         my $cellcount = scalar(@outlist);
-        my $cell = 0; 
+        my $cell = 0;
         while($cell < $cellcount) {
             # If this is the first cell, and the cell count is odd, we want a single cell on the row
             if(($cell == 0) && ($cellcount % 2 == 1)) {
-                $tablebody .= $self -> {"template"} -> load_template("map_row.tem", 
-                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], 
+                $tablebody .= $self -> {"template"} -> load_template("map_row.tem",
+                                                                     {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++],
                                                                                                                                  {"***span***" => 'colspan="2"'})});
             # Otherwise, we want to pull out two cells at a time
             } else {
-                $tablebody .= $self -> {"template"} -> load_template("map_row.tem", 
+                $tablebody .= $self -> {"template"} -> load_template("map_row.tem",
                                                                      {"***cells***" => $self -> {"template"} -> process_template($outlist[$cell++], {"***span***" => ''}).
                                                                                        $self -> {"template"} -> process_template($outlist[$cell++], {"***span***" => ''})});
             }
@@ -1318,7 +1318,7 @@ sub write_course_frontpage {
     my $self = shift;
 
     # create the graphic element(s)
-    my $graphic = $self -> {"template"} -> load_template("frontpage-".$self -> {"mdata"} -> {"course"} -> {"type"}.".tem", 
+    my $graphic = $self -> {"template"} -> load_template("frontpage-".$self -> {"mdata"} -> {"course"} -> {"type"}.".tem",
                                                          {"***mediadir***" => $self -> {"config"} -> {"Processor"} -> {"mediadir"},
                                                           "***filename***" => $self -> {"mdata"} -> {"course"} -> {"splash"},
                                                           "***width***"    => $self -> {"mdata"} -> {"course"} -> {"width"},
@@ -1337,14 +1337,14 @@ sub write_course_frontpage {
             $message = '<span class="error">No course message provided.</span>';
         }
     }
-    
+
     # dump the page.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "frontpage.html"),
               $self -> {"template"} -> load_template("frontpage.tem",
                                                      {"***bodytext***"      => $message,
                                                       "***graphic***"       => $graphic,
                                                       "***title***"         => $self -> {"mdata"} -> {"course"} -> {"title"},
-                                                      
+
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("course"),
                                                       "***include***"       => $self -> get_extrahead("course"),
@@ -1355,7 +1355,7 @@ sub write_course_frontpage {
 
 # ============================================================================
 #  Dropdown handling
-#  
+#
 
 ## @method $ is_related($theme, $module, $mode, $check)
 # Determine whether the module name specified exists as a prerequisite or leadsto
@@ -1367,7 +1367,7 @@ sub write_course_frontpage {
 # @param module The name of the current module.
 # @param mode   The list to check - should be "prerequisites" or "leadsto".
 # @param check  The name of the module to check.
-# @return true if check is in the appropriate list for the current module, false 
+# @return true if check is in the appropriate list for the current module, false
 #         if it is not.
 sub is_related {
     my $self    = shift;
@@ -1385,7 +1385,7 @@ sub is_related {
     foreach my $entry (@{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {$mode} -> {"target"}}) {
         return 1 if($entry eq $check);
     }
-                 
+
     return 0;
 }
 
@@ -1393,11 +1393,11 @@ sub is_related {
 ## @method $ build_theme_dropdowns()
 # Generate the theme dropdowns shown on theme map and theme index pages, and included
 # in each step nav menu. This generates two partially-processed dropdown menus, and
-# get_theme_dropdown() should be called to complete the processing before inserting 
+# get_theme_dropdown() should be called to complete the processing before inserting
 # into the target template. $self -> {"dropdowns"} -> {"theme_themeview"} stores the
-# theme level dropdown, while $self -> {"dropdowns"} -> {"theme_stepview"} stores 
+# theme level dropdown, while $self -> {"dropdowns"} -> {"theme_stepview"} stores
 # the equivalent step dropdown.
-# 
+#
 # @note This will die if any theme is missing its indexorder, although the metadata
 #       validation should have failed if it does not!
 # @return A reference to an array of theme names, sorted by index order.
@@ -1407,15 +1407,15 @@ sub build_theme_dropdowns {
     # These accumulate the bodies of the dropdowns, and will be shoved into templated
     # containers before storing.
     my $themedrop_theme  = ""; # dropdown menu shown in theme index/maps
-    my $themedrop_module = ""; # theme dropdown in modules 
-    
+    my $themedrop_module = ""; # theme dropdown in modules
+
     # Generate a sorted list of the themes stored in the metadata
-    my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b" 
+    my @themenames = sort { die "Attempt to sort theme without indexorder while comparing $a and $b"
                                 if(!defined($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}) ||
                                    !defined($self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"}));
-                            
+
                             return ($self -> {"mdata"} -> {"themes"} -> {$a} -> {"theme"} -> {"indexorder"}
-                                    <=> 
+                                    <=>
                                     $self -> {"mdata"} -> {"themes"} -> {$b} -> {"theme"} -> {"indexorder"});
                           }
                           keys(%{$self -> {"mdata"} -> {"themes"}});
@@ -1449,7 +1449,7 @@ sub build_theme_dropdowns {
 
 ## @method void build_step_dropdowns($theme, $module)
 # Generate the step dropdown for the specified module. This generates the partially
-# processed step dropdown for the specified module in the provided theme, and 
+# processed step dropdown for the specified module in the provided theme, and
 # get_step_dropdown() should be called to complete the processing prior to inserting
 # into the target template.
 #
@@ -1474,7 +1474,7 @@ sub build_step_dropdowns {
                                                             { "***name***"  => $self -> get_step_name($theme, $module, $step),
                                                               "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$step} -> {"title"}});
     }
-     
+
     die "FATAL: No steps stored for \{$theme\} -> \{$module\} -> \{steps\}\n" if(!$stepdrop);
 
     # and store the partially-processed dropdown
@@ -1485,7 +1485,7 @@ sub build_step_dropdowns {
 
 ## @method void build_module_dropdowns($theme)
 # Generate the completed module dropdowns for each module in the specified theme, and
-# the partially processed dropdowns for the steps in each module. 
+# the partially processed dropdowns for the steps in each module.
 #
 # @note This will die if any module is missing its indexorder, although this should
 #       not happen if the metadata was validated during loading.
@@ -1495,19 +1495,19 @@ sub build_module_dropdowns {
     my $self  = shift;
     my $theme = shift;
 
-    my @modulenames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b" 
+    my @modulenames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
                                   if(!$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
                                      !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
-                                  
-                              return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} 
-                                      <=> 
+
+                              return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}
+                                      <=>
                                       $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                             }
                             keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
 
     foreach my $module (@modulenames) {
         my $moduledrop = "";
-            
+
         # skip modules that won't be included in the course
         next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"exclude_resource"});
 
@@ -1518,7 +1518,7 @@ sub build_module_dropdowns {
         # first create the module dropdown for this module (ie: show all modules in this theme and how they relate)
         foreach my $buildmod (@modulenames) {
             my $relationship = "";
-                
+
             # skip modules that won't be included in the course
             next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$buildmod} -> {"exclude_resource"});
 
@@ -1529,7 +1529,7 @@ sub build_module_dropdowns {
                 $relationship = "-prereq";
             } elsif($self -> is_related($theme, $module, "leadsto", $buildmod)) {
                 $relationship = "-leadsto";
-            } 
+            }
 
             $moduledrop .= $self -> {"template"} -> load_template("theme/module/moduledrop-entry".$relationship.".tem",
                                                                   { "***level***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$buildmod} -> {"level"},
@@ -1548,15 +1548,15 @@ sub build_module_dropdowns {
 
 
 ## @method void build_dropdowns()
-# Builds the menus that will replace dropdown markers in the templates during processing. 
-# This should be called as part of the preprocessing work as the menus must have been built 
+# Builds the menus that will replace dropdown markers in the templates during processing.
+# This should be called as part of the preprocessing work as the menus must have been built
 # before any pages can be generated.
 sub build_dropdowns {
     my $self = shift;
 
     # Construct the easy dropdowns first.
     my $themenames = $self -> build_theme_dropdowns();
-    
+
     # Now build up the step level module and step menus
     foreach my $theme (@$themenames) {
         $self -> build_module_dropdowns($theme);
@@ -1565,7 +1565,7 @@ sub build_dropdowns {
 
 
 ## @method $ get_theme_dropdown($theme, $mode)
-# Generate a string containing the theme dropdown menu with the current theme 
+# Generate a string containing the theme dropdown menu with the current theme
 # marked. The menu produced is suitable for use in steps if the mode argument is
 # set to "step", and for theme maps/indexes if it is set to "theme".
 #
@@ -1592,13 +1592,13 @@ sub get_theme_dropdown {
     my $anchor = $self -> {"template"} -> load_template("$level/themedrop-entry.tem",
                                                         { "***name***"  => $theme,
                                                           "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}});
-                                       
+
     # And the chunk that should replace the bit above
     my $replace = $self -> {"template"} -> load_template("$level/themedrop-entry-current.tem",
                                                          { "***name***"  => $theme,
                                                            "***title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}});
 
- 
+
     die "FATAL: Unable to open anchor template themedrop-entry.tem: $!"  if(!$anchor);
     die "FATAL: Unable to open replace template themedrop-entry.tem: $!" if(!$replace);
 
@@ -1616,7 +1616,7 @@ sub get_theme_dropdown {
 
 
 ## @method $ get_step_dropdown($theme, $module, $stepid)
-# Obtain a string for the step dropdown, marking the current step so it can be 
+# Obtain a string for the step dropdown, marking the current step so it can be
 # inserted into the step body.
 #
 # @param theme  The theme the step is in.
@@ -1638,7 +1638,7 @@ sub get_step_dropdown {
     my $replace = $self -> {"template"} -> load_template("theme/module/stepdrop-entry-current.tem",
                                                          { "***name***"    => $self -> get_step_name($theme, $module, $stepid),
                                                            "***title***"   => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"title"} });
-    
+
     die "FATAL: Unable to open anchor template stepdrop-entry.tem: $!"  if(!$anchor);
     die "FATAL: Unable to open replace template stepdrop-entry.tem: $!" if(!$replace);
 
@@ -1647,7 +1647,7 @@ sub get_step_dropdown {
 
     # replace the current step
     $dropdown =~ s/\Q$anchor\E/$replace/;
-    
+
     # and nuke the remainder of the current markers
     $dropdown =~ s/\*\*\*current\*\*\*//g;
 
@@ -1657,11 +1657,11 @@ sub get_step_dropdown {
 
 # ============================================================================
 #  Cleanup code.
-#  
+#
 
 ## @method void cleanup_module($moddir)
 # Remove all intermediate files from the specified module directory. When the
-# global debugging mode is disabled, this will remove all node*.html files 
+# global debugging mode is disabled, this will remove all node*.html files
 # from the specified module directory. If debugging is enabled, this does nothing.
 #
 # @param moddir The mdoule to remove the intermediate files from.
@@ -1711,12 +1711,12 @@ sub framework_merge {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying directory $entry and its contents to $outdir...");
             my $out = `$self->{config}->{paths}->{cp} -rv $entryfile $outdir`;
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is:\n$out");
-        
+
         # convert templates
         } elsif($entry =~ /\.tem?$/) {
             my ($name) = $entry =~ /^(.*?)\.tem?$/;
             die "FATAL: Unable to get name from $entry!" if(!$name);
-            
+
             save_file(path_join($outdir, "$name.html"),
                       $self -> {"template"} -> load_template(path_join("framework", $entry),
                                                              {"***glosrefblock***"  => $self -> build_glossary_references("course"),
@@ -1727,7 +1727,7 @@ sub framework_merge {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying $entry to $outdir...");
             my $out = `$self->{config}->{paths}->{cp} -rv $framedir/$entry $outdir`;
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "cp output is: $out");
-        }   
+        }
     }
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Merge complete.");
@@ -1738,23 +1738,23 @@ sub framework_merge {
 
 # ============================================================================
 #  Preprocessing code.
-#  
+#
 
 ## @method void preprocess()
-# Scan the document tree recording the location of anchors and glossary terms 
+# Scan the document tree recording the location of anchors and glossary terms
 # in the course content. This will go through the course data loading and validating
 # the metadata as needed, recording where anchors, terms (and, if needed, references)
 # appear in the material. Once this completes the HTMLOutputhandler object will have
-# three hashes containing glossary term locations, reference locations, and the 
+# three hashes containing glossary term locations, reference locations, and the
 # validated metadata for the course and all themes. The preprocess also counts how
 # many steps there are in the whole course for progress updates later.
 #
 # @note The preprocess almost completely ignores filtering, and it will store metadata,
-#       glossary definitions and reference definitions (but not references to them) 
-#       even if a theme, module, or step they occur in is filtered out of the final 
-#       course. This is necessary because the definition of a term may only be present 
-#       in a resource that will be filtered out, but references to it may exist 
-#       elsewhere in the course. It should be noted that link anchors *will not* be 
+#       glossary definitions and reference definitions (but not references to them)
+#       even if a theme, module, or step they occur in is filtered out of the final
+#       course. This is necessary because the definition of a term may only be present
+#       in a resource that will be filtered out, but references to it may exist
+#       elsewhere in the course. It should be noted that link anchors *will not* be
 #       stored if the resource will be excluded.
 sub preprocess {
     my $self = shift;
@@ -1774,7 +1774,7 @@ sub preprocess {
         if(!defined($self -> {"mdata"} -> {"course"}) || ref($self -> {"mdata"} -> {"course"}) ne "HASH");
 
     # We no longer need the course metadata
-    unlink path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "metadata.xml") 
+    unlink path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "metadata.xml")
         unless($self -> {"config"} -> {"Processor"} -> {"debug"});
 
     # This should be the top-level "source data" directory, and it should contain theme dirs
@@ -1797,7 +1797,7 @@ sub preprocess {
             $self -> {"mdata"} -> {"themes"} -> {$theme} = $metadata; # otherwise, store it.
 
             # We can remove the theme metadata now
-            unlink path_join($fulltheme, "metadata.xml") 
+            unlink path_join($fulltheme, "metadata.xml")
                 unless($self -> {"config"} -> {"Processor"} -> {"debug"});
 
             # Determine whether this theme will actually end up in the generated course
@@ -1809,7 +1809,7 @@ sub preprocess {
             # Check whether the theme has objectives now to make things easier later
             $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"has_outjectives"} = $self -> has_outjectives($theme);
 
-            # Now we need to get a list of modules inside the theme. This looks at the list of modules 
+            # Now we need to get a list of modules inside the theme. This looks at the list of modules
             # stored in the metadata so that we don't need to worry about non-module directoried...
             foreach my $module (keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}})) {
                 my $fullmodule = path_join($fulltheme, $module); # prepend the module directory...
@@ -1825,11 +1825,11 @@ sub preprocess {
                 if(-d $fullmodule) {
                     opendir(SUBDIR, $fullmodule)
                         or die "FATAL: Unable to open module directory for reading: $!";
-            
+
                     # Know grab a list of files we know how to process, then call the internal process
                     # function for each one, remembering to include the full path.
                     my @steps = grep(/^node\d+\.html/, readdir(SUBDIR));
-            
+
                     if(scalar(@steps)) {
                         my $cwd = getcwd();
                         chdir($fullmodule);
@@ -1868,7 +1868,7 @@ sub preprocess {
                                 or die "FATAL: Unable to open step file '$fullmodule/$step': $!\n";
 
                             my ($title) = $content =~ m{<title>\s*(.*?)\s*</title>}im;
-                        
+
                             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Checking whether '$title' is should be included... ");
 
                             # If we have a step entry in the metadata, check whether this step will be excluded
@@ -1890,21 +1890,21 @@ sub preprocess {
                             }
 
                             # reset so we can scan for glossary terms
-                            pos($content) = 0; 
+                            pos($content) = 0;
                             # first look for definitions...
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\](.*?)\[\/glossary\]}isg) {
                                 $self -> set_glossary_point($1, $2, $theme, $module, $step, $title, !$exclude_step);
                             }
 
                             # Now look for references to the terms...
-                            pos($content) = 0; 
+                            pos($content) = 0;
                             while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\/\s*\]}isg) {
                                 $self -> set_glossary_point($1, undef, $theme, $module, $step, $title, !$exclude_step);
                             }
 
                             # Next look for references if the reference handler is valid.
                             if($self -> {"refhandler"}) {
-                                pos($content) = 0; 
+                                pos($content) = 0;
                                 while($content =~ m{\[ref\s+(.*?)\s*/?\s*\]}isg) {
                                     $self -> {"refhandler"} -> set_reference_point($self -> {"refs"}, $1, $theme, $module, $step, $title, !$exclude_step);
                                 }
@@ -1924,14 +1924,14 @@ sub preprocess {
                                 $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"exclude_resource"} = 1;
                             }
 
-                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");                               
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Done preprocessing $fullmodule/$step");
                         }
                         chdir($cwd);
                     } # if(scalar(@steps))
 
                     closedir(SUBDIR);
                 } # if(-d $fullmodule)
-            } # foreach my $module (@modules) 
+            } # foreach my $module (@modules)
 
         } # if(-d $fulltheme)
     } # foreach my $theme (@themes)
@@ -1948,7 +1948,7 @@ sub preprocess {
 
 # ============================================================================
 #  Media usage check and cleanup
-#  
+#
 
 ## @method void scan_step_media($body)
 # Scan the contents of the specified step, adding any media files detected to the
@@ -2009,7 +2009,7 @@ sub cleanup_media {
 
         # Otherwise, if the file is not in the used media, remove it
         if(!$self -> {"used_media"} -> {lc($filename)}) {
-            
+
             $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Removing unused media file $filename.");
 
             unlink path_join($mediadir, $filename)
@@ -2030,20 +2030,20 @@ sub cleanup_media {
 
 # ============================================================================
 #  Objectives/Outcomes
-#  
+#
 
 ## @method $ has_outjectives($theme, $module, $type)
 # Determine whether the specified module (or theme if the module is not specified)
 # has objectives or outcomes set. If the optional type argument is not specified,
-# this will return true if the module (or theme) has either objectives or outcomes 
-# set. If the type is "objective", this will return true if the module (or theme) 
+# this will return true if the module (or theme) has either objectives or outcomes
+# set. If the type is "objective", this will return true if the module (or theme)
 # has objectives, and if it is "outcome" this will return true if the module (or
 # theme) has outcomes set.
 #
 # @param theme  The theme the module resides in, or the theme to check for objectives/outcomes.
 # @param module The module to check for objectives/outcomes. If undef, the theme is checked instead.
 # @param type   The type to check for, must be undef, 'objective', or 'outcome'
-# @return true if the module (or theme) has the appropriate objectives or outcomes 
+# @return true if the module (or theme) has the appropriate objectives or outcomes
 #         set, false otherwise.
 sub has_outjectives {
     my $self   = shift;
@@ -2057,16 +2057,16 @@ sub has_outjectives {
 
     # Otherwise, we need to examine the appropriate hash bits
     } else {
-        
+
         # Work out the parent block for the type we're interested in
         my $parent = $type."s";
 
         # Grab a reference to the module or theme to avoid painful repetition...
-        my $resref = $module ? $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} 
+        my $resref = $module ? $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module}
                              : $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"};
 
         # Do we actually have any entries for the requested type?
-        return ($resref -> {$parent} && $resref -> {$parent} -> {$type} && 
+        return ($resref -> {$parent} && $resref -> {$parent} -> {$type} &&
                 (ref($resref -> {$parent} -> {$type}) eq "ARRAY") &&
                 scalar(@{$resref -> {$parent} -> {$type}}));
     }
@@ -2074,7 +2074,7 @@ sub has_outjectives {
 
 
 ## @method $ has_objectives($theme, $module)
-# A convenience wrapper for has_outjectives() to make checking for objectives 
+# A convenience wrapper for has_outjectives() to make checking for objectives
 # more readable.
 #
 # @param theme  The theme the module resides in, or the theme to check for objectives.
@@ -2103,7 +2103,7 @@ sub has_outcomes {
 
     return $self -> has_outjectives($theme, $module, "outcome");
 }
-    
+
 
 ## @method $ make_outjective_list($theme, $module, $type, $template)
 # Generate a list of objectives or outcomes set for the specified theme or module.
@@ -2115,7 +2115,7 @@ sub has_outcomes {
 # @param module   The module to generate an objective/outcome list for. If undef, the theme is used instead.
 # @param type     The type of list, allowed values are 'objective' or 'outcome'.
 # @param template The template to apply to each entry.
-# @return A string containing the objectives or outcomes for the specified module or theme, or 
+# @return A string containing the objectives or outcomes for the specified module or theme, or
 #         an empty string if there are no appropriate entries available.
 sub make_outjective_list {
     my $self     = shift;
@@ -2129,14 +2129,14 @@ sub make_outjective_list {
     my $parent = $type."s";
 
     # Grab a reference to the module or theme to avoid painful repetition...
-    my $resref = $module ? $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} 
+    my $resref = $module ? $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module}
                          : $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"};
 
     # Do we actually have any entries for the requested type? Working this out safely is a bit messy...
-    if($resref -> {$parent} && $resref -> {$parent} -> {$type} && 
+    if($resref -> {$parent} && $resref -> {$parent} -> {$type} &&
        (ref($resref -> {$parent} -> {$type}) eq "ARRAY") &&
        scalar(@{$resref -> {$parent} -> {$type}})) {
-        
+
         # We have entries, make a string by catting the result of pushing them into the template.
         foreach my $entry (@{$resref -> {$parent} -> {$type}}) {
             $result .= $self -> {"template"} -> process_template($template, {"***entry***" => $entry});
@@ -2145,11 +2145,11 @@ sub make_outjective_list {
 
     return $result;
 }
-    
+
 
 ## @method void write_module_outjectives($theme, $module, $laststep)
 # Generate a step-like page containing the objectives and outcomes for the current
-# module. 
+# module.
 #
 # @param theme  The theme the module is in.
 # @param module The module to write the objectives and outcome step for.
@@ -2167,7 +2167,7 @@ sub write_module_outjectives {
 
     # Do we have any objectives to add to the page?
     my $objs = $self -> make_outjective_list($theme, $module, "objective", $objective);
-    
+
     # And any outcomes?
     my $outs = $self -> make_outjective_list($theme, $module, "outcome", $outcome);
 
@@ -2187,7 +2187,7 @@ sub write_module_outjectives {
         # Build the navigation data we need for the controls
         my $navhash = $self -> build_navlinks($theme, $module, 0, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
 
-        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, 
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG,
                                      "Writing ".
                                      $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {"0"} -> {"title"}.
                                      " page for '".
@@ -2203,7 +2203,7 @@ sub write_module_outjectives {
                                                              # Navigation buttons
                                                              "***previous***"      => $navhash -> {"button"} -> {"previous"},
                                                              "***next***"          => $navhash -> {"button"} -> {"next"},
-                                                             
+
                                                              # Header <link> elements
                                                              "***startlink***"     => $navhash -> {"link"} -> {"first"},
                                                              "***prevlink***"      => $navhash -> {"link"} -> {"previous"},
@@ -2238,7 +2238,7 @@ sub write_module_outjectives {
 
 ## @method void write_theme_outjectives($theme)
 # Generate an index-like page containing the objectives and outcomes for the current
-# theme (and its modules if they have any objectives or outcomes set). 
+# theme (and its modules if they have any objectives or outcomes set).
 #
 # @param theme  The theme to generate outcomes/objectives for.
 sub write_theme_outjectives {
@@ -2256,7 +2256,7 @@ sub write_theme_outjectives {
 
     # Do we have any theme-level objectives?
     my $themeobjs = $self -> make_outjective_list($theme, undef, "objective", $themeobjtem);
-    
+
     # And any theme-level outcomes?
     my $themeouts = $self -> make_outjective_list($theme, undef, "outcome"  , $themeouttem);
 
@@ -2273,7 +2273,7 @@ sub write_theme_outjectives {
                                   !$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
 
                            return ($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}
-                                   <=> 
+                                   <=>
                                    $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                          }
                          keys(%{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"}});
@@ -2289,7 +2289,7 @@ sub write_theme_outjectives {
 
             $modobjs = $self -> {"template"} -> process_template($modobjstem, {"***objectives***" => $modobjs})
                 if($modobjs);
-            
+
             $modouts = $self -> {"template"} -> process_template($modoutstem, {"***outcomes***" => $modouts})
                 if($modouts);
 
@@ -2307,7 +2307,7 @@ sub write_theme_outjectives {
             }
         }
     }
-    
+
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing outcomes and objectives page for '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}."'");
 
     # Write the outjectives page...
@@ -2335,7 +2335,7 @@ sub write_theme_outjectives {
 
 # ============================================================================
 #  Step processing and tag conversion code.
-#  
+#
 
 ## @fn $ media_alignment_class($align)
 # Convert a human-readable alignment ('left', 'right', 'center') into a class
@@ -2349,7 +2349,7 @@ sub media_alignment_class {
     if($align) {
         if($align =~ /^left$/i) {
             return "floatleft";
-        } elsif($align =~ /^right$/i) {        
+        } elsif($align =~ /^right$/i) {
             return "floatright";
         } elsif($align =~/^center$/i) {
             return "center";
@@ -2372,7 +2372,7 @@ sub convert_image {
     my $self    = shift;
     my $tagdata = shift;
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Use of deprecated [image] tag with attributes '$tagdata'"); 
+    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Use of deprecated [image] tag with attributes '$tagdata'");
 
     # Convert the tag arguments into an attribute hash
     my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
@@ -2403,7 +2403,7 @@ sub convert_image {
 
 ## @method $ convert_anim($tagdata)
 # Convert an anim tag to html markup. This processes the specified list of tag args
-# and generates the html elements needed to include a flash movie, or an error 
+# and generates the html elements needed to include a flash movie, or an error
 # message to include in the document.
 #
 # @param tagdata  The anim tag attribute list
@@ -2413,7 +2413,7 @@ sub convert_anim {
     my $self    = shift;
     my $tagdata = shift;
 
-    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Use of deprecated [anim] tag with attributes '$tagdata'"); 
+    $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Use of deprecated [anim] tag with attributes '$tagdata'");
 
     # Convert the tag arguments into an attribute hash
     my %attrs = $tagdata =~ /(\w+)\s*=\s*\"([^\"]+)\"/g;
@@ -2429,7 +2429,7 @@ sub convert_anim {
         $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Anim tag attribute list is missing width or height information.");
         return "<p class=\"error\">Anim tag attribute list is missing width or height information.</p>";
     }
-     
+
     # obtain the alignment class for the container
     my $divclass = media_alignment_class($attrs{"align"});
 
@@ -2452,8 +2452,8 @@ sub convert_applet {
     my $tagdata = shift;
 
     $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Applet support has been removed. If you require applet support, contact Chris.");
-    
-    return "<p class=\"error\">Applets are no longer supported by the APEcs processor.</p>";    
+
+    return "<p class=\"error\">Applets are no longer supported by the APEcs processor.</p>";
 }
 
 
@@ -2482,7 +2482,7 @@ sub convert_local {
 
 
 ## @method $ convert_step_tags($content, $theme, $module, stepid)
-# Convert any processor markup tags in the supplied step text into the equivalent 
+# Convert any processor markup tags in the supplied step text into the equivalent
 # html. This function scans the provided text for any of the special marker tags
 # supported by the processor and replaces them with the appropriate html, using
 # the various convert_ functions as needed to support the process.
@@ -2536,9 +2536,9 @@ sub convert_step_tags {
 
 
 ## @method void process_step($theme, $module, $stepid, $laststep)
-# Convert thestep identified by the specified theme, module, and step id from the 
+# Convert thestep identified by the specified theme, module, and step id from the
 # intermediate format data files into a processed, templated course step. This will
-# load the intermediate format data for the specified step from the filesystem, 
+# load the intermediate format data for the specified step from the filesystem,
 # apply any necessary tag conversions to the body, and write out a templated step
 # file.
 #
@@ -2556,7 +2556,7 @@ sub process_step {
     # Load the step content
     my $content = load_file($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"})
         or die "FATAL: Unable to open step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"}."': $!\n";
-    
+
     # extract the bits we're interested in...
     # IMPORTANT: This code has been modified from 3.6 behaviour to not strip trailing <hr>s out of
     # content. This should not break wiki export, but will break files generated by the latex input
@@ -2564,7 +2564,7 @@ sub process_step {
     my ($title, $body) = $content =~ m|<title>\s*(.*?)\s*</title>.*<body.*?>\s*(.*?)\s*</body>|si;
 
     # We need title and body parts
-    die "FATAL: Unable to read body from step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"}."'\n" 
+    die "FATAL: Unable to read body from step file '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"steps"} -> {$stepid} -> {"filename"}."'\n"
         if(!$title || !$body);
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Obtained body for step $stepid, title is $title. Processing body.");
@@ -2574,10 +2574,10 @@ sub process_step {
 
     # Build the navigation data we need for the step
     my $navhash = $self -> build_navlinks($theme, $module, $stepid, $laststep, $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"module"} -> {$module} -> {"level"});
-    
+
     # Save the step out as a templated step...
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing out processed data to ".$self -> get_step_name($theme, $module, $stepid));
-    save_file($self -> get_step_name($theme, $module, $stepid), 
+    save_file($self -> get_step_name($theme, $module, $stepid),
               $self -> {"template"} -> load_template("theme/module/step.tem",
                                                      {# Basic content
                                                       "***title***"         => $title,
@@ -2629,7 +2629,7 @@ sub process_step {
         # Now invoke tidy
         my $cmd = $self -> {"config"}-> {"HTMLOutputHandler"} -> {"tidycmd"}." ".
             $self -> {"config"} -> {"HTMLOutputHandler"} -> {"tidyargs"}." -m $name";
-        
+
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Invoing tidy using: $cmd");
         my $out = `$cmd 2>&1`;
 
