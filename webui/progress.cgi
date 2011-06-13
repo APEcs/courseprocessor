@@ -2,10 +2,10 @@
 
 ## @file
 # APEcs course processor web frontend, progress log fetching script. This script
-# fetches the export or processor progress logs for the current session, and 
-# after various transforms, spits it out as text for display in the webui's 
+# fetches the export or processor progress logs for the current session, and
+# after various transforms, spits it out as text for display in the webui's
 # progress boxes.
-# 
+#
 # @version 1.0.0 (24 February 2011)
 # @copy 2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -47,7 +47,7 @@ my $contact = 'webmaster@starforge.co.uk'; # global contact address, for error m
 # install more useful error handling
 BEGIN {
     $ENV{"PATH"} = ""; # Force no path.
-    
+
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
     sub handle_errors {
         my $msg = shift;
@@ -121,7 +121,7 @@ if($settings -> {"config"} -> {"compress_output"}) {
 
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
-                                    cgi      => $out, 
+                                    cgi      => $out,
                                     dbh      => $dbh,
                                     settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
@@ -151,17 +151,19 @@ if($mode eq "zipwrapper") {
     # Otherwise, send the contents of the log file to the user if possible
     if(-f $logfile) {
         my $data = load_file($logfile);
-        
+
         print $out -> header(-type => 'text/plain');
         $data =~ s|\n|<br />\n|g; # explicitly force newlines
         $data =~ s|$outbase||g;   # remove scary/path exposing output
-        
+        $data =~ s|<|&lt;|g;
+        $data =~ s|>|&gt;|g;
+
         # If we have colourisation enabled, do some
         if($settings -> {"config"} -> {"colour_progress"}) {
             $data =~ s|^(WARNING: .*?)$|<span class="warn">$1</span>|mg;
             $data =~ s|^(FATAL: .*?)$|<span class="error">$1</span>|mg;
         }
-        
+
         print $data;
 
     } else {
