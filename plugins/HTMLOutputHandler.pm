@@ -1104,7 +1104,7 @@ sub write_theme_index {
         foreach my $resource (@{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"includes"} -> {"resource"}}) {
             # Skip resources that should not be included
             if(!$self -> {"filter"} -> includes_filter($resource)) {
-                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Resource ".substr((ref($resource) eq "HASH" ? $resource -> {"content"} : $resource), 0, 16)."... excluded by filter rule");
+                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Resource ".substr((ref($resource) eq "HASH" ? $resource -> {"content"} : $resource), 0, 16)."... excluded by filter rule");
                 next;
             }
 
@@ -1194,7 +1194,7 @@ sub write_course_textindex {
 # course metadata contains a user-defined map it will use that instead.
 sub write_course_index {
     my $self = shift;
-    my $body;
+    my $body = "";
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing course index: determining whether a set map has been provided.");
     # Does the course explicity provide a course map?
@@ -1205,7 +1205,7 @@ sub write_course_index {
         foreach my $map (@{$self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"}}) {
             # Skip maps that should not be included
             if(!$self -> {"filter"} -> includes_filter($map)) {
-                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Map ".substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 16)."... excluded by filter rule");
+                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Map ".substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 16)."... excluded by filter rule");
                 next;
             }
 
