@@ -1104,12 +1104,12 @@ sub write_theme_index {
         foreach my $resource (@{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"includes"} -> {"resource"}}) {
             # Skip resources that should not be included
             if(!$self -> {"filter"} -> includes_filter($resource)) {
-                my $resdata = substr((ref($resource) eq "HASH" ? $resource -> {"content"} : $resource), 0, 16);
+                my $resdata = substr((ref($resource) eq "HASH" ? $resource -> {"content"} : $resource), 0, 24);
 
                 # Remove newlines from the resource data
                 $resdata =~ s/\n//g;
 
-                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Resource $resdata... excluded by filter rule");
+                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Resource '$resdata...' excluded by filter rule");
                 next;
             }
 
@@ -1210,12 +1210,12 @@ sub write_course_index {
         foreach my $map (@{$self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"}}) {
             # Skip maps that should not be included
             if(!$self -> {"filter"} -> includes_filter($map)) {
-                my $mapdata = substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 16);
+                my $mapdata = substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 24);
 
                 # Trim any newlines from the map data, as we don't want them to end up in the output
                 $mapdata =~ s/\n//g;
 
-                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Map $mapdata... excluded by filter rule");
+                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Map '$mapdata...' excluded by filter rule");
                 next;
             }
 
