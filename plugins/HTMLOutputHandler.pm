@@ -1257,12 +1257,12 @@ sub write_course_index {
             my $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_off.xml",
                                                                     {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
                                                                     path_join($imgpath, "cmap_".$theme."_off.png"));
-            die "FATAL: Unable to generate theme '$theme' off image: $errors\n" if($errors);
+            die "FATAL: Unable to generate theme '$theme' off image: $errors\nFATAL: To fix this, reduce the length of the theme title, or manually specify a course map.\n" if($errors);
 
             $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_on.xml",
                                                                  {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
                                                                  path_join($imgpath, "cmap_".$theme."_on.png"));
-            die "FATAL: Unable to generate theme '$theme' on image: $errors\n" if($errors);
+            die "FATAL: Unable to generate theme '$theme' on image: $errors\nFATAL: To fix this, reduce the length of the theme title, or manually specify a course map.\n" if($errors);
 
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Storing course map templates for '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}."'.");
 
