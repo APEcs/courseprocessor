@@ -1205,7 +1205,12 @@ sub write_course_index {
         foreach my $map (@{$self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"}}) {
             # Skip maps that should not be included
             if(!$self -> {"filter"} -> includes_filter($map)) {
-                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Map ".substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 16)."... excluded by filter rule");
+                my $mapdata = substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 16);
+
+                # Trim any newlines from the map data, as we don't want them to end up in the output
+                $mapdata =~ s/\n//g;
+
+                $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Map ".."... excluded by filter rule");
                 next;
             }
 
