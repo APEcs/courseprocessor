@@ -234,6 +234,9 @@ sub ttf_string_wrap {
     # Start off with the string 'as is'
     my $wstring = $string;
 
+    $Text::Wrap::huge = "overflow";
+    $Text::Wrap::separator = "|";
+
     my $sdata;     # somewhere to store size data
     my $lines = 1; # there's currently only one line in the string, we assume...
     do {
@@ -247,8 +250,7 @@ sub ttf_string_wrap {
         # If it won't fit in the width, we need to wrap it (height will be handled for us, but that should
         # never be an issue in normal situations anyway)
         if($sdata -> {"_"} -> {"maxwide"} > $maxwidth) {
-            $Text::Wrap::columns   = length($string) / ++$lines;
-            $Text::Wrap::separator = "|";
+            $Text::Wrap::columns = length($string) / ++$lines;
             $wstring = eval { wrap("", "", $string) };
 
             return "Unable to wrap string: $@" if($@);
