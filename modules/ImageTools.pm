@@ -185,7 +185,7 @@ sub ttf_string_centred {
         }
 
         # Is the new size within limits? If not, exit with an error
-        return "Unable to draw requested string: scaled text too small" if($reqsize < $minsize);
+        return "Unable to draw requested string, scaled text too small (would require $reqsize, minimum is $minsize)" if($reqsize < $minsize);
 
         # scaled point size is acceptable, recalculate the bounding boxes
         $sdata = $self -> ttf_string_calcsize($fontname, $colour, \@strings, $reqsize, $linespacing);
