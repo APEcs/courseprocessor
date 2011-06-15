@@ -1251,6 +1251,8 @@ sub write_course_index {
             # skip themes we don't need to process
             next if($self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"exclude_resource"});
 
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Generating course map buttons for '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}."'.");
+
             # Buttons first...
             my $errors = $self -> {"imagetools"} -> load_render_xml("theme_button_off.xml",
                                                                     {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
@@ -1261,6 +1263,8 @@ sub write_course_index {
                                                                  {"***theme_title***" => $self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"} },
                                                                  path_join($imgpath, "cmap_".$theme."_on.png"));
             die "FATAL: Unable to generate theme '$theme' on image: $errors\n" if($errors);
+
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Storing course map templates for '".$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"title"}."'.");
 
             # the span has to be handled later, as at this point we can't assume that
             # scalar(@themenames) is the number of themes that will end up generated.

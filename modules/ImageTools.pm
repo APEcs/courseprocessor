@@ -457,7 +457,9 @@ sub get_elasticlabel_size {
                 # If the string didn't fit into the width, but it did fit the height, wrap it
                 } elsif($sdata -> {"_"} -> {"maxwide"} > $pwidth && $sdata -> {"_"} -> {"sumhigh"} <= $pheight) {
                     $Text::Wrap::columns   = length($workstring) / ++$lines;
-                    $workstring = wrap("", "", $label);
+                    $workstring = eval { wrap("", "", $label) };
+
+                    die "Generating elastic button string failed: $@" if($@);
                 }
 
             # keep going until the string fits the width, or we overflow the height
