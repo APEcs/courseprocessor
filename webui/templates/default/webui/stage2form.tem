@@ -31,10 +31,10 @@
             <td class="formfield">{L_COURSE_VERBWARN}</td>
         </tr>
         <tr><td class="formname">&nbsp;</td>
-            <td class="formfield"><input type="checkbox" name="expverb" value="1" /> <b>{L_COURSE_EXPVERB}</b></td>
+            <td class="formfield"><input type="checkbox" id="verb_exp" name="expverb" value="1" /> <b><label for="verb_exp">{L_COURSE_EXPVERB}</label></b></td>
         </tr>
         <tr><td class="formname">&nbsp;</td>
-            <td class="formfield"><input type="checkbox" name="procverb" value="1" /> <b>{L_COURSE_PROCVERB}</b></td>
+            <td class="formfield"><input type="checkbox" id="verb_proc" name="procverb" value="1" /> <b><label for="verb_proc">{L_COURSE_PROCVERB}</label></b></td>
         </tr>
     </table>
 <table class="formtable" cellpadding="3" cellspacing="1">
