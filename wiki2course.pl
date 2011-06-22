@@ -918,6 +918,10 @@ if(makedir($basedir)) {
     # Now we need to get logged in so we can get anywhere
     wiki_login($wikih, $username, $password);
 
+    # Check the specified namespace is valid
+    die "FATAL: The specified namespace does not appear in the wiki. Can't export from a namespace that doesn't exist!\n"
+        unless(wiki_valid_namespace($wikih, $namespace));
+
     # Get the coursedata page
     my $cdpage = wiki_course_exists($wikih, $namespace, $config);
 

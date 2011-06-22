@@ -24,10 +24,11 @@ use Exporter;
 use MediaWiki::API;
 
 our @ISA       = qw(Exporter);
-our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size);
+our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace);
 our @EXPORT_OK = qw();
 our $VERSION   = 1.0;
 
+#use Data::Dumper;
 use Utils qw(path_join);
 
 ## @fn $ wiki_login($wikih, $username, $password)
@@ -345,4 +346,42 @@ sub wiki_media_size {
     return ($width, $height);
 }
 
+
+## @fn $ wiki_valid_namespace($wikih, $namespace, $minid, $maxid)
+# Determine whether the specified namespace exists in the wiki. This will return
+# true if the namespace exists, false if it does not.
+#
+# @param wikih A reference to a MediaWiki API object.
+# @param namespace The namespace to look for in the wiki.
+# @param minid Optional lower limit on the namespace id, inclusive. Defaults to 100.
+# @param maxid Optional upper limit on the namespace id, inclusive. Defaults to 998.
+# @return true if the namespace exists, false otherwise.
+sub wiki_valid_namespace
+{
+    my $wikih     = shift;
+    my $namespace = shift;
+    my $minid     = shift;
+    my $maxnid    = shift;
+
+    # Set defaults as needed
+    $minid = 100 if(!defined($minid));
+    $maxid = 998 if(!defined($maxid));
+
+    my $namespaces = $wikih -> api({ action => 'query',
+                                     meta   => 'siteinfo',
+                                     siprop => 'namespaces' })
+        or die "FATAL: Unable to obtain namespace list from wiki. API error was: ".$mw -> {"error"} -> {"code"}.": ".$mw -> {"error"} -> {"details"}."\n";
+
+    if($namespaces -> {"query"} -> {"namespaces"}) {
+        foreach my $id (keys(%{$namespaces -> {"query"} -> {"namespaces"}})) {
+            return 1 if($namespaces -> {"query"} -> {"namespaces"} -> {$id} -> {"*"} && # Must have a name
+                        $namespaces -> {"query"} -> {"namespaces"} -> {$id} -> {"*"} eq $namespace && # Must match the requested name
+                        $id >= $minid && # id must be 100 or more unless overridden
+                        $id <= $maxid && # id must be 998 or less unless overridden
+                        $id % 2 == 0);   # id must be even (ie: not a Talk namespace)
+        }
+    }
+
+    return 0;
+}
 1;
