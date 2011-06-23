@@ -28,7 +28,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid untaint_path get_password makedir);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid untaint_path get_password makedir load_config);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -429,7 +429,7 @@ sub makedir {
     # If the directory exists, we're okayish...
     if(-d $name) {
         $logger -> print($logger -> WARNING, "Dir $name exists, the contents will be overwritten.")
-            unless($quiet || $no_warn_exists);
+            unless($no_warn_exists);
         return 1;
 
     # It's not a directory, is it something... else?
@@ -466,6 +466,7 @@ sub makedir {
 sub load_config {
     my $configfile = shift;
     my $defaultcfg = shift;
+    my $cfgkey     = shift;
     my $logger     = shift;
     my $data;
 
@@ -482,15 +483,15 @@ sub load_config {
 
     # we /need/ a data object here...
     if(!$data) {
-        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr) unless($quiet);
+        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr);
         $data = {};
     } else {
-        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile") unless($quiet);
+        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile");
     }
 
     # Set important defaults if needed
-    foreach my $key (keys(%defaultcfg)) {
-        $data -> {$cfgkey} -> {$key} = $defaultcfg{$key} if(!$data -> {$cfgkey} -> {$key});
+    foreach my $key (keys(%{$defaultcfg})) {
+        $data -> {$cfgkey} -> {$key} = $defaultcfg -> {$key} if(!$data -> {$cfgkey} -> {$key});
     }
 
     return $data;

@@ -62,13 +62,13 @@ use constant MAXLEVEL => 5;
 use constant WIKIURL  => 'http://elearn.cs.man.ac.uk/devwiki/api.php';
 
 # default settings
-my %default_config = ( course_page   => "Course",
+my $default_config = { course_page   => "Course",
                        data_page     => "coursedata",
                        themes_title  => "Themes",
                        modules_title => "Modules",
                        metadata      => "Metadata",
                        media_page    => "Media"
-    );
+    };
 
 # various globals set via the arguments
 my ($retainold, $quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile, $pidfile) = ('', '', '', '', '', '', WIKIURL, '', '', 0, 'media', '', '');
