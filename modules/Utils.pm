@@ -2,8 +2,8 @@
 # General utility functions. This file contains the implementation of
 # functions used throughout the processor and support tools.
 #
-# @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 2.1
+# @copy 2011, Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 2.5
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 package Utils;
 use Exporter;
+use ConfigMicro;
 use Term::Size;
 use Time::Local qw(timelocal);
 use File::Spec;
@@ -447,6 +448,52 @@ sub makedir {
     }
 
     return 0;
+}
+
+
+## @fn $ load_config($configfile, $defaultcfg, $cfgkey, $logger)
+# Attempt to load the processor configuration file. This will attempt to load the
+# specified configuration file, and if no filename is specified it will attempt
+# to load the .courseprocessor.cfg file from the user's home directory.
+#
+# @param configfile Optional filename of the configuration to load. If this is not
+#                   given, the configuration is loaded from the user's home directory.
+# @param defaultcfg A reference to the default settings.
+# @param cfgkey     The name of the key the default settings apply to.
+# @param logger     A reference to a logger object
+# @return A reference to a configuration object, or undef if the configuration can
+#         not be loaded.
+sub load_config {
+    my $configfile = shift;
+    my $defaultcfg = shift;
+    my $logger     = shift;
+    my $data;
+
+    # If we have no filename specified, we need to look at the user's
+    # home directory for the file instead
+    if(!$configfile || !-f $configfile) {
+        my $home = File::HomeDir -> my_home;
+        $configfile = path_join($home, ".courseprocessor.cfg");
+    }
+
+    # Get configmicro to load the configuration
+    $data = ConfigMicro -> new($configfile)
+        if(-f $configfile);
+
+    # we /need/ a data object here...
+    if(!$data) {
+        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr) unless($quiet);
+        $data = {};
+    } else {
+        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile") unless($quiet);
+    }
+
+    # Set important defaults if needed
+    foreach my $key (keys(%defaultcfg)) {
+        $data -> {$cfgkey} -> {$key} = $defaultcfg{$key} if(!$data -> {$cfgkey} -> {$key});
+    }
+
+    return $data;
 }
 
 1;

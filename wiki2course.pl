@@ -49,10 +49,9 @@ use XML::Simple;
 
 # Local modules
 use lib ("$path/modules"); # Add the script path for module loading
-use ConfigMicro;
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin write_pid get_password makedir);
+use Utils qw(save_file path_join find_bin write_pid get_password makedir load_config);
 use MediaWiki::Wrap;
 
 # Constants used in various places in the code
@@ -816,7 +815,7 @@ print "wiki2course.pl version ",get_version("wiki2course")," started.\n" unless(
 
 # set up the logger and configuration data
 $logger -> set_verbosity($verbose);
-$config = load_config($configfile);
+$config = load_config($configfile, $default_config, "wiki2course", $logger);
 
 # Locate necessary binaries
 find_bins($config);

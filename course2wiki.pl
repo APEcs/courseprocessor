@@ -44,10 +44,9 @@ use XML::Simple;
 
 # Local modules
 use lib ("$path/modules"); # Add the script path for module loading
-use ConfigMicro;
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin write_pid get_password makedir);
+use Utils qw(save_file path_join find_bin write_pid get_password makedir load_config);
 use MediaWiki::Wrap;
 
 # Location of the API script in the default wiki.
@@ -100,63 +99,6 @@ $SIG{__DIE__}  = sub { warn_die_handler(1, @_); };
 # -----------------------------------------------------------------------------
 #  Utility functions
 #
-# FIXME: copied straight from wiki2course. See if there is a way to refactor and
-#        move this stuff into a module.
-
-## @fn void find_bins($config)
-# Attempt to locate the external binaries the exporter relies on to operate. This
-# function will store the location of the binaries used by this script inside the
-# 'paths' section of the supplied config.
-#
-# @param config The configuration hash to store the paths in.
-sub find_bins {
-    my $config = shift;
-
-    $config -> {"paths"} -> {"rm"} = find_bin("rm")
-        or die "FATAL: Unable to locate 'rm' in search paths.\n";
-
-}
-
-
-## @fn $ load_config($configfile)
-# Attempt to load the processor configuration file. This will attempt to load the
-# specified configuration file, and if no filename is specified it will attempt
-# to load the .courseprocessor.cfg file from the user's home directory.
-#
-# @param configfile Optional filename of the configuration to load. If this is not
-#                   given, the configuration is loaded from the user's home directory.
-# @return A reference to a configuration object, or undef if the configuration can
-#         not be loaded.
-sub load_config {
-    my $configfile = shift;
-    my $data;
-
-    # If we have no filename specified, we need to look at the user's
-    # home directory for the file instead
-    if(!$configfile || !-f $configfile) {
-        my $home = File::HomeDir -> my_home;
-        $configfile = path_join($home, ".courseprocessor.cfg");
-    }
-
-    # Get configmicro to load the configuration
-    $data = ConfigMicro -> new($configfile)
-        if(-f $configfile);
-
-    # we /need/ a data object here...
-    if(!$data) {
-        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr) unless($quiet);
-        $data = {};
-    } else {
-        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile") unless($quiet);
-    }
-
-    # Set important defaults if needed
-    foreach my $key (keys(%default_config)) {
-        $data -> {"wiki2course"} -> {$key} = $default_config{$key} if(!$data -> {"wiki2course"} -> {$key});
-    }
-
-    return $data;
-}
 
 
 # -----------------------------------------------------------------------------
@@ -201,10 +143,7 @@ print "course2wiki.pl version ",get_version("course2wiki")," started.\n";
 
 # set up the logger and configuration data
 $logger -> set_verbosity($verbose);
-$config = load_config($configfile);
-
-# Locate necessary binaries
-find_bins($config);
+$config = load_config($configfile, $default_config, "wiki2course", $logger);
 
 # Do we have a course directory to work on?
 if(-d $coursedir) {
