@@ -40,6 +40,7 @@ use File::Path;
 use Getopt::Long;
 use MediaWiki::API;
 use Pod::Usage;
+use Term::ANSIColor;
 use XML::Simple;
 
 # Local modules
@@ -55,17 +56,20 @@ use constant WIKIURL    => 'http://elearn.cs.man.ac.uk/devwiki/api.php';
 # Location of the Special:Upload page in the wiki
 use constant UPLOADURL  => 'http://elearn.cs.man.ac.uk/devwiki/index.php/Special:Upload';
 
+# How long should the user have to abort the process?
+use constant ABORT_TIME => 5;
+
 # default settings
-my %default_config = ( course_page   => "Course",
+my $default_config = { course_page   => "Course",
                        data_page     => "coursedata",
                        themes_title  => "Themes",
                        modules_title => "Modules",
                        metadata      => "Metadata",
                        media_page    => "Media"
-    );
+    };
 
 # various globals set via the arguments
-my ($coursedir, $username, $password, $namespace, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet) = ('', '', '', '', WIKIURL, UPLOADURL, 0, '', '', 0);
+my ($coursedir, $username, $password, $namespace, $dryrun, $force, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet) = ('', '', '', '', 0, 0, WIKIURL, UPLOADURL, 0, '', '', 0);
 my $man = 0;
 my $help = 0;
 
@@ -100,6 +104,29 @@ $SIG{__DIE__}  = sub { warn_die_handler(1, @_); };
 #  Utility functions
 #
 
+## @fn void doomsayer()
+# Warn the user that they have started the script without the dry-run option
+# and without the force option, and give them ABORT_TIME seconds to abort the
+# process.
+sub doomsayer {
+
+    # Print out a friendly, happy warning message
+    print colored("-= WARNING * WARNING * WARNING * WARNING * WARNING * WARNING =-", 'bold red'), "\n\n";
+    print         "You have launched course2wiki.pl without the --dry-run option.\n";
+    print colored("      THIS SCRIPT WILL MODIFY THE CONTENTS OF THE WIKI!", 'bold yellow'),"\n";
+    print         "If you are not certain the import will work. Press Ctrl+C now\nto abort the script and run it with the --dry-run option!\n\nContinuing in: ";
+
+    # Countdown time!
+    for(my $sec = ABORT_TIME; $sec > 0; --$sec) {
+        print colored("$sec.. ", 'bold red');
+        select((select(STDOUT), $| = 1)[0]); # Flush stdout
+
+        sleep(1);
+    }
+
+    print "\nStarting course to wiki conversion.\n";
+}
+
 
 # -----------------------------------------------------------------------------
 #  Scanning functions
@@ -121,6 +148,8 @@ my $markers = { };
 GetOptions('course|c=s'    => \$coursedir,
            'username|u=s'  => \$username,
            'password|p=s'  => \$password,
+           'dry-run!'      => \$dryrun,
+           'force!'        => \$force,
            'wiki|w=s'      => \$apiurl,
            'uploadurl=s'   => \$uploadurl,
            'namespace|n=s' => \$namespace,
@@ -147,6 +176,9 @@ $config = load_config($configfile, $default_config, "wiki2course", $logger);
 
 # Do we have a course directory to work on?
 if(-d $coursedir) {
+    # predict doom if the program is launched without dry-run and force
+    doomsayer() unless($dryrun || $force);
+
     # If we don't have a password, prompt for it
     $password = get_password() if(!$password);
 
