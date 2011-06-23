@@ -1,6 +1,6 @@
 # @file utils.pl
-# General utility functions. This file contains the implementation of 
-# functions used throughout the processor and support tools. 
+# General utility functions. This file contains the implementation of
+# functions used throughout the processor and support tools.
 #
 # @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
 # @version 2.1
@@ -27,12 +27,12 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid untaint_path);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid untaint_path get_password);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
-# Take an array of path fragments and concatenate them together. This will 
-# concatenate the list of path fragments provided using '/' as the path 
+# Take an array of path fragments and concatenate them together. This will
+# concatenate the list of path fragments provided using '/' as the path
 # delimiter. this is not as platform specific as might be imagined: windows
 # will accept / delimited paths. The resuling string is trimmed so that it
 # <b>does not</b> end in /, but nothing is done to ensure that the string
@@ -106,12 +106,12 @@ sub resolve_path {
 # Apply a number of checks to the specified directory. This will check
 # various attribues of the specified directory and if any of the checks
 # fail, this will die with an appropriate message. If all the checks pass,
-# this will return silently. The optional options hash controls which 
+# this will return silently. The optional options hash controls which
 # checks are performed on the directory:
-#  
-# exists    If true, the specified directory must exist. If false, the 
+#
+# exists    If true, the specified directory must exist. If false, the
 #           existence of the directory is not enforced. If not specified,
-#           this check defaults to true. 
+#           this check defaults to true.
 # nolink    If true, the directory must be a real, physical directory, it
 #           must not be a shambolic link. If false, it can be either. If not
 #           specified, this defaults to false (don't check).
@@ -119,11 +119,11 @@ sub resolve_path {
 #           not a file or other special directory entry. If false, don't
 #           bother checking. If not specified, this defaults to true.
 #
-# @note If 'checkdir' is set to true, the function will die with a fatal 
+# @note If 'checkdir' is set to true, the function will die with a fatal
 #       error if the directory does not exist even if 'exists' is false.
 # @param dirname The directory to check
 # @param title   A human-readable description of the directory.
-# @param options A reference to a hash of options controlling the checks.      
+# @param options A reference to a hash of options controlling the checks.
 sub check_directory {
     my $dirname  = shift;
     my $title    = shift;
@@ -132,7 +132,7 @@ sub check_directory {
     $options -> {"exists"}   = 1 if(!defined($options -> {"exists"}));
     $options -> {"nolink"}   = 0 if(!defined($options -> {"nolink"}));
     $options -> {"checkdir"} = 1 if(!defined($options -> {"checkdir"}));
-    
+
     die "FATAL: The specified $title does not exist.\n"
         unless(!$options -> {"exists"} || -e $dirname);
 
@@ -160,7 +160,7 @@ sub load_file {
         undef $/;
         my $lines = <INFILE>;
         $/ = "\n";
-        close(INFILE) 
+        close(INFILE)
             or return undef;
 
         return $lines;
@@ -171,8 +171,8 @@ sub load_file {
 
 ## @fn $ save_file($name, $data)
 # Save the specified string into a file. This will attempt to open the specified
-# file and write the string in the second argument into it, and the file will be 
-# truncated before writing.  This should be used for all file saves whenever 
+# file and write the string in the second argument into it, and the file will be
+# truncated before writing.  This should be used for all file saves whenever
 # possible to ensure there are no internal problems with UTF-8 encoding screwups.
 #
 # @param name The name of the file to load into memory.
@@ -187,20 +187,20 @@ sub save_file {
 
     if(open(OUTFILE, ">:utf8", $name)) {
         print OUTFILE ref($data) ? ${$data} : $data;
-        
+
         close(OUTFILE)
             or die "FATAL: Unable to close $name after write: $!\n";
 
         return undef;
-    } 
+    }
 
     die "FATAL: Unable to open $name for writing: $!\n";
 }
-        
+
 
 ## @fn void superchomp($line)
 # Remove any white space or newlines from the end of the specified line. This
-# performs a similar task to chomp(), except that it will remove <i>any</i> OS 
+# performs a similar task to chomp(), except that it will remove <i>any</i> OS
 # newline from the line (unix, dos, or mac newlines) regardless of the OS it
 # is running on. It does not remove unicode newlines (U0085, U2028, U2029 etc)
 # because they are made of spiders.
@@ -298,12 +298,12 @@ sub get_proc_size {
 # Attempt to locate the named binary file on the filesystem. This will search several
 # standard paths for the named binary (much like the shell will search its path,
 # except that this is not subject to environment pollution), and if it is located the
-# full path is returned. 
+# full path is returned.
 #
 # @param name   The name of the binary to locate.
-# @param search An optional reference to an array of locations to look in for the 
+# @param search An optional reference to an array of locations to look in for the
 #               binary. Defaults to ['/usr/bin', '/bin', '/opt/bin', '/usr/local/bin']
-#               Paths are searched first to last, and the path of the first matching 
+#               Paths are searched first to last, and the path of the first matching
 #               binary user can execute is used.
 # @return A string containing the path of the binary, or undef on error.
 sub find_bin {
@@ -365,7 +365,7 @@ sub read_pid {
 
 ## @fn $ untaint_path($taintedpath)
 # Untaint the path provided. This will attempt to pull a valid path out of
-# the specified tainted path - note that this is rather stricter about 
+# the specified tainted path - note that this is rather stricter about
 # path contents than strictly necessary, and it will only allow alphanumerics,
 # /, . and - in paths.
 #
@@ -378,5 +378,38 @@ sub untaint_path {
 
     return $untainted;
 }
+
+
+## @fn $ get_password()
+# Obtain a password from the user. This will read the user's password
+# from STDIN after prompting for input, and disabling terminal echo. Once
+# the password has been entered, echo is re-enabled. If no password is
+# entered, this will die and not return.
+#
+# @return A string containing the user's password.
+sub get_password {
+    my ($word, $tries) = ("", 0);
+
+    # We could do something fancy with Term::ReadChar or something, but this
+    # code is pretty much tied to *nix anyway, so just use stty...
+    system "stty -echo";
+
+    # repeat until we get a word, or the user presses return three times.
+    while(!$word && ($tries < 3)) {
+        print STDERR "Password: ";  # print to stderr to avoid issues with output redirection.
+        chomp($word = <STDIN>);
+        print STDERR "\n";
+        ++$tries;
+    }
+    # Remember to reinstate the echo...
+    system "stty echo";
+
+    # Bomb if the user has just pressed return
+    die "FATAL: No password provided\n" if(!$word);
+
+    # Otherwise send back the string
+    return $word;
+}
+
 
 1;

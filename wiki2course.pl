@@ -52,7 +52,7 @@ use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin write_pid);
+use Utils qw(save_file path_join find_bin write_pid get_password);
 use MediaWiki::Wrap;
 
 # Constants used in various places in the code
@@ -194,38 +194,6 @@ sub makedir {
     }
 
     return 0;
-}
-
-
-## @fn $ get_password()
-# Obtain a password from the user. This will read the user's password
-# from STDIN after prompting for input, and disabling terminal echo. Once
-# the password has been entered, echo is re-enabled. If no password is
-# entered, this will die and not return.
-#
-# @return A string containing the user's password.
-sub get_password {
-    my ($word, $tries) = ("", 0);
-
-    # We could do something fancy with Term::ReadChar or something, but this
-    # code is pretty much tied to *nix anyway, so just use stty...
-    system "stty -echo";
-
-    # repeat until we get a word, or the user presses return three times.
-    while(!$word && ($tries < 3)) {
-        print STDERR "Password: ";  # print to stderr to avoid issues with output redirection.
-        chomp($word = <STDIN>);
-        print STDERR "\n";
-        ++$tries;
-    }
-    # Remember to reinstate the echo...
-    system "stty echo";
-
-    # Bomb if the user has just pressed return
-    die "FATAL: No password provided\n" if(!$word);
-
-    # Otherwise send back the string
-    return $word;
 }
 
 
