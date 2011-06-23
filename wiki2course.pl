@@ -52,7 +52,7 @@ use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin write_pid get_password);
+use Utils qw(save_file path_join find_bin write_pid get_password makedir);
 use MediaWiki::Wrap;
 
 # Constants used in various places in the code
@@ -161,42 +161,6 @@ sub load_config {
 }
 
 
-## @fn $ makedir($name, $no_warn_exists)
-# Attempt to create the specified directory if needed. This will determine
-# whether the directory exists, and if not whether it can be created.
-#
-# @param name           The name of the directory to create.
-# @param no_warn_exists If true, no warning is generated if the directory exists.
-# @return true if the directory was created, false otherwise.
-sub makedir {
-    my $name           = shift;
-    my $no_warn_exists = shift;
-
-    # If the directory exists, we're okayish...
-    if(-d $name) {
-        $logger -> print($logger -> WARNING, "Dir $name exists, the contents will be overwritten.")
-            unless($quiet || $no_warn_exists);
-        return 1;
-
-    # It's not a directory, is it something... else?
-    } elsif(-e $name) {
-        # It exists, and it's not a directory, so we have a problem
-        die "FATAL: dir $name corresponds to a file or other resource.\n";
-
-    # Okay, it doesn't exist in any form, time to make it
-    } else {
-        eval { mkpath($name); };
-
-        if($@) {
-            die "FATAL: Unable to create directory $name: $@\n";
-        }
-        return 1;
-    }
-
-    return 0;
-}
-
-
 # -----------------------------------------------------------------------------
 #  Step processing functions
 
@@ -224,7 +188,7 @@ sub process_generated_media {
     $logger -> print($logger -> NOTICE, "Fetching generated file ".$type.$path." to $dir/$filename") unless($quiet);
 
     my $url = path_join($wikih -> {"siteinfo"} -> {$type."path"}, $path);
-    if(makedir($dir, 1)) {
+    if(makedir($dir, $logger, 1)) {
         my $error = wiki_download_direct($wikih, $url, path_join($dir, $filename));
 
         $logger -> print($logger -> WARNING, $error) if(!$quiet && $error);
@@ -464,7 +428,7 @@ sub wiki_export_module {
     $logger -> print($logger -> NOTICE, "Exporting module $module to $moduledir.") unless($quiet);
 
     # Sort out the directory
-    if(makedir($moduledir)) {
+    if(makedir($moduledir, $logger)) {
         my $mpage = wiki_fetch($wikih, $module, 1);
 
         # Do we have any content? If not, bomb now
@@ -530,7 +494,7 @@ sub wiki_export_module {
         } else { # if($mpage) {
             $logger -> print($logger -> WARNING, "No content for $module.") unless($quiet);
         }
-    } # if(makedir($moduledir)) {
+    } # if(makedir($moduledir, $logger)) {
 
     return 0;
 }
@@ -666,7 +630,7 @@ sub wiki_export_theme {
                 my $themedir = path_join($basedir, $mdxml -> {"name"});
 
                 $logger -> print($logger -> NOTICE, "Creating theme directory ",$mdxml -> {"name"}," for $theme...") unless($quiet);
-                if(makedir($themedir)) {
+                if(makedir($themedir, $logger)) {
 
                     # We have the theme directory, now we need to start on modules!
                     wiki_export_modules($wikih, $mdxml -> {"title"}, $tpage, $themedir, $mdxml, $convert, $markers, $mediahash);
@@ -763,7 +727,7 @@ sub wiki_export_files {
         return 0;
     }
 
-    if(makedir($destdir)) {
+    if(makedir($destdir, $logger)) {
         # Now we can do a quick and dirty yoink on the file/image links
         my @entries = $list =~ m{\[\[((?:Image:|File:)[^|\]]+)}goi;
 
@@ -876,7 +840,7 @@ if(-e $basedir && !$retainold) {
 }
 
 # Now we need to process the output directory. Does it exist?
-if(makedir($basedir)) {
+if(makedir($basedir, $logger)) {
     # Get the show on the road...
     my $wikih = MediaWiki::API -> new({api_url => $apiurl });
 

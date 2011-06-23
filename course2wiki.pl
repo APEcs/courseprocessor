@@ -47,7 +47,7 @@ use lib ("$path/modules"); # Add the script path for module loading
 use ConfigMicro;
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin write_pid get_password);
+use Utils qw(save_file path_join find_bin write_pid get_password makedir);
 use MediaWiki::Wrap;
 
 # Location of the API script in the default wiki.
@@ -156,42 +156,6 @@ sub load_config {
     }
 
     return $data;
-}
-
-
-## @fn $ makedir($name, $no_warn_exists)
-# Attempt to create the specified directory if needed. This will determine
-# whether the directory exists, and if not whether it can be created.
-#
-# @param name           The name of the directory to create.
-# @param no_warn_exists If true, no warning is generated if the directory exists.
-# @return true if the directory was created, false otherwise.
-sub makedir {
-    my $name           = shift;
-    my $no_warn_exists = shift;
-
-    # If the directory exists, we're okayish...
-    if(-d $name) {
-        $logger -> print($logger -> WARNING, "Dir $name exists, the contents will be overwritten.")
-            unless($quiet || $no_warn_exists);
-        return 1;
-
-    # It's not a directory, is it something... else?
-    } elsif(-e $name) {
-        # It exists, and it's not a directory, so we have a problem
-        die "FATAL: dir $name corresponds to a file or other resource.\n";
-
-    # Okay, it doesn't exist in any form, time to make it
-    } else {
-        eval { mkpath($name); };
-
-        if($@) {
-            die "FATAL: Unable to create directory $name: $@\n";
-        }
-        return 1;
-    }
-
-    return 0;
 }
 
 

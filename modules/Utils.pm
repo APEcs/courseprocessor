@@ -27,7 +27,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid untaint_path get_password);
+our @EXPORT_OK = qw(path_join check_directory load_file save_file resolve_path superchomp lead_zero string_in_array is_defined_numeric get_proc_size find_bin write_pid read_pid untaint_path get_password makedir);
 our $VERSION   = 2.1;
 
 ## @fn $ path_join(@fragments)
@@ -411,5 +411,42 @@ sub get_password {
     return $word;
 }
 
+
+## @fn $ makedir($name, $logger, $no_warn_exists)
+# Attempt to create the specified directory if needed. This will determine
+# whether the directory exists, and if not whether it can be created.
+#
+# @param name           The name of the directory to create.
+# @param logger         A reference to a logger object.
+# @param no_warn_exists If true, no warning is generated if the directory exists.
+# @return true if the directory was created, false otherwise.
+sub makedir {
+    my $name           = shift;
+    my $logger         = shift;
+    my $no_warn_exists = shift;
+
+    # If the directory exists, we're okayish...
+    if(-d $name) {
+        $logger -> print($logger -> WARNING, "Dir $name exists, the contents will be overwritten.")
+            unless($quiet || $no_warn_exists);
+        return 1;
+
+    # It's not a directory, is it something... else?
+    } elsif(-e $name) {
+        # It exists, and it's not a directory, so we have a problem
+        die "FATAL: dir $name corresponds to a file or other resource.\n";
+
+    # Okay, it doesn't exist in any form, time to make it
+    } else {
+        eval { mkpath($name); };
+
+        if($@) {
+            die "FATAL: Unable to create directory $name: $@\n";
+        }
+        return 1;
+    }
+
+    return 0;
+}
 
 1;
