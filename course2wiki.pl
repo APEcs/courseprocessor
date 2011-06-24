@@ -38,6 +38,7 @@ BEGIN {
 use File::HomeDir;
 use File::Path;
 use Getopt::Long;
+use HTML::TreeBuilder;
 use MediaWiki::API;
 use Pod::Usage;
 use Term::ANSIColor;
@@ -131,10 +132,14 @@ sub doomsayer {
 # -----------------------------------------------------------------------------
 #  Scanning functions
 
+## @fn $ scan_theme_directory($entry)
+# Check whether the specified directory is a theme directory (it contains a
+# metadata.xml file) and if it is, process its contents.
+sub scan_theme_directory {
+    my $entry = shift;
 
 
-
-
+}
 
 # -----------------------------------------------------------------------------
 #  Interesting Stuff
@@ -195,4 +200,29 @@ if(-d $coursedir) {
     die "FATAL: The specified namespace does not appear in the wiki. You must create the namespace before it can be used.\n"
         unless(wiki_valid_namespace($wikih, $namespace));
 
+    # Okay, now we hope the course is a course...
+    opendir(CDIR, $coursedir)
+        or die "FATAL: Unable to open course directory: $!\n";
+
+    my $themelist = "";
+    while(my $entry = readdir(CDIR)) {
+        # skip anything that isn't a directory for now
+        next if($entry =~ /^\.\.?$/ || !(-d path_join($coursedir, $entry)));
+
+        my $themelink = wiki_link(scan_theme_directory(path_join($coursedir, $entry)));
+        $themelist .= "$themelink<br />" if($themelink);
+    }
+
+    # check for a course index to push into the course metadata
+    my $coursemap = extract_coursemap();
+
+    # Finish off the course page as much as possible
+    wiki_set_coursedata($themelist, $coursemap);
+
 }
+
+print "Import finished.\n";
+
+
+# THE END!
+__END__
