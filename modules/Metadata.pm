@@ -14,14 +14,14 @@ BEGIN {
 
 
 # ============================================================================
-#  Constructor and identifier functions.  
-#   
+#  Constructor and identifier functions.
+#
 
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
 
-    my $self = { 
+    my $self = {
          @_,
     };
 
@@ -38,14 +38,14 @@ sub new {
 # @param plugins A reference to the hash of plugins.
 sub set_plugins {
     my $self = shift;
-    
+
     $self -> {"plugins"} = shift;
 }
 
 
 # ============================================================================
 #  Metadata handling
-#  
+#
 
 ## @method $ validate_metadata_course($coursedir, $xml)
 #  Determine whether the provided metadata contains the required elements for a
@@ -88,7 +88,7 @@ sub validate_metadata_course {
 # against the current theme directory. This will check that the provided
 # metadata includes the required elements and attributes, and that the
 # values included appear to correspond to the data in the theme directory,
-# including asking the input plugins to confirm whether the contents are 
+# including asking the input plugins to confirm whether the contents are
 # usable by the input handler.
 #
 # @param themedir  The directory containing the theme and metadata.
@@ -119,17 +119,17 @@ sub validate_metadata_theme {
         # check that any prereqs are valid.
         if($xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"}) {
             # If we have prerequisites, we need a reference to a hash (essentially just the target element)
-            # If we have anything else - say an arrayref - then the xml is b0rken and can not be easily handled 
+            # If we have anything else - say an arrayref - then the xml is b0rken and can not be easily handled
             # (we could work around it, but the user should be giving us valid xml, damnit)
             die "FATAL: Error in metadata: please check that each module has at most one <prerequisites> element.\n" if(ref($xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"}) ne "HASH");
 
             # The target should be a reference to an array of names, even when there's only one
             my $targets = $xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"} -> {"target"};
             die "FATAL: Error in metadata: malformed prerequisite list for module $module.\n" if(!ref($targets) || ref($targets) ne "ARRAY");
-            
+
             # Check the target exists...
             foreach my $target (@$targets) {
-                die "FATAL: metadata for theme $shortname contains unknown prerequisite '$target' for '$module'.\n" 
+                die "FATAL: metadata for theme $shortname contains unknown prerequisite '$target' for '$module'.\n"
                     if(!$xml -> {"theme"} -> {"module"} -> {$target});
 
                 # Does the target list this module as a leadsto?
@@ -139,10 +139,10 @@ sub validate_metadata_theme {
 
                     # this module is not the target's leadsto, so make it so.
                     push(@{$xml -> {"theme"} -> {"module"} -> {$target} -> {"leadsto"} -> {"target"}}, $module);
-                }                    
+                }
             }
         }
-        
+
         # check that any leadstos are valid.
         if($xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"}) {
             # As above, if we have leadstos, we need a reference to a hash (essentially just the target element)
@@ -151,10 +151,10 @@ sub validate_metadata_theme {
             # The target should be a reference to an array of names, even when there's only one
             my $targets = $xml -> {"theme"} -> {"module"} -> {$module} -> {"leadsto"} -> {"target"};
             die "FATAL: Error in metadata: malformed leadsto list for module $module.\n" if(!ref($targets) || ref($targets) ne "ARRAY");
-            
+
             # Check the target exists
             foreach my $target (@$targets) {
-                die "FATAL: metadata for theme $shortname contains unknown prerequisite '$target' for '$module'.\n" 
+                die "FATAL: metadata for theme $shortname contains unknown prerequisite '$target' for '$module'.\n"
                     if(!$xml -> {"theme"} -> {"module"} -> {$target});
 
                 # Does the target list this module as a prerequisite?
@@ -275,7 +275,7 @@ sub validate_metadata {
 #
 # @param srcdir    The directory to load metdata from.
 # @param name      The human-readable name of the directory the metadata is being read from.
-# @param validate  If true, the metadata is validated to ensure it contains 
+# @param validate  If true, the metadata is validated to ensure it contains
 #                  required sections
 # @return 1 if the metadata file does not exist, 0 if the metadata exists but
 #         it is not valid, otherwise this returns a reference to a hash
@@ -290,8 +290,8 @@ sub load_metadata {
 
     # If the xml file exists, attempt to load it
     if(-e "$srcdir/metadata.xml") {
-        eval { $data = XMLin("$srcdir/metadata.xml", 
-                             KeepRoot => 1, 
+        eval { $data = XMLin("$srcdir/metadata.xml",
+                             KeepRoot => 1,
                              ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
                              KeyAttr => {step => 'title', module => 'name', theme => 'name'}); };
 
@@ -309,5 +309,44 @@ sub load_metadata {
     # Get here and the metadata exists and is valid, so return it
     return $data;
 }
+
+
+## @method $ load_metadata($content, $validate, $plugins)
+# PArse the XML in the specified string, optionally does basic checks on the data
+# to ensure that the minimal requirements for the metadata consistency and content
+# are met.
+#
+# @param content   The XML string to parse.
+# @param name      The human-readable name of the metadata being processed.
+# @param validate  If true, the metadata is validated to ensure it contains
+#                  required sections
+# @return 0 if the metadata is not valid, otherwise this returns a reference to a hash
+#         containing the metadata information.
+sub parse_metadata {
+    my $self     = shift;
+    my $content  = shift;
+    my $name     = shift;
+    my $validate = shift;
+
+    my $data;
+
+    eval { $data = XMLin($content,
+                         KeepRoot => 1,
+                         ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
+                         KeyAttr => {step => 'title', module => 'name', theme => 'name'}); };
+
+    die "FATAL: Unable to parse $name metadata. Errors were:\n$@\n" if($@);
+
+    # If we need to validate the metadata, go ahead and do so.
+    if($validate) {
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Metadata contents: \n".Data::Dumper -> Dump([$data], ['*data']));
+        return 0 if(!$self -> validate_metadata($srcdir, $data));
+    }
+
+    # Get here and the metadata exists and is valid, so return it
+    return $data;
+}
+
+
 
 1;
