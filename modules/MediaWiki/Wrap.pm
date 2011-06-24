@@ -24,7 +24,7 @@ use Exporter;
 use MediaWiki::API;
 
 our @ISA       = qw(Exporter);
-our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace);
+our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace wiki_link);
 our @EXPORT_OK = qw();
 our $VERSION   = 1.0;
 
@@ -384,4 +384,19 @@ sub wiki_valid_namespace
 
     return 0;
 }
+
+
+## @fn $ wiki_link($title)
+# Generate a wiki link for the specified title. This is a simple convenience
+# function to wrap the specified title in the brackets needed to make
+# it into a link. If the specified title is '' or undef, this returns ''.
+#
+# @param title The title to convert to a wiki link.
+# @return The link to the page with the specified title.
+sub wiki_link {
+    my $title = shift;
+
+    return $title ? '[['.$title.']]' : '';
+}
+
 1;
