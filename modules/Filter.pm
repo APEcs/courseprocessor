@@ -32,9 +32,9 @@
 # - resources that have no <filters> element in their metadata will always be included.
 # - if no filters are selected on the command line, all resources that have no <filters>,
 #   or only exclusionary filters (ie: the <filters> element contains no <include> elements)
-#   will be included. 
+#   will be included.
 # - if one or more filters are selected, all resources with no <filters> are included, as
-#   are resources with <include> elements that match one of the selected filters. Any 
+#   are resources with <include> elements that match one of the selected filters. Any
 #   resources that have matching <exclude> elements will be excluded, even if they have
 #   matching <include> elements (ie: exclude takes precedent over include)
 
@@ -79,7 +79,7 @@ sub new {
     my @filters = split(/,/, $filtertemp);
     my $filterhash;
     foreach my $filter (@filters) {
-        # Store the filter forced to lowercase so that we don't need to 
+        # Store the filter forced to lowercase so that we don't need to
         # worry about case issues when filtering...
         $obj -> {"filters"} -> {lc($filter)} = 1;
     }
@@ -93,9 +93,9 @@ sub new {
 
 ## @method $ filter($resource)
 # Determine whether the resource identified by the provided metadata fragment should
-# be included in the generated content. This will check the specified resource 
+# be included in the generated content. This will check the specified resource
 # metadata to determine whether it has any filters set, and if it has it will apply
-# the filtering rules to it to establish whether it should be included in the 
+# the filtering rules to it to establish whether it should be included in the
 # generated content.
 #
 # @param resource A reference to the resource's metadata fragment.
@@ -166,15 +166,15 @@ sub exclude_resource {
 }
 
 
-## @method $ includes_filter($resource)
-# A special filtering function needed to support filtering of resources in theme
+## @method $ maps_filter($resource)
+# A special filtering function needed to support filtering of maps in theme
 # include blocks. This performs the same include/exclude calculation as filter(),
 # except that it assumes the filters will be specified as comma separated values
 # stored in 'include' and 'exclude' keys in the provided resource hash.
 #
-# @param resource A reference to the hash containing the include resource metadata.
+# @param resource A reference to the hash containing the map metadata.
 # @return true if the resource should be included, false otherwise.
-sub includes_filter {
+sub maps_filter {
     my $self     = shift;
     my $resource = shift;
 
@@ -208,7 +208,7 @@ sub includes_filter {
     foreach my $include (@includes) {
         return 1 if($self -> {"filters"} -> {lc($include)});
     }
-    
+
     # Get here and we have one or more includes but none of them match, so we don't include
     return 0;
 }

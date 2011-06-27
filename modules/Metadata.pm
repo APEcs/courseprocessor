@@ -211,11 +211,11 @@ sub validate_metadata_theme {
         }
     }
 
-    # If we have an includes section, we must have at least one resource section
-    if($xml -> {"theme"} -> {"includes"}) {
-        die "FATAL: Error in metadata: metadata for theme $shortname contains an includes element with no valid resources\n" if(ref($xml -> {"theme"} -> {"includes"}) ne "HASH" ||
-                                                                                                                          !$xml -> {"theme"} -> {"includes"} -> {"resource"} ||
-                                                                                                                          !scalar(@{$xml -> {"theme"} -> {"includes"} -> {"resource"}}));
+    # If we have a maps section, we must have at least one map section
+    if($xml -> {"theme"} -> {"maps"}) {
+        die "FATAL: Error in metadata: metadata for theme $shortname contains an includes element with no valid resources\n" if(ref($xml -> {"theme"} -> {"maps"}) ne "HASH" ||
+                                                                                                                          !$xml -> {"theme"} -> {"maps"} -> {"map"} ||
+                                                                                                                          !scalar(@{$xml -> {"theme"} -> {"maps"} -> {"map"}}));
     }
 
     # Do we have any theme-level objectives?
