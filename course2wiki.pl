@@ -48,7 +48,7 @@ use XML::Simple;
 use lib ("$path/modules"); # Add the script path for module loading
 use Logger;
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin write_pid get_password makedir load_config);
+use Utils qw(load_file path_join find_bin write_pid get_password makedir load_config);
 use MediaWiki::Wrap;
 
 # Location of the API script in the default wiki.
@@ -129,16 +129,48 @@ sub doomsayer {
 }
 
 
+## @fn @ load_legacy_metadata($dirname)
+# Attempt to load the metadata in the specified directory. During loading, this
+# will try to correct the metadata contents to meet the current standard.
+#
+sub load_legacy_metadata {
+    my $dirname = shift;
+
+    # If this fails, the file is probably not readable...
+    my $content = load_file(path_join($dirname, "metdata.xml"));
+    if(!$content) {
+        $logger -> print($logger -> WARNING, "Unable to load metadata in $dirname: $!");
+        return (undef, undef);
+    }
+
+    # Fix up old xml as much as possible...
+    # Correct the naming of the root element if needed
+    $content =~ s/metadata/theme/g;
+
+    # Do we need to insert an indexorder attribue into the theme element?
+    my ($telem) = $content =~ /(<\s*theme.*?>)/;
+    $content =~ s/theme/theme indexorder="1"/ if($telem !~ /indexorder/);
+}
+
+
 # -----------------------------------------------------------------------------
 #  Scanning functions
 
-## @fn $ scan_theme_directory($entry)
+## @fn $ scan_theme_directory($fullpath, $dirname)
 # Check whether the specified directory is a theme directory (it contains a
 # metadata.xml file) and if it is, process its contents.
 sub scan_theme_directory {
-    my $entry = shift;
+    my $fullpath = shift;
+    my $dirname  = shift;
 
+    # Do we have a metadata file? If not, give up...
+    if(!-f path_join($dirname, "metadata.xml")) {
+        $logger -> print($logger -> WARNING, "Skipping non-theme directory $dirname (metadata.xml not found in directory)");
+        return undef;
+    }
 
+    # load the metadata, converting it as needed
+    my ($xmltree, $metadata) = load_legacy_metadata($dirname);
 }
 
 # -----------------------------------------------------------------------------
