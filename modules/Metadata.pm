@@ -47,17 +47,15 @@ sub set_plugins {
 #  Metadata handling
 #
 
-## @method $ validate_metadata_course($coursedir, $xml)
+## @method $ validate_metadata_course($xml)
 #  Determine whether the provided metadata contains the required elements for a
 #  course metadata file, and that those elements are well-formed.
 #
-#  @param coursedir The directory containing the course and metadata.
-#  @param xml       A reference to a hash containing the metadata.
+#  @param xml A reference to a hash containing the metadata.
 #  @return 0 if the metadata is not valid, 1 if it is. Note that serious
 #         errors in the metadata will cause the processor to exit!
 sub validate_metadata_course {
     my $self      = shift;
-    my $coursedir = shift;
     my $xml       = shift;
 
     # Note that all errors in course metadata are fatal, and can not be recovered from. Sections that
@@ -83,7 +81,7 @@ sub validate_metadata_course {
 }
 
 
-## @method $ validate_metadata_theme($themedir, $xml)
+## @method $ validate_metadata_theme($xml)
 # Attempts to determine whether the data specified in the metadata is valid
 # against the current theme directory. This will check that the provided
 # metadata includes the required elements and attributes, and that the
@@ -91,13 +89,11 @@ sub validate_metadata_course {
 # including asking the input plugins to confirm whether the contents are
 # usable by the input handler.
 #
-# @param themedir  The directory containing the theme and metadata.
-# @param data      A reference to a hash containing the metadata.
+# @param xml A reference to a hash containing the metadata.
 # @return 0 if the metadata is not valid, 1 if it is. Note that serious
 #         errors in the metadata will cause the processor to exit!
 sub validate_metadata_theme {
     my $self     = shift;
-    my $themedir = shift;
     my $xml      = shift;
 
     my ($shortname) = $themedir =~ m|^.*/(.*?)$|;
@@ -238,26 +234,24 @@ sub validate_metadata_theme {
 }
 
 
-## @method $ validate_metadata($srcdir, $xml)
+## @method $ validate_metadata($xml)
 #  Attempt to validate the contents of the specified xml, based on the type of element
 #  at the root of the xml ('course' or 'theme' for example).
 #
-# @param srcdir The directory containing the metadata.
 # @param xml    A reference to a hash containing the metadata.
 # @return 0 if the metadata is not valid, 1 if it is. Note that serious
 #         errors in the metadata will cause the processor to exit!
 sub validate_metadata {
     my $self   = shift;
-    my $srcdir = shift;
     my $xml    = shift;
 
     # Obtain the metadata type from the first key in the hash (should be the xml root node)
     my $type = (keys(%$xml))[0];
 
     if($type eq "course") {
-        return $self -> validate_metadata_course($srcdir, $xml);
+        return $self -> validate_metadata_course($xml);
     } elsif($type eq "theme") {
-        return $self -> validate_metadata_theme($srcdir, $xml);
+        return $self -> validate_metadata_theme($xml);
 
     # Fallback case, assume invalid metadata as it doesn't have a recognised root type
     } else {
@@ -300,7 +294,7 @@ sub load_metadata {
         # If we need to validate the metadata, go ahead and do so.
         if($validate) {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Metadata contents: \n".Data::Dumper -> Dump([$data], ['*data']));
-            return 0 if(!$self -> validate_metadata($srcdir, $data));
+            return 0 if(!$self -> validate_metadata($data));
         }
     } else {
         return 1;
@@ -340,7 +334,7 @@ sub parse_metadata {
     # If we need to validate the metadata, go ahead and do so.
     if($validate) {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Metadata contents: \n".Data::Dumper -> Dump([$data], ['*data']));
-        return 0 if(!$self -> validate_metadata($srcdir, $data));
+        return 0 if(!$self -> validate_metadata($data));
     }
 
     # Get here and the metadata exists and is valid, so return it
