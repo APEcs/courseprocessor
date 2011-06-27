@@ -40,7 +40,6 @@ BEGIN {
 use Digest;
 use Encode qw(encode encode_utf8);
 use File::HomeDir;
-use File::Path;
 use Getopt::Long;
 use MediaWiki::API;
 use MIME::Base64;
@@ -116,47 +115,6 @@ sub find_bins {
     $config -> {"paths"} -> {"rm"} = find_bin("rm")
         or die "FATAL: Unable to locate 'rm' in search paths.\n";
 
-}
-
-
-## @fn $ load_config($configfile)
-# Attempt to load the processor configuration file. This will attempt to load the
-# specified configuration file, and if no filename is specified it will attempt
-# to load the .courseprocessor.cfg file from the user's home directory.
-#
-# @param configfile Optional filename of the configuration to load. If this is not
-#                   given, the configuration is loaded from the user's home directory.
-# @return A reference to a configuration object, or undef if the configuration can
-#         not be loaded.
-sub load_config {
-    my $configfile = shift;
-    my $data;
-
-    # If we have no filename specified, we need to look at the user's
-    # home directory for the file instead
-    if(!$configfile || !-f $configfile) {
-        my $home = File::HomeDir -> my_home;
-        $configfile = path_join($home, ".courseprocessor.cfg");
-    }
-
-    # Get configmicro to load the configuration
-    $data = ConfigMicro -> new($configfile)
-        if(-f $configfile);
-
-    # we /need/ a data object here...
-    if(!$data) {
-        $logger -> print($logger -> WARNING, "Unable to load configuration file: ".$ConfigMicro::errstr) unless($quiet);
-        $data = {};
-    } else {
-        $logger -> print($logger -> DEBUG, "Loaded configuration from $configfile") unless($quiet);
-    }
-
-    # Set important defaults if needed
-    foreach my $key (keys(%{$default_config})) {
-        $data -> {"wiki2course"} -> {$key} = $default_config -> {$key} if(!$data -> {"wiki2course"} -> {$key});
-    }
-
-    return $data;
 }
 
 
