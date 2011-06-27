@@ -81,7 +81,7 @@ sub validate_metadata_course {
 }
 
 
-## @method $ validate_metadata_theme($xml, $shortname)
+## @method $ validate_metadata_theme($xml, $shortname, $themedir)
 # Attempts to determine whether the data specified in the metadata is valid
 # against the current theme directory. This will check that the provided
 # metadata includes the required elements and attributes, and that the
@@ -91,12 +91,14 @@ sub validate_metadata_course {
 #
 # @param xml       A reference to a hash containing the metadata.
 # @param shortname A short name to identify the theme for the user.
+# @param themedir  The direcotyr containing the theme.
 # @return 0 if the metadata is not valid, 1 if it is. Note that serious
 #         errors in the metadata will cause the processor to exit!
 sub validate_metadata_theme {
     my $self      = shift;
     my $xml       = shift;
     my $shortname = shift;
+    my $themedir  = shift;
 
     # check the theme name and title have been specified.
     die "FATAL: metadata for theme $shortname missing theme title." if(!$xml -> {"theme"} -> {"title"});
@@ -234,18 +236,20 @@ sub validate_metadata_theme {
 }
 
 
-## @method $ validate_metadata($xml, $shortname)
+## @method $ validate_metadata($xml, $shortname, $srcdir)
 #  Attempt to validate the contents of the specified xml, based on the type of element
 #  at the root of the xml ('course' or 'theme' for example).
 #
 # @param xml       A reference to a hash containing the metadata.
 # @param shortname A short name to identify the metadata for the user.
+# @param srcdir    The directory containing the resource.
 # @return 0 if the metadata is not valid, 1 if it is. Note that serious
 #         errors in the metadata will cause the processor to exit!
 sub validate_metadata {
     my $self      = shift;
     my $xml       = shift;
     my $shortname = shift;
+    my $srcdir    = shift;
 
     # Obtain the metadata type from the first key in the hash (should be the xml root node)
     my $type = (keys(%$xml))[0];
@@ -253,7 +257,7 @@ sub validate_metadata {
     if($type eq "course") {
         return $self -> validate_metadata_course($xml);
     } elsif($type eq "theme") {
-        return $self -> validate_metadata_theme($xml, $shortname);
+        return $self -> validate_metadata_theme($xml, $shortname, $srcdir);
 
     # Fallback case, assume invalid metadata as it doesn't have a recognised root type
     } else {
@@ -296,7 +300,7 @@ sub load_metadata {
         # If we need to validate the metadata, go ahead and do so.
         if($validate) {
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Metadata contents: \n".Data::Dumper -> Dump([$data], ['*data']));
-            return 0 if(!$self -> validate_metadata($data, $name));
+            return 0 if(!$self -> validate_metadata($data, $name, $srcdir));
         }
     } else {
         return 1;
@@ -307,12 +311,13 @@ sub load_metadata {
 }
 
 
-## @method $ load_metadata($content, $validate, $plugins)
+## @method $ load_metadata($content, $srcdir, $validate, $plugins)
 # PArse the XML in the specified string, optionally does basic checks on the data
 # to ensure that the minimal requirements for the metadata consistency and content
 # are met.
 #
 # @param content   The XML string to parse.
+# @param srcdir    The directory containing the metadata.
 # @param name      The human-readable name of the metadata being processed.
 # @param validate  If true, the metadata is validated to ensure it contains
 #                  required sections
@@ -321,6 +326,7 @@ sub load_metadata {
 sub parse_metadata {
     my $self     = shift;
     my $content  = shift;
+    my $srcdir   = shift;
     my $name     = shift;
     my $validate = shift;
 
