@@ -152,8 +152,8 @@ sub load_config {
     }
 
     # Set important defaults if needed
-    foreach my $key (keys(%default_config)) {
-        $data -> {"wiki2course"} -> {$key} = $default_config{$key} if(!$data -> {"wiki2course"} -> {$key});
+    foreach my $key (keys(%{$default_config})) {
+        $data -> {"wiki2course"} -> {$key} = $default_config -> {$key} if(!$data -> {"wiki2course"} -> {$key});
     }
 
     return $data;
