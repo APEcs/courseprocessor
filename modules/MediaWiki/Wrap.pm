@@ -386,17 +386,19 @@ sub wiki_valid_namespace
 }
 
 
-## @fn $ wiki_link($title)
+## @fn $ wiki_link($title, $name)
 # Generate a wiki link for the specified title. This is a simple convenience
 # function to wrap the specified title in the brackets needed to make
 # it into a link. If the specified title is '' or undef, this returns ''.
 #
 # @param title The title to convert to a wiki link.
+# @param name  An optional name to use instead of the title.
 # @return The link to the page with the specified title.
 sub wiki_link {
     my $title = shift;
+    my $name  = shift;
 
-    return $title ? '[['.$title.']]' : '';
+    return $title ? '[['.$title.($name ? "|$name" : "").']]' : '';
 }
 
 1;
