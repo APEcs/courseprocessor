@@ -74,7 +74,7 @@ use constant PLUG_DESCRIPTION      => 'HTML input processor';
 
 # ============================================================================
 #  Plugin class override functions
-#   
+#
 
 ## @cmethod $ new(%args)
 # Overridded plugin creator. This will create a new Plugin object, and then set
@@ -90,7 +90,7 @@ sub new {
     # Set the plugin-specific data
     $self -> {"htype"}       = PLUG_TYPE;
     $self -> {"description"} = PLUG_DESCRIPTION;
-    
+
     $self -> {"extfilter"}   = FILE_REGEXP;
 
     # Set defaults in the configuration if values have not been provided.
@@ -109,7 +109,7 @@ sub new {
 
 ## @method $ use_plugin()
 # Determine whether this plugin should be run against the source tree by looking for
-# files it recognises how to process in the directory structure. This will scan 
+# files it recognises how to process in the directory structure. This will scan
 # through the directory structure of the source and count how many files it thinks
 # the plugin should be able to process, and returns this count. If this is 0, the
 # plugin can not be used on the source tree.
@@ -121,7 +121,7 @@ sub use_plugin {
 
     # This gets set > 1 if there are any files this plugin understands, and it can be used
     # during processing to show the progress of processing.
-    $self -> {"filecount"} = 0; 
+    $self -> {"filecount"} = 0;
 
     # This should be the top-level "source data" directory, should contain theme dirs
     opendir(SRCDIR, $self -> {"config"} -> {"Processor"} -> {"datasource"})
@@ -129,7 +129,7 @@ sub use_plugin {
 
     # grab the directory list so we can check it for subdirs, strip .* files though
     my @srcentries = grep(!/^\./, readdir(SRCDIR));
-    
+
     foreach my $theme (@srcentries) {
         $theme = path_join($self -> {"config"} -> {"Processor"} -> {"datasource"}, $theme); # prepend the source directory
 
@@ -149,7 +149,7 @@ sub use_plugin {
                 if(-d $module) {
                     opendir(SUBDIR, $module)
                         or die "FATAL: Unable to open source subdir for reading: $!";
-            
+
                     # grep returns the number of matches in scalar mode and that's all we
                     # really want to know at this point
                     $self -> {"filecount"} += grep(/^$self->{extfilter}$/, readdir(SUBDIR));
@@ -161,7 +161,7 @@ sub use_plugin {
 
             closedir(MODDIR);
 
-        } # if(-d $theme) { 
+        } # if(-d $theme) {
     } # foreach my $theme (@srcentries) {
 
     closedir(SRCDIR);
@@ -173,7 +173,7 @@ sub use_plugin {
 # @method $ module_check($themedir, $module)
 # Check whether the module specified is valid and usable by this plugin. This is
 # used by the metadata validation code to determine whether the module specified
-# appears to be valid. This will return a string containing an error message if 
+# appears to be valid. This will return a string containing an error message if
 # there is a problem, 0 otherwise.
 #
 # @param themedir The directory containing the module to check.
@@ -199,7 +199,7 @@ sub module_check {
 
 
 ## @method $ process()
-# Run the plugin over the contents of the course data. This will process all 
+# Run the plugin over the contents of the course data. This will process all
 # html in the course directory into the intermediate data format ready for
 # processing by an output handler.
 sub process {
@@ -248,7 +248,7 @@ sub process {
                 if(-d $module) {
                     opendir(STEPS, $module)
                         or die "FATAL: Unable to open module directory $module for reading: $!";
-            
+
                     # Know grab a list of files we know how to process
                     my @subfiles = grep(/^$self->{extfilter}$/, readdir(STEPS));
 
@@ -258,10 +258,10 @@ sub process {
 
                         # obtain the sorted files
                         my ($stepfiles, $numlength) = $self -> sort_step_files(\@subfiles);
-                        
+
                         # for each file we know how to process, pass it to the html processor
-                        # to be converted. 
-                        for(my $i = 0; $i < scalar(@$stepfiles); ++$i) { 
+                        # to be converted.
+                        for(my $i = 0; $i < scalar(@$stepfiles); ++$i) {
                             $self -> process_html_page($stepfiles -> [$i], $i, $numlength, $self -> {"config"} -> {"Processor"} -> {"outputdir"}, $module);
 
                             # Update the progress bar if needed
@@ -294,7 +294,7 @@ sub process {
 
 # ============================================================================
 #  File handling code
-#   
+#
 
 ## @method void check_media_dirs()
 # Ensure that the required media directory is present on the filesystem This is
@@ -316,9 +316,9 @@ sub check_media_dirs {
 
 
 ## @method $ fix_quotes($tag, $body)
-# Converts &quot symbols on the specified body text to literal quotes. Should 
-# be used to convert the contents of tag attribute lists to the correct form. 
-# This will also ensure that newlines in quotes are removed (Dreamweaver wordwrap 
+# Converts &quot symbols on the specified body text to literal quotes. Should
+# be used to convert the contents of tag attribute lists to the correct form.
+# This will also ensure that newlines in quotes are removed (Dreamweaver wordwrap
 # workaround)
 #
 # @param tag  The tag name.
@@ -337,7 +337,7 @@ sub fix_quotes {
 
     return "[$tag $body]";
 }
- 
+
 
 # Converts local inter-theme or inter-module links to a form that will work when
 # the course content has been passed through the output handler
@@ -367,10 +367,10 @@ sub read_html_file {
     my $filename = shift;
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Reading contents of $filename.");
-    
+
     # First we need to grab the file text itself...
     my $data = load_file($filename);
-    
+
     # Die immediately if the file load failed.
     return (undef, undef) if(!$data);
 
@@ -386,7 +386,7 @@ sub read_html_file {
         $body = $1;
         $self ->{"logger"} -> print($self -> {"logger"} -> DEBUG, "Body is in new template content format.");
 
-    # Emergency catch case for the new templates, needed in case the body has been 
+    # Emergency catch case for the new templates, needed in case the body has been
     # defined incorrectly, but is far riskier when applied to popups.
     } elsif($body =~ m|<div id="content">\s*(.*?)\s*</div>\s*$|ios) {
         $body = $1;
@@ -412,10 +412,10 @@ sub read_html_file {
         # convert quote entities to literal quotes
         $body =~ s/\[$tag\s+(.*?)\]/$self -> fix_quotes($tag, $1)/isge;
     }
-        
+
     return ($title, $body);
 }
-    
+
 
 ## @method $ read_latex_file($latexdir, $checksum, $offset)
 # Extract the body from a generated latex file, replacing any images with
@@ -423,7 +423,7 @@ sub read_html_file {
 #
 # @param latexdir The directory containing the latex2html output files.
 # @param checksum The checksum of the latex used to provide uniqueness for images.
-# @param offset   The relative path offset to the media directory, needed as we 
+# @param offset   The relative path offset to the media directory, needed as we
 #                 can't use an absolute path to the media directory.
 # @return The body of the generated latex file.
 sub read_latex_file {
@@ -436,9 +436,9 @@ sub read_latex_file {
     my $content = load_file("$latexdir/node2.html");
     die "FATAL: Unable to read content from $latexdir/node2.html: $!\n".
         "This Should Not Happen! Check the output from latex2html to determine why this failed.\n".
-        "In particular, check for things like nested \$s in maths blocks." 
+        "In particular, check for things like nested \$s in maths blocks."
         if(!$content);
-    
+
     # extract the body...
     my ($body) = $content =~ /<body.*?>\s*(.*?)\s*(?:<br>)?\s*<hr>\s*<\/body>/si;
     die "FATAL: Unable to read body from $latexdir/node2.html. This Should Not Happen" if(!$body);
@@ -459,7 +459,7 @@ sub read_latex_file {
 # @return The numeric comparison of the first numbers encountered in the
 #         filenames in $a and $b
 sub sort_step_func {
-    
+
     # obtain the *FIRST NUMBER IN THE FILENAME*
     my ($anum) = $a =~ /^[a-zA-Z_-]*(\d+)/o;
     my ($bnum) = $b =~ /^[a-zA-Z_-]*(\d+)/o;
@@ -469,28 +469,28 @@ sub sort_step_func {
 }
 
 
-
+## @method $ sort_step_files($filenames)
 # Give an unsorted list of files, this will generate a sorted array of files
-# such that the array index may be used to determine the number of the target 
+# such that the array index may be used to determine the number of the target
 # file (except for the need to +1 to the index). Returns a reference to the
-# sorted array and the numbe rof characters the digits part of a step name 
+# sorted array and the numbe rof characters the digits part of a step name
 # should contain.
 sub sort_step_files {
     my $self      = shift;
     my $filenames = shift;
 
     # sort the files, and then fall over if the step count exceeds 99
-    my @sortfiles = sort sort_step_func @$filenames; 
+    my @sortfiles = sort sort_step_func @$filenames;
     die "FATAL: step count limit exceeded. Modules must not contain more than 99 steps" if(scalar(@sortfiles) > 99);
-    
-    # we can fix the step number count at 2, this should ensure leading-0s 
+
+    # we can fix the step number count at 2, this should ensure leading-0s
     # across the whole course.
     return (\@sortfiles, 2);
 }
 
 # ============================================================================
 #  Tag support code
-#   
+#
 
 # mark latex tags inside glossary definitions
 sub mark_glossary_latex {
@@ -528,7 +528,7 @@ sub read_local_tag {
     # be shared across steps and removing the file for the first hit will break
     # later references to it.
 
-    # If we have a body, return a tag with the contents of the file in the popup 
+    # If we have a body, return a tag with the contents of the file in the popup
     my $output = '[local text="'.$term.'"';
     $output .= " $extra " if(defined($extra) && $extra);
     $output .= ']'.$body.'[/local]';
@@ -539,7 +539,7 @@ sub read_local_tag {
 
 # Convert a block of LaTeX code into html and return the body of the generated
 # content. If the processing fails for some reason the latex is replaced by
-# an error message in the code, unfortunately it would be too complex to 
+# an error message in the code, unfortunately it would be too complex to
 # snarf the true error from the latex2html output so we just drop in an error
 # and let the use look up the real problem in the log.
 sub process_latex {
@@ -555,7 +555,7 @@ sub process_latex {
 
     my $body = '<span class="error">Failed to proces latex directive</span>';
 
-    # work out what to call the temporary file. Uses the md5 of the 
+    # work out what to call the temporary file. Uses the md5 of the
     # content to determine the filename extension (nice side effect: two
     # graphics-generating latex block in the same module will end up sharing
     # images thanks to this)
@@ -580,16 +580,16 @@ sub process_latex {
             print TMPFILE $content;
             print TMPFILE "\n\\end{document}\n";
             close(TMPFILE);
-            
+
             # Now run latex2html on it
             my $cmd = $self -> {"config"} -> {"HTMLInputHandler"} -> {"latexcmd"}." ".$self -> {"config"} -> {"HTMLInputHandler"} -> {"latexargs"}." ".$tempname;
-            
+
             my $output = `$cmd 2>&1`;
             if($output =~ /Error while converting image/) {
                 print $output;
                 die "FATAL: Errors encountered while running latext2html";
             }
-            
+
             print $output if($self -> {"verbose"} > 1);
 
             # before we can process the content we need the name without the .tex extension
@@ -597,12 +597,12 @@ sub process_latex {
 
             # Grab the autogenerated content
             $body = $self -> read_latex_file($tempname, $checksum, $glossary ? ".." : "../..");
-            
-            # Move any images across from the latex2html generated directory to the 
+
+            # Move any images across from the latex2html generated directory to the
             # course global generated directory
             while(my $name = glob("/tmp/htmlinput-$checksum/img*.png")) {
                 $name =~ /img(\d+)\.(\w+)/;
-                
+
                 my $dest = "$base/media/generated/$checksum-img$1\.$2";
 
                 $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Copying and cropping $name as $dest");
@@ -615,7 +615,7 @@ sub process_latex {
 
             # Remove the generated content
             `$self->{config}->{paths}->{rm} -rf $tempname`;
-            
+
             # remove the source latex file
             `$self->{config}->{paths}->{rm} -f $tempname.tex`;
 
@@ -635,7 +635,7 @@ sub process_latex {
 
 # ============================================================================
 #  Process code
-#   
+#
 
 # remove any non-node .html files from the output directory, leaves other formats
 # intact as we don't know what support files the user has placed in the same directory.
@@ -650,11 +650,11 @@ sub cleanup {
     # by using readdir/grep, but it seems to work well enough for now.
     foreach my $filename (@files) {
         if(($filename =~ /\.html?$/) && ($filename !~ /^.\/node\d+\.html$/)) {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Removing source file \"$filename\"");            
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Removing source file \"$filename\"");
             unlink $filename;
         }
     }
-            
+
 }
 
 # Convert an individual html page into the intermediate format used by the course processor,
@@ -671,7 +671,7 @@ sub process_html_page {
 
     my ($title, $body) = $self -> read_html_file($filename);
 
-    # give up if no body can be obtained from the file (shouldn't happen unless the html 
+    # give up if no body can be obtained from the file (shouldn't happen unless the html
     # is badly malformed, otherwise there should always be /some/ body returned, even if
     # if includes extraneous material we don't really want.
     if(!$body) {
@@ -699,7 +699,7 @@ sub process_html_page {
     # Attempt to write the intermediate format file.
     if(open(OUTFILE, ">:utf8", $destname)) {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing processed contents of \"$filename\" to \"$destname\"");
-        
+
         print OUTFILE "<html>\n<head>\n<title>",$title,"</title>\n</head>\n\n";
         print OUTFILE "<body>\n",$body,"\n</body>\n</html>\n";
         close(OUTFILE);
