@@ -219,6 +219,24 @@ sub sort_step_func {
 }
 
 
+## @fn $ fix_media_name($name)
+# Takes the specified filename, removes any path component, and ensures that the
+# name starts with the current namespace as a prefix.
+#
+# @param name The name to check and fix up.
+# @return The corrected name.
+sub fix_media_name {
+    my $name = shift;
+
+    # Remove any path...
+    $name =~ s|^.*?/([^/]+)$|$1|;
+
+    # Prefix the name with the namespace if it isn't already
+    $name = $namespace."_".$name if($name =~ /^${namespace}_/);
+
+    return $name;
+}
+
 
 # -----------------------------------------------------------------------------
 #  HTML fixing functions
@@ -268,22 +286,21 @@ sub fix_flash {
 
     # If we have all three, it's probably a flash tag...
     if($width && $height && $flash) {
-        $flash =~ s|^.*?/([^/]+)$|$1|;
-
         my $outname = fix_media_name($flash);
-        wiki_upload_media($flash, $outname);
+        wiki_upload_media($wikih, $flash, $outname, $dryrun);
 
-        return '{flash}file='.$flash.'|width='.$width.'|height='.$height.'{/flash}';
+        return '{flash}file='.$outname.'|width='.$width.'|height='.$height.'{/flash}';
     }
 
     # otherwise return it as-is, we can't fix it.
     return "<div>$object</div>";
 }
 
+
 ## @fn $ fix_twpopup($wikih, $title, $encdata)
 # Convert a TWPopup span sequence into a <popup> tag.
 #
-# @param wikih    A reference to the MediaWiki::API wiki handle.
+# @param wikih   A reference to the MediaWiki::API wiki handle.
 # @param title   The title string for the popup.
 # @param encdata The Base64 encoded popup body.
 # @return A string containing the <popup> tag.
@@ -307,6 +324,14 @@ sub fix_twpopup {
 }
 
 
+## @fn $ fix_image($wikih, $imgattrs)
+# Take the contents of an img tag and produce a mediawiki tag to
+# take its place.
+#
+# @param wikih    A reference to the MediaWiki::API wiki handle.
+# @param imgattrs The image tag attribute list.
+# @return An mediawiki image tag, or the original <img> if the imgattrs
+#         can't be understood.
 sub fix_image {
     my $wikih    = shift;
     my $imgattrs = shift;
@@ -318,8 +343,11 @@ sub fix_image {
     }
 
     # Upload image here...
+    my $outname = fix_media_name($imgname);
+    wiki_upload_media($wikih, $imgname, $outname, $dryrun);
 
-    return
+    return "[[Image:$outname]]";
+}
 
 
 ## @fn $ convert_content($wikih, $content)
@@ -435,7 +463,6 @@ sub scan_module_directory {
         or die "FATAL: Unable to change to $fullpath: $!\n";
 
     my @stepnames = glob("step*.html");
-    chdir($cwd);
 
     # We need steps to do anything...
     return undef if(!scalar(@stepnames));
@@ -454,9 +481,10 @@ sub scan_module_directory {
     # Do the edit and then return a link to the new module page.
     wiki_edit_page($wikih, $namespace, $module, \$pagecontent, $dryrun);
 
+    chdir($cwd);
+
     return wiki_link($namespace.':'.$module, $module);
 }
-
 
 
 ## @fn $ scan_theme_directory($wikih, $fullpath, $dirname)

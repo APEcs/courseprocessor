@@ -24,7 +24,7 @@ use Exporter;
 use MediaWiki::API;
 
 our @ISA       = qw(Exporter);
-our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace wiki_link wiki_edit_page);
+our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace wiki_link wiki_edit_page wiki_upload_media);
 our @EXPORT_OK = qw();
 our $VERSION   = 1.0;
 
@@ -431,6 +431,42 @@ sub wiki_edit_page {
                          text   => $$content,
                          bot    => 1})
             or die "FATAL: Unable to set content for page '$namespace:$title': ".$wikih -> {"error"} -> {"code"}.' - '.$wikih -> {"error"}->{"details"}."\n";
+    }
+}
+
+
+## @fn void wiki_upload_media($wikih, $file, $name, $dryrun)
+# Upload the file at the specified location and give it the provided name.
+#
+# @param wikih  A reference to a MediaWiki API object.
+# @param file   The path to the file to upload.
+# @param name   The name of the file in the wiki.
+# @param dryrun If true, the file is not really uploaded.
+sub wiki_upload_media {
+    my $wikih  = shift;
+    my $file   = shift;
+    my $name   = shift;
+    my $dryrun = shift;
+
+    # If we have dry-run mode on, print out the page instead of uploading it
+    if($dryrun) {
+        print "Dry-run mode enabled. The following file would be uploaded to the wiki:\n";
+        print " Source file: $file\nName in wiki: $name\n";
+    } else {
+        open(RESFILE, $file)
+            or die "FATAL: failed to open media file '$file': $!\n";
+
+        binmode RESFILE;
+        my ($buffer, $data);
+        while(read(RESFILE, $buffer, 65536))  {
+            $data .= $buffer;
+        }
+        close(FILE);
+
+        $wikih -> upload({ title => $name,
+                           summary => 'File uploaded by bot',
+                           data => $data })
+            or die "FATAL: upload of $name failed: ".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"};
     }
 }
 
