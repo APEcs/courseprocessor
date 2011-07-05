@@ -527,6 +527,33 @@ sub scan_theme_directory {
 
     $themepage .= "\n== Metadata ==\n<source lang=\"xml\" style=\"emacs\">\n$metadata</source>\n";
 
+    # Check the metadata for images
+    my @mdimages = $metadata =~ m|<img\s+(.*?)>|gs;
+    if(scalar(@mdimages)) {
+        print "Got ",scalar(@mdimages)," images in metadata\n";
+
+        # Change to the theme dir, as image sources will be relative
+        my $cwd = getcwd();
+        chdir $fullpath
+            or die "FATAL: Unable to change to directory '$fullpath': $!\n";
+
+        foreach my $mdimg (@mdimages) {
+            print "Processing '$mdimg'\n";
+
+            # Can we get a sources?
+            my ($imgsrc) = $mdimg =~ /src="(.*?)"/;
+
+            if($imgsrc) {
+                my $outname = fix_media_name($imgsrc);
+                wiki_upload_media($wikih, $imgsrc, $outname, $dryrun);
+            } else {
+                $logger -> print($logger -> WARNING, "Malformed image <img $mdimg/> - no source found!");
+            }
+        }
+
+        chdir $cwd;
+    }
+
     # Add the theme page...
     wiki_edit_page($wikih, $namespace, $xmltree -> {"theme"} -> {"title"}, \$themepage, $dryrun);
 
@@ -612,7 +639,7 @@ if(-d $coursedir) {
 #    my $coursemap = extract_coursemap();
 
     # Finish off the course page as much as possible
-#    wiki_set_coursedata($themelist, $coursemap);
+#    make_coursedata($themelist, $coursemap);
 
 }
 
