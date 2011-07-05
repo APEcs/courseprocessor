@@ -24,7 +24,7 @@ use Exporter;
 use MediaWiki::API;
 
 our @ISA       = qw(Exporter);
-our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace wiki_link);
+our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace wiki_link wiki_edit_page);
 our @EXPORT_OK = qw();
 our $VERSION   = 1.0;
 
@@ -399,6 +399,39 @@ sub wiki_link {
     my $name  = shift;
 
     return $title ? '[['.$title.($name ? "|$name" : "").']]' : '';
+}
+
+
+## @fn void wiki_edit_page($wikih, $namespace, $title, $content, $dryrun)
+# Edit (or create) a page in the wiki via the specified wiki handle. This will
+# not care about conflicts, missing pages, or any 'niceties' - it sets the
+# page content, not caring about any existing content.
+#
+# @param wikih     A reference to a MediaWiki API object.
+# @param namespace The namespace the page should be created in.
+# @param title     The title of the page to create/edit.
+# @param content   A reference to the content to set in the page.
+# @param dryrun    If set, the wiki is not updated and a message describing what
+#                  would be done is printed instead.
+sub wiki_edit_page {
+    my $wikih     = shift;
+    my $namespace = shift;
+    my $title     = shift;
+    my $content   = shift;
+    my $dryrun    = shift;
+
+    # If we have dry-run mode on, print out the page instead of uploading it
+    if($dryrun) {
+        print "Dry-run mode enabled. Wiki action that would be taken:\n";
+        print "{ action => 'edit', title => '$namespace:$title', bot => 1}\n";
+        print "Text will contain:\n$$content\n";
+    } else {
+        $wikih -> edit({ action => 'edit',
+                         title  => "$namespace:$title",
+                         text   => $$content,
+                         bot    => 1})
+            or die "FATAL: Unable to set content for page '$namespace:$title': ".$wikih -> {"error"} -> {"code"}.' - '.$wikih -> {"error"}->{"details"}."\n";
+    }
 }
 
 1;
