@@ -228,6 +228,8 @@ sub sort_step_func {
 sub fix_media_name {
     my $name = shift;
 
+    $logger -> print($logger -> DEBUG, "Converting media name: $name");
+
     # Remove any path...
     $name =~ s|^.*?/([^/]+)$|$1|;
 
@@ -289,8 +291,12 @@ sub fix_flash {
         my $outname = fix_media_name($flash);
         wiki_upload_media($wikih, $flash, $outname, $dryrun);
 
+        $logger -> print($logger -> DEBUG, "Found flash animation: $flash stored as $outname");
+
         return '{flash}file='.$outname.'|width='.$width.'|height='.$height.'{/flash}';
     }
+
+    $logger -> print($logger -> DEBUG, "Unable to convert potential flash object ($object)");
 
     # otherwise return it as-is, we can't fix it.
     return "<div>$object</div>";
@@ -342,10 +348,19 @@ sub fix_image {
         return "<img $imgattrs/>";
     }
 
-    # Upload image here...
+    # Does the image appear to be latex maths?
+    if($imgattrs =~ /class="tex"/ && $imgattrs =~/alt="/) {
+        # Yes, this looks like maths, try returning the contents of the alt in a maths tag
+        my ($maths) = $imgattrs =~ /alt="(.*?)"/s;
+
+        return "<math>$maths</math>" if($maths);
+    }
+
+    # Image is not maths, or has no alt tag if it is, so upload image...
     my $outname = fix_media_name($imgname);
     wiki_upload_media($wikih, $imgname, $outname, $dryrun);
 
+    # and send back a bog-standard image tag.
     return "[[Image:$outname]]";
 }
 
