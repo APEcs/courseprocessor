@@ -461,7 +461,7 @@ sub wiki_upload_media {
         while(read(RESFILE, $buffer, 65536))  {
             $data .= $buffer;
         }
-        close(FILE);
+        close(RESFILE);
 
         $wikih -> upload({ title => $name,
                            summary => 'File uploaded by bot',
