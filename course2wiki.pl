@@ -268,18 +268,20 @@ sub fix_link {
 }
 
 
-## @fn $ fix_flash($wikih, $object)
+## @fn $ fix_flash($wikih, $object, $media)
 # Pull the width, height, and flash file name out of a (probable) flash
 # object/embed tag combination, and convert to an intermediate string that
 # will get it through HTML::WikiConverter unscathed.
 #
-# @param wikih    A reference to the MediaWiki::API wiki handle.
+# @param wikih  A reference to the MediaWiki::API wiki handle.
 # @param object The text of the object/embed tags to process.
+# @param media  A refrence to an array to store media file links in.
 # @return A string containing the intermediate flash tag, or the original
 #         object/embed combo.
 sub fix_flash {
     my $wikih  = shift;
     my $object = shift;
+    my $media  = shift;
 
     # Attempt to get the width, height, and flash file names
     my ($width)  = $object =~ /width="(\d+)"/;
@@ -290,6 +292,9 @@ sub fix_flash {
     if($width && $height && $flash) {
         my $outname = fix_media_name($flash);
         wiki_upload_media($wikih, $flash, $outname, $dryrun);
+
+        # store the media link for inclusion in the media page later
+        push(@$media, wiki_link("File:$outname"));
 
         $logger -> print($logger -> DEBUG, "Found flash animation: $flash stored as $outname");
 
@@ -303,17 +308,19 @@ sub fix_flash {
 }
 
 
-## @fn $ fix_twpopup($wikih, $title, $encdata)
+## @fn $ fix_twpopup($wikih, $title, $encdata, $media)
 # Convert a TWPopup span sequence into a <popup> tag.
 #
 # @param wikih   A reference to the MediaWiki::API wiki handle.
 # @param title   The title string for the popup.
 # @param encdata The Base64 encoded popup body.
+# @param media   A refrence to an array to store media file links in.
 # @return A string containing the <popup> tag.
 sub fix_twpopup {
     my $wikih   = shift;
     my $title   = shift;
     my $encdata = shift;
+    my $media   = shift;
 
     # Converting to mediawiki format will have killed the newlines in thebase64 encoded data, fix that
     $encdata =~ s/ /\n/g;
@@ -321,7 +328,7 @@ sub fix_twpopup {
     # decode so that we can convert the content
     my $content = decode_base64($encdata);
     if($content) {
-        $content = convert_content($wikih, $content);
+        $content = convert_content($wikih, $content, $media);
     } else {
         $content = $encdata;
     }
@@ -330,17 +337,19 @@ sub fix_twpopup {
 }
 
 
-## @fn $ fix_image($wikih, $imgattrs)
+## @fn $ fix_image($wikih, $imgattrs, $media)
 # Take the contents of an img tag and produce a mediawiki tag to
 # take its place.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param imgattrs The image tag attribute list.
+# @param media    A refrence to an array to store media file links in.
 # @return An mediawiki image tag, or the original <img> if the imgattrs
 #         can't be understood.
 sub fix_image {
     my $wikih    = shift;
     my $imgattrs = shift;
+    my $media    = shift;
 
     my ($imgname) = $imgattrs =~ /src="(.*?)"/;
     if(!$imgname) {
@@ -360,30 +369,36 @@ sub fix_image {
     my $outname = fix_media_name($imgname);
     wiki_upload_media($wikih, $imgname, $outname, $dryrun);
 
+    # store the media link for inclusion in the media page later
+    push(@$media, wiki_link("File:$outname"));
+
     # and send back a bog-standard image tag.
     return "[[Image:$outname]]";
 }
 
 
-## @fn $ convert_content($wikih, $content)
+## @fn $ convert_content($wikih, $content, $media)
 # Convert the provided content from HTML to MediaWiki markup.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param content The html content to convert to MediaWiki markup.
+# @param media    A refrence to an array to store media file links in.
 # @return The converted content.
 sub convert_content {
     my $wikih   = shift;
     my $content = shift;
+    my $media   = shift;
 
     # Convert links with anchors to [target] and [link] as needed...
     $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|g;
     $content =~ s|<a\s*href="(.*?)">(.*?)</a>|fix_link($1, $2)|ges;
 
     # Fix flash, stage 1
-    $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1)|ges;
+    $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
 
     # Fix images
-    $content =~ s|<div.*?><img\s+(.*?)></div>|fix_image($wikih, $1)|ges;
+    $content =~ s|<div.*?><img\s+(.*?)></div>|fix_image($wikih, $1, $media)|ges;
+    $content =~ s|<a.*?><img\s+(.*?)></a>|fix_image($wikih, $1, $media)|ges;
 
     # Do html conversion
     my $mw = new HTML::WikiConverter(dialect => 'MediaWiki');
@@ -402,16 +417,20 @@ sub convert_content {
 # -----------------------------------------------------------------------------
 #  Scanning functions
 
-## @fn @ load_step_file($wikih, $stepfile)
+## @fn @ load_step_file($wikih, $stepfile, $media)
 # Load the contents of the specified step file, converting as much as possible
 # back into wiki markup.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param stepfile The step file to load into memory.
+# @param media    A refrence to an array to store media file links in.
 # @return An array containing the step title and content on success, undefs otherwise.
 sub load_step_file {
     my $wikih    = shift;
     my $stepfile = shift;
+    my $media    = shift;
+
+    $logger -> print($logger -> DEBUG, "Processing step $stepfile.");
 
     my $root = eval { HTML::TreeBuilder -> new_from_file($stepfile) };
     die "FATAL: Unable to load and parse $stepfile: $@" if($@);
@@ -447,10 +466,10 @@ sub load_step_file {
     my $realcontent = $content -> as_HTML();
     $realcontent =~ s|^<div id="content">(.*)</div>$|$1|s;
 
-    my $mwcontent = convert_content($wikih, $realcontent);
+    my $mwcontent = convert_content($wikih, $realcontent, $media);
 
     # now try to deal with popups
-    $mwcontent =~ s|<span class="twpopup">(.*?)<span class="twpopup-inner">([a-zA-Z0-9+= ]+)</span></span>|fix_twpopup($wikih, $1, $2)|ges;
+    $mwcontent =~ s|<span class="twpopup">(.*?)<span class="twpopup-inner">([a-zA-Z0-9+=/\n ]+)</span>\s*</span>|fix_twpopup($wikih, $1, $2, $media)|ges;
 
     # must explicitly delete the html tree to prevent leaks
     $root -> delete();
@@ -459,18 +478,22 @@ sub load_step_file {
 }
 
 
-## @fn $ scan_module_directory($wikih, $fullpath, $module)
+## @fn $ scan_module_directory($wikih, $fullpath, $module, $media)
 # Scan the specified module directory for steps, concatenating their contents into
 # a single wiki page.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param fullpath The path to the module directory.
 # @param module   The title of the module.
+# @param media    A refrence to an array to store media file links in.
 # @return A wiki link for the module on success, undef otherwise.
 sub scan_module_directory {
     my $wikih    = shift;
     my $fullpath = shift;
     my $module   = shift;
+    my $media    = shift;
+
+    $logger -> print($logger -> DEBUG, "Scanning directory $module for steps.");
 
     # Get the list of steps in the directory
     my $cwd = getcwd();
@@ -480,14 +503,17 @@ sub scan_module_directory {
     my @stepnames = glob("step*.html");
 
     # We need steps to do anything...
-    return undef if(!scalar(@stepnames));
+    if(!scalar(@stepnames)) {
+        $logger -> print($logger -> WARNING, "Module directory '$fullpath' contains no step files!");
+        return undef;
+    }
 
     my @sorted = sort sort_step_func @stepnames;
 
     # Now process each step into an appropriate page
     my $pagecontent = "";
     foreach my $stepname (@sorted) {
-        my ($title, $content) = load_step_file($wikih, path_join($fullpath, $stepname));
+        my ($title, $content) = load_step_file($wikih, path_join($fullpath, $stepname), $media);
 
         # Make the step in wiki format
         $pagecontent .= "== $title ==\n$content\n" if($title && $content);
@@ -502,13 +528,22 @@ sub scan_module_directory {
 }
 
 
-## @fn $ scan_theme_directory($wikih, $fullpath, $dirname)
+## @fn $ scan_theme_directory($wikih, $fullpath, $dirname, $mediahash)
 # Check whether the specified directory is a theme directory (it contains a
 # metadata.xml file) and if it is, process its contents.
+#
+# @param wikih     A reference to a Mediawiki::API object.
+# @param fullpath  The path to the theme directory to process.
+# @param dirname   The name of the theme directory.
+# @param mediahash A reference to a hash to store media links in.
+# @return A wiki link to the theme page on success, undef on failure.
 sub scan_theme_directory {
-    my $wikih    = shift;
-    my $fullpath = shift;
-    my $dirname  = shift;
+    my $wikih     = shift;
+    my $fullpath  = shift;
+    my $dirname   = shift;
+    my $mediahash = shift;
+
+    $logger -> print($logger -> DEBUG, "Processing directory $dirname.");
 
     # Do we have a metadata file? If not, give up...
     if(!-f path_join($fullpath, "metadata.xml")) {
@@ -523,6 +558,8 @@ sub scan_theme_directory {
         return undef;
     }
 
+    $logger -> print($logger -> DEBUG, "Directory $dirname contains the theme '".$xmltree -> {"theme"} -> {"title"}."', scanning modules.");
+
     # Process each module in order.
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
                                if(!$xmltree -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
@@ -534,13 +571,20 @@ sub scan_theme_directory {
                          }
                          keys(%{$xmltree -> {"theme"} -> {"module"}});
 
-    my $themepage = "== Modules ==\n";
+    my $themepage  = "== ".$config -> {"wiki2course"} -> {"modules_title"}." ==\n";
+    my $thememedia = [];
+
+    # scan modules inside the theme directory, storing the steps as we go.
     foreach my $module (@modnames) {
-        my $link = scan_module_directory($wikih, path_join($fullpath, $module), $xmltree -> {"theme"} -> {"module"} -> {$module} -> {"title"});
+        my $link = scan_module_directory($wikih,
+                                         path_join($fullpath, $module),
+                                         $xmltree -> {"theme"} -> {"module"} -> {$module} -> {"title"},
+                                         $thememedia);
+
         $themepage .= "$link<br />\n" if($link);
     }
 
-    $themepage .= "\n== Metadata ==\n<source lang=\"xml\" style=\"emacs\">\n$metadata</source>\n";
+    $themepage .= "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n<source lang=\"xml\" style=\"emacs\">\n$metadata</source>\n";
 
     # Check the metadata for images
     my @mdimages = $metadata =~ m|<img\s+(.*?)>|gs;
@@ -561,6 +605,10 @@ sub scan_theme_directory {
             if($imgsrc) {
                 my $outname = fix_media_name($imgsrc);
                 wiki_upload_media($wikih, $imgsrc, $outname, $dryrun);
+
+                # store the media link for inclusion in the media page later
+                push(@$thememedia, wiki_link("File:$outname"));
+
             } else {
                 $logger -> print($logger -> WARNING, "Malformed image <img $mdimg/> - no source found!");
             }
@@ -569,12 +617,89 @@ sub scan_theme_directory {
         chdir $cwd;
     }
 
+    # store the media hash if we have any entries
+    $mediahash -> {$xmltree -> {"theme"} -> {"title"}} = $thememedia
+        if(scalar(@$thememedia));
+
     # Add the theme page...
     wiki_edit_page($wikih, $namespace, $xmltree -> {"theme"} -> {"title"}, \$themepage, $dryrun);
 
     return wiki_link($namespace.':'.$xmltree -> {"theme"} -> {"title"}, $xmltree -> {"theme"} -> {"title"});
 }
 
+# -----------------------------------------------------------------------------
+#  Generation code
+
+## @fn void make_mediapage($wikih, $media)
+# Create and upload a media page for the course. This will create a page listing
+# all media uploaded to the wiki while importing the course.
+#
+# @param wikih A reference to a Mediawiki::API object.
+# @param media A reference to a hash to store media links in.
+sub make_mediapage {
+    my $wikih = shift;
+    my $media = shift;
+
+    my $mediapage = "";
+    # Go through each theme in the media hash, building a list of its files.
+    foreach my $theme (sort(keys(%{$media}))) {
+        $mediapage .= "== $theme ==\n";
+        foreach my $link (@{$media -> {$theme}}) {
+            $mediapage .= "$link<br />\n";
+        }
+        $mediapage .= "\n";
+    }
+
+    # and do the page edit.
+    wiki_edit_page($wikih, $namespace, $config -> {"wiki2course"} -> {"media_page"}, \$mediapage, $dryrun);
+}
+
+
+## @fn void make_coursedata($wikih, $themes, $coursemap)
+# Create the course data page in the wiki.
+#
+# @param wikih     A reference to a Mediawiki::API object.
+# @param themes    A string containing the list of theme links.
+# @param coursemap A string containing the course map html.
+sub make_coursedata {
+    my $wikih     = shift;
+    my $themes    = shift;
+    my $coursemap = shift;
+
+    # Horribly messy concatenation of all the page data
+    my $cdpage = wiki_link($namespace.":".$config -> {"wiki2course"} -> {"course_page"}."View ".lc($config -> {"wiki2course"} -> {"course_page"})." page")."\n".
+                 "== ".$config -> {"wiki2course"} -> {"themes_title"}." ==\n".
+                 $themes."\n".
+                 "== Resources ==\n".
+                 wiki_link($namespace.":".$config -> {"wiki2course"} -> {"media_page"}, "Media")."\n".
+                 "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n".
+                 "<source lang=\"xml\" style=\"emacs\">\n".
+                 "<course version=\"\" title=\"\" splash=\"\" type=\"\" width=\"\" height=\"\">\n".
+                 "<message><![CDATA[ ]]></message>\n".
+                 ($coursemap ? "<maps><map>$coursemap</map></maps>\n" : "").
+                 "</course>\n</source>\n";
+
+    # and do the page edit.
+    wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"data_page"}), \$cdpage, $dryrun);
+}
+
+
+## @fn void make_course($wikih)
+# Create (or update) the course page in the wiki.
+#
+# @param wikih A reference to a Mediawiki::API object.
+sub make_course {
+    my $wikih = shift;
+
+    my $course = "== Development resources ==\n".
+                 "[[$namespace:".ucfirst($config -> {"wiki2course"} -> {"data_page"})."]]<br/>\n".
+                 "[[$namespace:TODO]]\n\n".
+                 "== Source data ==\n".
+                 "[[$namespace:Anim Source]]<br/>\n".
+                 "[[$namespace:Image Source]]<br/>";
+
+    wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"course_page"}), \$course, $dryrun);
+}
 
 # -----------------------------------------------------------------------------
 #  Interesting Stuff
@@ -641,21 +766,27 @@ if(-d $coursedir) {
     opendir(CDIR, $coursedir)
         or die "FATAL: Unable to open course directory: $!\n";
 
-    my $themelist = "== Themes ==\n";
+    my $themelist = "";
+    my $mediahash = { };
     while(my $entry = readdir(CDIR)) {
         # skip anything that isn't a directory for now
         next if($entry =~ /^\.\.?$/ || !(-d path_join($coursedir, $entry)));
 
-        my $themelink = scan_theme_directory($wikih, path_join($coursedir, $entry), $entry);
+        my $themelink = scan_theme_directory($wikih, path_join($coursedir, $entry), $entry, $mediahash);
         $themelist .= "$themelink<br />\n" if($themelink);
     }
 
     # check for a course index to push into the course metadata
-#    my $coursemap = extract_coursemap();
+    my $coursemap = ''; #extract_coursemap();
+
+    # Make the media page
+    make_mediapage($wikih, $mediahash);
 
     # Finish off the course page as much as possible
-#    make_coursedata($themelist, $coursemap);
+    make_coursedata($wikih, $themelist, $coursemap);
 
+    # and update the course page to make sure the link is correct
+    make_course($wikih);
 }
 
 print "Import finished.\n";
