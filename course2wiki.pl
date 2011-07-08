@@ -133,6 +133,52 @@ sub doomsayer {
     print "\nStarting course to wiki conversion.\n";
 }
 
+## @fn $ extract_coursemap($wikih, $media)
+# Retrieve the contents of the course map for the imported course.
+#
+# @param wikih A reference to the MediaWiki::API wiki handle.
+# @param media A refrence to a hash to store media file links in.
+sub extract_coursemap {
+    my $wikih = shift;
+    my $media = shift;
+    my $mapfile = path_join($coursedir, "coursemap.html");
+
+    $logger -> print($logger -> DEBUG, "Processing $mapfile.");
+
+    my $root = eval { HTML::TreeBuilder -> new_from_file($mapfile) };
+    die "FATAL: Unable to load and parse $mapfile: $@" if($@);
+    $root = $root -> elementify();
+
+    # And now the content div
+    my $content = $root -> look_down("id", "content");
+    if(!$content) {
+        $logger -> print($logger -> WARNING, "Unable to locate content div in $mapfile. Unable to load step.");
+        $root -> delete();
+        return undef;
+    }
+
+    # get the contents
+    my $realcontent = $content -> as_HTML();
+    $realcontent =~ s|^<div id="content">(.*)</div>$|$1|s;
+
+    # save any media used in the content
+    my @imglist = $realcontent =~ /src="(.*?\.(?:gif|png|jpg|swf))"/g;
+    my $medialist = [];
+    foreach my $src (@imglist) {
+        my $outname = fix_media_name($src);
+        wiki_upload_media($wikih, path_join($coursedir, $src), $outname, $dryrun);
+
+        # store the media link for inclusion in the media page later
+        push(@$medialist, wiki_link("File:$outname"));
+    }
+    $media -> {"Course Map"} = $medialist if(scalar(@$medialist));
+
+    # Explicitly delete the tree to prevent memory leaks
+    $root -> delete();
+
+    return $realcontent;
+}
+
 
 ## @fn $ load_legacy_resource($dirname, $resname)
 # Load the content of the specified resource file from the directory, and
@@ -676,7 +722,7 @@ sub make_coursedata {
                  "<source lang=\"xml\" style=\"emacs\">\n".
                  "<course version=\"\" title=\"\" splash=\"\" type=\"\" width=\"\" height=\"\">\n".
                  "<message><![CDATA[ ]]></message>\n".
-                 ($coursemap ? "<maps><map>$coursemap</map></maps>\n" : "").
+                 ($coursemap ? "<maps><map><![CDATA[$coursemap]]></map></maps>\n" : "").
                  "</course>\n</source>\n";
 
     # and do the page edit.
@@ -777,7 +823,7 @@ if(-d $coursedir) {
     }
 
     # check for a course index to push into the course metadata
-    my $coursemap = ''; #extract_coursemap();
+    my $coursemap = extract_coursemap($wikih, $mediahash);
 
     # Make the media page
     make_mediapage($wikih, $mediahash);
