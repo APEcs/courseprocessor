@@ -166,7 +166,11 @@ sub extract_coursemap {
     my $medialist = [];
     foreach my $src (@imglist) {
         my $outname = fix_media_name($src);
-        wiki_upload_media($wikih, path_join($coursedir, $src), $outname, $dryrun);
+        $logger -> print($logger -> DEBUG, "Found image: $src storing as $outname");
+
+        # Do the upload if possible
+        my $errs = wiki_upload_media($wikih, path_join($coursedir, $src), $outname, $dryrun);
+        $logger -> print($logger -> WARNING, $errs) if($errs);
 
         # store the media link for inclusion in the media page later
         push(@$medialist, wiki_link("File:$outname"));
@@ -337,12 +341,14 @@ sub fix_flash {
     # If we have all three, it's probably a flash tag...
     if($width && $height && $flash) {
         my $outname = fix_media_name($flash);
-        wiki_upload_media($wikih, $flash, $outname, $dryrun);
+        $logger -> print($logger -> DEBUG, "Found flash animation: $flash storing as $outname");
 
-        # store the media link for inclusion in the media page later
+        # upload the file if possible
+        my $errs = wiki_upload_media($wikih, $flash, $outname, $dryrun);
+        $logger -> print($logger -> WARNING, $errs) if($errs);
+
+        # store the media link for inclusion in the media page later, even if upload failed
         push(@$media, wiki_link("File:$outname"));
-
-        $logger -> print($logger -> DEBUG, "Found flash animation: $flash stored as $outname");
 
         return '{flash}file='.$outname.'|width='.$width.'|height='.$height.'{/flash}';
     }
@@ -413,7 +419,10 @@ sub fix_image {
 
     # Image is not maths, or has no alt tag if it is, so upload image...
     my $outname = fix_media_name($imgname);
-    wiki_upload_media($wikih, $imgname, $outname, $dryrun);
+    $logger -> print($logger -> DEBUG, "Found maths image: $imgname storing as $outname");
+
+    my $errs = wiki_upload_media($wikih, $imgname, $outname, $dryrun);
+    $logger -> print($logger -> WARNING, $errs) if($errs);
 
     # store the media link for inclusion in the media page later
     push(@$media, wiki_link("File:$outname"));
@@ -650,7 +659,10 @@ sub scan_theme_directory {
 
             if($imgsrc) {
                 my $outname = fix_media_name($imgsrc);
-                wiki_upload_media($wikih, $imgsrc, $outname, $dryrun);
+                $logger -> print($logger -> DEBUG, "Found image in metadata: $imgsrc storing as $outname");
+
+                my $errs = wiki_upload_media($wikih, $imgsrc, $outname, $dryrun);
+                $logger -> print($logger -> WARNING, $errs) if($errs);
 
                 # store the media link for inclusion in the media page later
                 push(@$thememedia, wiki_link("File:$outname"));
