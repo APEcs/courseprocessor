@@ -435,13 +435,14 @@ sub wiki_edit_page {
 }
 
 
-## @fn void wiki_upload_media($wikih, $file, $name, $dryrun)
+## @fn $ wiki_upload_media($wikih, $file, $name, $dryrun)
 # Upload the file at the specified location and give it the provided name.
 #
 # @param wikih  A reference to a MediaWiki API object.
 # @param file   The path to the file to upload.
 # @param name   The name of the file in the wiki.
 # @param dryrun If true, the file is not really uploaded.
+# @return undef on success, otherwise an error message.
 sub wiki_upload_media {
     my $wikih  = shift;
     my $file   = shift;
@@ -452,9 +453,15 @@ sub wiki_upload_media {
     if($dryrun) {
         print "Dry-run mode enabled. The following file would be uploaded to the wiki:\n";
         print " Source file: $file\nName in wiki: $name\n";
+
+        # Make damned sure we can read it.
+        open(RESFILE, $file)
+            or return "Upload will fail as '$file' can not be opened: $!";
+        close(RESFILE);
+
     } else {
         open(RESFILE, $file)
-            or die "FATAL: failed to open media file '$file': $!\n";
+            or return "Failed to open media file '$file': $!";
 
         binmode RESFILE;
         my ($buffer, $data);
@@ -466,8 +473,9 @@ sub wiki_upload_media {
         $wikih -> upload({ title => $name,
                            summary => 'File uploaded by bot',
                            data => $data })
-            or die "FATAL: upload of $name failed: ".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"};
+            or return "Upload of $name failed: ".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"};
     }
+    return undef;
 }
 
 1;
