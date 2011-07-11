@@ -644,7 +644,7 @@ sub scan_theme_directory {
     # Check the metadata for images
     my @mdimages = $metadata =~ m|<img\s+(.*?)>|gs;
     if(scalar(@mdimages)) {
-        print "Got ",scalar(@mdimages)," images in metadata\n";
+        $logger -> print($logger -> DEBUG, "Got ",scalar(@mdimages)," images in metadata");
 
         # Change to the theme dir, as image sources will be relative
         my $cwd = getcwd();
@@ -652,7 +652,7 @@ sub scan_theme_directory {
             or die "FATAL: Unable to change to directory '$fullpath': $!\n";
 
         foreach my $mdimg (@mdimages) {
-            print "Processing '$mdimg'\n";
+            $logger -> print($logger -> DEBUG, "Processing '$mdimg'");
 
             # Can we get a sources?
             my ($imgsrc) = $mdimg =~ /src="(.*?)"/;
