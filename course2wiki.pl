@@ -414,7 +414,9 @@ sub fix_image {
         # Yes, this looks like maths, try returning the contents of the alt in a maths tag
         my ($maths) = $imgattrs =~ /alt="(.*?)"/s;
 
-        return "<math>$maths</math>" if($maths);
+        # Can't use <math> here, as HTML::WikiConverter will break it, so send back
+        # something that can be easily converted.
+        return "\{math\}$maths\{/math\}" if($maths);
     }
 
     # Image is not maths, or has no alt tag if it is, so upload image...
@@ -427,8 +429,9 @@ sub fix_image {
     # store the media link for inclusion in the media page later
     push(@$media, wiki_link("File:$outname"));
 
-    # and send back a bog-standard image tag.
-    return "[[Image:$outname]]";
+    # Can't return a 'standard' image tag, as HTML::WikiConverter will <nowiki> wrap it,
+    # so send back something we can identify and munge.
+    return "\{Image:$outname\}";
 }
 
 
@@ -451,16 +454,20 @@ sub convert_content {
     # Fix flash, stage 1
     $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
 
-    # Fix images
+    # Fix images, stage 1
     $content =~ s|<div.*?><img\s+(.*?)></div>|fix_image($wikih, $1, $media)|ges;
     $content =~ s|<a.*?><img\s+(.*?)></a>|fix_image($wikih, $1, $media)|ges;
 
     # Do html conversion
-    my $mw = new HTML::WikiConverter(dialect => 'MediaWiki');
+    my $mw = new HTML::WikiConverter(dialect => 'MediaWiki', preserve_templates => 1 );
     my $mwcontent = $mw -> html2wiki($content);
 
     # Fix flash, stage 2
     $mwcontent =~ s|{(/?flash)}|<$1>|g;
+
+    # Fix images, stage 2
+    $mwcontent =~ s|{(/?math)}|<$1>|g;
+    $mwcontent =~ s|{(Image:.*?)}|[[$1]]|g;
 
     # Trim any trailing <br/>
     $mwcontent =~ s|<br\s*/>\s*$||g;
@@ -725,7 +732,7 @@ sub make_coursedata {
     my $coursemap = shift;
 
     # Horribly messy concatenation of all the page data
-    my $cdpage = wiki_link($namespace.":".$config -> {"wiki2course"} -> {"course_page"}."View ".lc($config -> {"wiki2course"} -> {"course_page"})." page")."\n".
+    my $cdpage = wiki_link($namespace.":".$config -> {"wiki2course"} -> {"course_page"}, "View ".lc($config -> {"wiki2course"} -> {"course_page"})." page")."\n".
                  "== ".$config -> {"wiki2course"} -> {"themes_title"}." ==\n".
                  $themes."\n".
                  "== Resources ==\n".
