@@ -1,9 +1,18 @@
+Version 3.8.3
+=============
+
+Bug fixes:
+  - Improvements to ImageTools to support new image types and cleaner images.
+
+Additions:
+  - [bug 15] course2wiki.pl script added to support importing of old courses.
+
 Version 3.8.2
 =============
 
-Bug files:
+Bug fixes:
   - serious problems with step filtering addressed (previously step filtering
-    could have caused gaps in step numbering, breaking normal navigation). 
+    could have caused gaps in step numbering, breaking normal navigation).
     Complete overhaul of step numbering system implemented.
 
   - empty front page message caused erroneous HASH address display in generated
@@ -13,7 +22,7 @@ Bug files:
 
 Additions:
   - [bug 7] support for objectives and outcomes added.
- 
+
   - documentation for <outcomes>, <outcome>, <objectives>, and <objective>
     metadata elements added.
 
@@ -21,19 +30,19 @@ Version 3.8
 ===========
 
 Bug fixes:
-  - Filter list is cleared before requesting a new list, prevents users from 
+  - Filter list is cleared before requesting a new list, prevents users from
     selecting filter keywords, changing courses, and then hitting next with
     the old filter selected.
 
   - Rewording of welcome stage for clarity.
-  
+
 Additions:
   - WARNING messages are now copied to separate boxes on the export and process
     stages of the web interface.
 
   - filtering rules for steps now use step titles rather than ids.
 
-  - full documentation for the web interface and filtering, and upgraded 
+  - full documentation for the web interface and filtering, and upgraded
     documentation for the rest of the system.
 
 Version 3.7.3
@@ -60,7 +69,7 @@ Version 3.7.0
 =============
 
 Bug fixes:
-  - various small fixes to correct behaviour for full release in response to 
+  - various small fixes to correct behaviour for full release in response to
     testing.
 
 
@@ -85,38 +94,38 @@ Bug fixes:
     material and attempt to address it.
 
 Additions:
-  - [bug 1] Page transclusion using {{Template}} syntax supported. Full 
+  - [bug 1] Page transclusion using {{Template}} syntax supported. Full
     support for all template operations available.
-    
-  - [bug 2] Media files (images, animations, etc) are now listed on a single 
+
+  - [bug 2] Media files (images, animations, etc) are now listed on a single
     Media page.
 
   - [bug 3] Multiple streamed videos per page are now supported.
 
-  - [bug 4] HTMLOutputHandler now uses the framework directory inside the 
-    active template directory to construct the framework for the course. No 
-    separate user-maintained framework is needed (effectively, all course 
+  - [bug 4] HTMLOutputHandler now uses the framework directory inside the
+    active template directory to construct the framework for the course. No
+    separate user-maintained framework is needed (effectively, all course
     content can now be stored within the wiki.)
 
-  - [bug 5] wiki2course now uses mediawiki's API to convert a page from 
+  - [bug 5] wiki2course now uses mediawiki's API to convert a page from
     mediawiki markup to html. Complete support for all mediawiki markup is
     now available (including tables).
 
   - [bug 8] internal documentation has been overhauled to be doxygen
     compatible (requires doxygen perl filter to be installed)
 
-  - [bug 9] wiki2course: local tags may contain wiki links to transclude pages 
+  - [bug 9] wiki2course: local tags may contain wiki links to transclude pages
     using the syntax [local][[NS:Page]][/local]
 
   - [bug 16] streamflv is now supported, including multiple streams per page.
 
-  - [bug 17] fixing bug 5 now makes 17 a non-issue (mediawiki will generate 
+  - [bug 17] fixing bug 5 now makes 17 a non-issue (mediawiki will generate
     the content of the <math> element, and wiki2course downloads the result).
 
   - [bug 18] fixed as a side effect of bug 5 above. Spash images for streamed
     videos are now supported.
 
-  - [bug 20] <popup> tags are processed by the API (see bug 5 above), and 
+  - [bug 20] <popup> tags are processed by the API (see bug 5 above), and
     [local] tags are now converted to popups.
 
   - [bug 21] POD usage information added to both core scripts.
@@ -126,33 +135,33 @@ Additions:
 
   - [bug 31] All filtering operations are now supported.
 
-  - [bug 32] wiki2course now generates flash tags in html, [anim] generation 
+  - [bug 32] wiki2course now generates flash tags in html, [anim] generation
     has been removed.
 
-  - [bug 35] the metadata loader will now autmomatically insert missing 
+  - [bug 35] the metadata loader will now autmomatically insert missing
     leadsto/prerequisite targets as needed to ensure consistent linking.
     (eg: if an author only specifies leadsto relations for the modules in
     a theme, the loader automagically adds the appropriate prerequisites
     relations). This is only done when metadata validation is enabled!
 
-  - [bug 36] wiki2course can now process transclusions at all levels in a 
+  - [bug 36] wiki2course can now process transclusions at all levels in a
     course other than the Course: page.
 
   - new metadata structure and tags available. Please consult the metadata
     documentation: http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Metadata
 
-  - automatic generation of course maps and the required theme buttons, with 
-    the ability for users to set a user-created map to use instead of an 
+  - automatic generation of course maps and the required theme buttons, with
+    the ability for users to set a user-created map to use instead of an
     auto-generated map if needed.
 
 Others:
-  - internal structure of processor.pl has been completely overhauled to be more 
+  - internal structure of processor.pl has been completely overhauled to be more
     future-proof and maintainable.
 
   - running processor.pl at minimum verbosity will present the user with simple
     progress bars indicating processing status, rather than scrolling messages.
 
-  - theme pages should no longer include a == Resources == section: resource 
+  - theme pages should no longer include a == Resources == section: resource
     handling is now done entirely inside the metadata.
 
   - if steps are processed with html tidy, any output is cached and the cache
