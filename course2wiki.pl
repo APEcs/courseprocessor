@@ -859,3 +859,141 @@ print "Import finished.\n";
 
 # THE END!
 __END__
+
+=head1 NAME
+
+course2wiki - import a course into a wiki namespace.
+
+=head1 SYNOPSIS
+
+course2wiki [options]
+
+ Options:
+    -c, --course=PATH        The location of the course to import.
+    --dry-run                Perform the import without updating the wiki.
+    --force                  Suppress the startup warning and countdown.
+    -g, --config=FILE        Use an alternative configuration file.
+    -h, -?, --help           Brief help message.
+    --man                    Full documentation.
+    -n, --namespace=NAME     The namespace containing the course to export.
+    -p, --password=PASSWORD  Password to provide when logging in. If this is
+                             not provided, it will be requested at runtime.
+    --pid=FILE               Write the process id to a file.
+    -q, --quiet              Suppress all normal status output.
+    -u, --username=NAME      The name to log into the wiki as.
+    --uploadurl=URL          The location of the wiki's Special:Upload page.
+    -v, --verbose            If specified, produce more progress output.
+    -w, --wiki=APIURL        The url of the mediawiki API to use.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-c, --course>
+
+I<This argument must be provided.> This argument tells the script where the
+course to be imported is stored. The specified path should be the root of the
+course (the directory containing the course themes).
+
+=item B<--dry-run>
+
+Perform the import process without updating the wiki. When the script is invoked
+with this argument, it will go through the course pretending to import it into
+the wiki without actually updating it. All actions that would be performed
+are reported on the terminal so that the user can verify that the course would
+be imported correctly. I<It is important that you run the importer with this
+argument until you are certain the course will import correctly.> If the script
+is invoked without this argument (and without the --force argument) it will
+show a warning message and 5 second countdown before starting the import.
+
+=item B<--force>
+
+If specified, this will suppress the warning message and countdown shown when
+the script is started without the --dry-run argument.
+
+=item B<-g, --config>
+
+Specify an alternative configuration file to use during importing. If not set,
+the .courseprocessor.cfg file in the user's home directory will be used instead.
+
+=item B<-h, -?, --help>
+
+Print a brief help message and exits.
+
+=item B<--man>
+
+Prints the manual page and exits.
+
+=item B<-n, --namespace>
+
+I<This argument must be provided.> This argument identifies the namespace
+containing the course you want to export, and it must correspond to a valid
+namespace in the wiki. As ever, case is important here, so triple-check that
+you have provided the namespace name in the correct case.
+
+The namespace must already exist in the wiki before you can import a course
+into it, this tool will not create a namespace for you!
+
+=item B<-p, --password>
+
+This argument is optional. If provided, the script will attempt to use the
+specified password when logging into the wiki. Use of this argument is
+B<very strongly discouraged in general use> - it is provided to allow the
+export script to be called programmatically, and providing your password this
+way can be a security risk (anyone looking over your shoulder could see the
+plain text password on the command prompt, and the whole command line will be
+saved in your shell history, including the password).
+
+=item B<--pid>
+
+If specified, the script will write its process ID to the file provided. This
+is primarily needed to support the web interface.
+
+=item B<-q, --quiet>
+
+Suppresses all non-fatal output. If quiet is set, the script will not print
+any status, warning, or debugging information to stdout regardless of the
+verbosity setting. Fatal errors will still be printed to stderr as normal.
+
+=item B<-u, --username>
+
+I<This argument must be provided.> This argument specifies which username
+should be used to log into the wiki. This must correspond to a valid wiki
+user, and you will need to either provide the password using the --password
+option described above, or you will be prompted to enter the password by
+course2wiki.pl. If your username contains spaces, please ensure that you
+either enclose the username in quotes, or replace any spaces with
+underscores. Note that wiki usernames B<are case sensitive>, so check that
+you use the correct case when specifying your username or the login will fail.
+
+=item B<--uploadurl>
+
+Specifies the location of the Special:Upload page in the target wiki. If not
+provided, this will default to the upload page on the development wiki. If
+you specify a different wiki with the --wiki argument you will almost certainly
+need to specify your own uploadurl as well!
+
+=item B<-v, --verbose>
+
+Increase the verbosity of status reporting. By default (unless the quiet flag
+is set), course2wiki.pl will only output warning messages during course import.
+If you include -v on the command line, it will output warnings and notices.
+For complete status information including debug messages, specify -v twice
+(-v -v).
+
+=item B<-w, --wiki>
+This argument is optional. If provided, the script will use the MediaWiki API
+script specified rather than the default DevWiki version.
+
+=back
+
+=head1 DESCRIPTION
+
+=over 8
+
+Please consult the Docs:course2wiki.pl documentation in the wiki for a full
+description of this program.
+
+=back
+
+=cut
