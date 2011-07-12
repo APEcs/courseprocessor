@@ -391,6 +391,9 @@ sub wiki_export_module {
         # Do we have any content? If not, bomb now
         if($mpage) {
 
+            # Strip anything before the first title
+            $mpage =~ s/^.*?==/==/s;
+
             # Mark the == title == a little more reliably
             $mpage =~ s/^==([^=].*?)==/--==$1==/gm;
 
