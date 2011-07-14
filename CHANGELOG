@@ -7,6 +7,9 @@ Bug fixes:
 Additions:
   - [bug 15] course2wiki.pl script added to support importing of old courses.
 
+  - <noinclude>{{NS:CourseNav}}</noinclude> stripped during export when
+    transclusion is enabled. This allows course navigation blocks in the wiki.
+
 Version 3.8.2
 =============
 
