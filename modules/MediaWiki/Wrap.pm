@@ -149,6 +149,9 @@ sub wiki_fetch {
     # Return right here if we are not transcluding, no point doing more work than we need.
     return $content if(!$transclude || !$content);
 
+    # Strip any coursenav transclusions
+    $content =~ s|<noinclude>{{.*?:CourseNav}}</noinclude>||gis;
+
     # Break any transclusions inside <nowiki></nowiki>
     while($content =~ s|(<nowiki>.*?)\{\{([^<]+?)\}\}(.*?</nowiki>)|$1\{\(\{$2\}\)\}$3|is) { };
 
