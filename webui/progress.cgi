@@ -66,16 +66,13 @@ END {
 }
 
 
-## @fn $ check_zip($sysvars, $pidfile)
-# Determine whether the zip wrapper is currently working. This will determine whether the
-# wrapper process is still alive, and return true if it is.
+## @fn $ process_running($pidfile)
+# Check whether the process whose id is stored in the specified pidfile is still running.
 #
-# @param sysvars A reference to a hash containing database, session, and settings objects.
 # @param pidfile Optional PID file to load, if not specified the session default file is used.
-# @return true if the exporter is running, false otherwise.
-sub check_zip {
-    my $sysvars = shift;
-    my $pidfile = shift || untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "zipwrapper.pid"));
+# @return true if the process is running, undef otherwise.
+sub process_running {
+    my $pidfile = shift;
 
     # Does the pid file even exist? If not don't bother doing anything
     return 0 if(!-f $pidfile);
@@ -84,6 +81,25 @@ sub check_zip {
     my $pid = read_pid($pidfile);
 
     return $pid if(kill 0, $pid);
+
+    return undef;
+}
+
+
+## @fn $ check_zip($sysvars, $pidfile)
+# Determine whether the zip wrapper is currently working. This will determine whether the
+# wrapper process is still alive, and return true if it is.
+#
+# @param sysvars A reference to a hash containing database, session, and settings objects.
+# @param pidfile Optional PID file to load, if not specified the session default file is used.
+# @return true if the wrapper is running, false otherwise.
+sub check_zip {
+    my $sysvars = shift;
+    my $pidfile = shift || untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"work_path"}, $sysvars -> {"session"} -> {"sessid"}, "zipwrapper.pid"));
+
+    # Is the wrapper running?
+    my $running = process_running($pidfile);
+    return $running if(defined($running));
 
     # get here and the task in the pid file is no longer present, so remove the file
     unlink $pidfile;
@@ -166,6 +182,13 @@ if($mode eq "zipwrapper") {
 
         print $data;
 
+        # If we haven't hit a 'safe' exit case (FATAL or 'finished'), the process needs to be
+        # running, or we have problems
+        if(!process_running($pidfile) && $data !~ /FATAL:/ && $data !~ /Export finished/ && $data !~ /Processing complete/) {
+            print ($settings -> {"config"} -> {"colour_progress"} ? '<span class="error">' : "").
+                  "FATAL: $mode script ended unexpectedly!<br/>".
+                  ($settings -> {"config"} -> {"colour_progress"} ? '</span>' : "");
+        }
     } else {
         print $out -> header(-type => 'text/plain');
         print "No log file present.";
