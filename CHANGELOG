@@ -4,6 +4,11 @@ Version 3.8.3
 Bug fixes:
   - Improvements to ImageTools to support new image types and cleaner images.
 
+  - progress.cgi now checks to make sure that the helper script (wiki2course or
+    processor) is still running. If it isn't it verifies that it exited
+    'normally' (either with a FATAL error, or a normal finish), and if the
+    helper died unexpectedly, progress.cgi will print its own FATAL error.
+
 Additions:
   - [bug 15] course2wiki.pl script added to support importing of old courses.
 
