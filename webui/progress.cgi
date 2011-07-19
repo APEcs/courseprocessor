@@ -174,6 +174,12 @@ if($mode eq "zipwrapper") {
         $data =~ s|\n|<br />\n|g; # explicitly force newlines
         $data =~ s|$outbase||g;   # remove scary/path exposing output
 
+        # If we haven't hit a 'safe' exit case (FATAL or 'finished'), the process needs to be
+        # running, or we have problems
+        if(!process_running($pidfile) && $data !~ /FATAL:/ && $data !~ /Export finished/ && $data !~ /Processing complete/) {
+            $data .= "FATAL: $mode script ended unexpectedly!<br/>\n";
+        }
+
         # If we have colourisation enabled, do some
         if($settings -> {"config"} -> {"colour_progress"}) {
             $data =~ s|^(WARNING: .*?)$|<span class="warn">$1</span>|mg;
@@ -181,14 +187,6 @@ if($mode eq "zipwrapper") {
         }
 
         print $data;
-
-        # If we haven't hit a 'safe' exit case (FATAL or 'finished'), the process needs to be
-        # running, or we have problems
-        if(!process_running($pidfile) && $data !~ /FATAL:/ && $data !~ /Export finished/ && $data !~ /Processing complete/) {
-            print ($settings -> {"config"} -> {"colour_progress"} ? '<span class="error">' : "").
-                  "FATAL: $mode script ended unexpectedly!<br/>".
-                  ($settings -> {"config"} -> {"colour_progress"} ? '</span>' : "");
-        }
     } else {
         print $out -> header(-type => 'text/plain');
         print "No log file present.";
