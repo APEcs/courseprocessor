@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of a simple logging system for 
+# This file contains the implementation of a simple logging system for
 # the processor.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
@@ -23,7 +23,7 @@
 ## @class Logger
 # A class to handle logging operations throughout the processor. This collects
 # together the various functions needed for displaying log messages and errors
-# at various levels of verbosity, in an attempt to cut down on duplicate 
+# at various levels of verbosity, in an attempt to cut down on duplicate
 # parameter passing throughout the rest of the system.
 #
 package Logger;
@@ -47,7 +47,7 @@ use constant MAX_VERBOSITY => 2;
 # verbosity   - One of the verbosity level constants, any messages over this will
 #               not be printed. If this is not specified, it defaults to DEBUG
 #               (the highest supported verbosity)
-# fatalblargh - If set to true, any calls to the blargh function kill the 
+# fatalblargh - If set to true, any calls to the blargh function kill the
 #               script immediately, otherwise blarghs produce warning messages.
 #               Defaults to false.
 # logname     - If set, messages sent to warn_log and die_log will be appended
@@ -59,7 +59,7 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
 
-    my $self = { 
+    my $self = {
         "verbosity"   => DEBUG,
         "fatalblargh" => 0,
         "outlevels"   => [ "WARNING", "NOTICE", "DEBUG" ],
@@ -123,7 +123,7 @@ sub start_log {
 
 
 ## @method void end_log($progname)
-# Stop logging warnings and errors to a file. This will write an indicator 
+# Stop logging warnings and errors to a file. This will write an indicator
 # that logging is stopping to the file and then close it.
 #
 # @param progname A optional program name to show in the log. Defaults to $0
@@ -153,11 +153,11 @@ sub end_log {
 ## @method $ fatal_setting($newstate)
 # Get (and optionally set) the value that determines whether calls to blargh
 # are fatal. If newstate is provided, the current state of blargh severity is
-# set to the new state. 
+# set to the new state.
 #
 # @param newstate If specified, change the value that determines whether calls
-#                 to blargh are fatal: if set to true, calls to blargh will exit 
-#                 the script immediately with an error, if set to 0 calls to 
+#                 to blargh are fatal: if set to true, calls to blargh will exit
+#                 the script immediately with an error, if set to 0 calls to
 #                 blargh will generate warning messages.
 # @return The current state of blargh fatality.
 sub fatal_setting {
@@ -172,7 +172,7 @@ sub fatal_setting {
 
 ## @method void print($level, $message, $newline)
 # If the specified level is less than, or equal to, the current verbosity level,
-# print the specified message to stdout. If the level is over the verbosity 
+# print the specified message to stdout. If the level is over the verbosity
 # level the message is discarded.
 #
 # @param level   The level of the message, should be one of WARNING, NOTICE, or DEBUG.
@@ -188,27 +188,33 @@ sub print {
     my $newline   = shift;
 
     $newline = 1 if(!defined($newline));
+    my $logfile = $self -> {"logfile"};
 
-    print $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "")
-        if($level <= $self -> {"verbosity"});
+    if($level <= $self -> {"verbosity"}) {
+        print $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "");
+        print $logfile $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "");
+
+        # flush stdout if needed to avoid log update delays
+        select((select(STDOUT), $| = 1)[0]) if($newline);
+    }
 }
 
 
 ## @method void blargh($message)
 # Generate a message indicating that a serious problem has occurred. If the logging
-# object is set up such that blargh()s are fatal, this function will die with the 
+# object is set up such that blargh()s are fatal, this function will die with the
 # specified message, otherwise the message will be printed as a warning.
 #
 # @param message The message to print.
 sub blargh {
     my $self    = shift;
-    my $message = shift; 
+    my $message = shift;
 
-    if($self -> {"fatalblargh"}) { 
-        die "FATAL: $message\n"; 
-    } else { 
-        $self -> print(WARNING, $message); 
-    } 
+    if($self -> {"fatalblargh"}) {
+        die "FATAL: $message\n";
+    } else {
+        $self -> print(WARNING, $message);
+    }
 }
 
 
