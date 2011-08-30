@@ -192,7 +192,7 @@ sub print {
 
     if($level <= $self -> {"verbosity"}) {
         print $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "");
-        print $logfile $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "");
+        print $logfile $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "") if($logfile);
 
         # flush stdout if needed to avoid log update delays
         select((select(STDOUT), $| = 1)[0]) if($newline);
