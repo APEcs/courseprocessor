@@ -1,10 +1,10 @@
 #!/usr/bin/perl -wT
 
 ## @file
-# APEcs course processor web frontend, help script. This script provides 
+# APEcs course processor web frontend, help script. This script provides
 # a means for users to contact the support address while simultaneously
 # including vital information in the email.
-# 
+#
 # @version 1.0.2 (9 March 2011)
 # @copy 2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -62,7 +62,7 @@ my $contact = 'webmaster@starforge.co.uk'; # global contact address, for error m
 # install more useful error handling
 BEGIN {
     $ENV{"PATH"} = ""; # Force no path.
-    
+
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
     sub handle_errors {
         my $msg = shift;
@@ -81,7 +81,7 @@ END {
 }
 
 # Names of the language variables storing stage titles.
-my @titlenames = ("WELCOME_TITLE", 
+my @titlenames = ("WELCOME_TITLE",
                   "LOGIN_TITLE",
                   "COURSE_TITLE",
                   "EXPORT_TITLE",
@@ -114,7 +114,7 @@ sub get_static_data {
     $data -> {"wiki_user"} = $sysvars -> {"template"} -> replace_langvar("HELP_ERR_USERNAME") unless($data -> {"wiki_user"});
 
     # Get the title for the stage, if the stage set is numeric.
-    $data -> {"stagename"} = $sysvars -> {"template"} -> replace_langvar($titlenames[$stage] || "HELP_ERR_NOSTAGE") 
+    $data -> {"stagename"} = $sysvars -> {"template"} -> replace_langvar($titlenames[$stage] || "HELP_ERR_NOSTAGE")
         if($stage =~ /^\d+$/);
 
     # Get the selected course namespace
@@ -127,7 +127,7 @@ sub get_static_data {
 ## @fn @ build_help_form($sysvars, $stage, $error, $args)
 # Generate the form to send to the user requesting their details and the details of the problem.
 # This will build the contents of the page through which the user should detail their problem
-# with the course processor web interface. 
+# with the course processor web interface.
 #
 # @param sysvars  A reference to a hash containing template, cgi, settings, session, and database objects.
 # @param stage    The stage the user was on when they hit "Contact support"
@@ -147,7 +147,7 @@ sub build_help_form {
         if($error);
 
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course"), 
+    my $subcourse = {"***course***"   => ($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course"),
                      "***lccourse***" => lc($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Spit out the message box with the form...
@@ -198,38 +198,38 @@ sub validate_help_form {
     my ($args, $error, $errors) = ({}, "", "");
 
     # Pull out the name, even though it's not required
-    ($args -> {"name"}, $error) = $sysvars -> {"validator"} -> validate_string($sysvars, 'name', {"required" => 0,
-                                                                                                  "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_NAME"),
-                                                                                                  "maxlen"   => 128});
+    ($args -> {"name"}, $error) = $sysvars -> {"validator"} -> validate_string('name', {"required" => 0,
+                                                                                        "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_NAME"),
+                                                                                        "maxlen"   => 128});
     $errors .= "$error<br />" if($error);
 
     # Do we have an email specified?
-    ($args -> {"email"}, $error) =  $sysvars -> {"validator"} -> validate_string($sysvars, 'email', {"required" => 1,
-                                                                                                     "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_EMAIL"),
-                                                                                                     "maxlen"   => 255});
+    ($args -> {"email"}, $error) =  $sysvars -> {"validator"} -> validate_string('email', {"required" => 1,
+                                                                                           "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_EMAIL"),
+                                                                                           "maxlen"   => 255});
     $errors .= "$error<br />" if($error);
-    
+
     # IF we have an email, we want to try to validate it...
     if(!$error) {
         # This is a fairly naive check, but there isn't a huge amount more we can do alas.
         if($args -> {'email'} !~ /^[\w\.-]+\@([\w-]+\.)+\w+$/) {
             $errors .= $sysvars -> {"template"} -> replace_langvar("HELP_ERR_BADEMAIL").'<br />';
         }
-        
+
         # Get here and either $errors has had an appropriate error appended to it, or the email is valid and not in use.
         # lowercase the whole email, as we don't need to deal with "...." < address > here
         $args -> {'email'} = lc($args -> {'email'}) if($args -> {'email'});
     }
-    
+
     # The summary is required...
-    ($args -> {"summary"}, $error) = $sysvars -> {"validator"} -> validate_string($sysvars, 'summary', {"required" => 1,
-                                                                                                        "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_PROBSUMM"),
-                                                                                                        "maxlen"   => 255});
+    ($args -> {"summary"}, $error) = $sysvars -> {"validator"} -> validate_string('summary', {"required" => 1,
+                                                                                              "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_PROBSUMM"),
+                                                                                              "maxlen"   => 255});
     $errors .= "$error<br />" if($error);
 
     # As is the full description
-    ($args -> {"fullprob"}, $error) = $sysvars -> {"validator"} -> validate_string($sysvars, 'fullprob', {"required" => 1,
-                                                                                                          "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_FULLPROB")});
+    ($args -> {"fullprob"}, $error) = $sysvars -> {"validator"} -> validate_string('fullprob', {"required" => 1,
+                                                                                                "nicename" => $sysvars -> {"template"} -> replace_langvar("HELP_FULLPROB")});
     $errors .= "$error<br />" if($error);
 
     return ($args, $errors);
@@ -238,13 +238,13 @@ sub validate_help_form {
 
 ## @fn $ send_help_email($sysvars, $stage, $args)
 # Attempt to send a message to the support address with the information the user
-# has supplied. This will prepare the email, including zipping up any existing 
+# has supplied. This will prepare the email, including zipping up any existing
 # log files, and squirt the lot at sendmail.
 #
 # @param sysvars  A reference to a hash containing template, cgi, settings, session, and database objects.
 # @param stage    The stage the user was on when they hit "Contact support"
 # @param args     A reference to a hash containing any defined variables to show in the form.
-# @return undef on success, otherwise this returns an error message.  
+# @return undef on success, otherwise this returns an error message.
 sub send_help_email {
     my $sysvars = shift;
     my $stage   = shift;
@@ -254,7 +254,7 @@ sub send_help_email {
     my $static = get_static_data($sysvars, $stage);
 
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course"), 
+    my $subcourse = {"***course***"   => ($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course"),
                      "***lccourse***" => lc($static -> {"wiki"} -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Now work out where the user's logs might be
@@ -269,7 +269,7 @@ sub send_help_email {
 
         # We're in the log directory, zip up any logs we can. Note that, if no log files
         # exist, this could easily generate nothing...
-        
+
         # Delete any old zip file, just in case
         unlink("logfiles.zip") if(-f "logfiles.zip");
 
@@ -281,7 +281,7 @@ sub send_help_email {
     # (if the user is the problem, we don't attach them to the email. Thankfully.)
     my @parts;
     my $part = Email::MIME -> create(attributes => { content_type => "text/plain",
-                                                     charset      => "US-ASCII" 
+                                                     charset      => "US-ASCII"
                                                    },
                                      body       => $sysvars -> {"template"} -> load_template("email/help.tem", {"***wikiname***"   => $static -> {"wiki"} -> {"WebUI"} -> {"name"},
                                                                                                                 "***username***"   => $static -> {"wiki_user"},
@@ -318,7 +318,7 @@ sub send_help_email {
                                                   Subject => $args -> {"summary"}
                                                 ],
                                       parts  => \@parts);
-    
+
     # And send it
     return $sysvars -> {"template"} -> send_email_sendmail($email -> as_string());
 }
@@ -332,7 +332,7 @@ sub send_help_email {
 # Generate the contents of the page based on whether the user has filled in the
 # help request form or not..
 #
-# @param sysvars A reference to a hash containing references to the template, 
+# @param sysvars A reference to a hash containing references to the template,
 #                database, settings, and cgi objects.
 # @return A string containing the page to display.
 sub page_display {
@@ -347,7 +347,7 @@ sub page_display {
     if($sysvars -> {"cgi"} -> param("dohelp")) {
         # Determine whether the form contents are valid
         my ($args, $errors) = validate_help_form($sysvars);
-        
+
         # No errors? The form is valid, so dispatch the email and acknowledge the submission.
         if(!$errors) {
             my $errors = send_help_email($sysvars, $stage, $args);
@@ -370,8 +370,8 @@ sub page_display {
     } else {
         ($title, $body) = build_help_form($sysvars, $stage);
     }
-   
-    return $sysvars -> {"template"} -> load_template("page.tem", 
+
+    return $sysvars -> {"template"} -> load_template("page.tem",
                                                      { "***title***"     => $title,
                                                        "***extrahead***" => "",
                                                        "***core***"      => $body || '<p class="error">No page content available, this should not happen.</p>'});
@@ -417,21 +417,21 @@ my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {
 
 # Create something to help out with wiki interaction
 my $wiki = WikiSupport -> new(logger   => $logger,
-                              cgi      => $out, 
+                              cgi      => $out,
                               dbh      => $dbh,
                               settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create wiki support object: ".$WikiSupport::errstr);
 
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
-                                    cgi      => $out, 
+                                    cgi      => $out,
                                     dbh      => $dbh,
                                     settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # And the support object to provide webui specific functions
 my $sess_support = SessionSupport -> new(logger   => $logger,
-                                         cgi      => $out, 
+                                         cgi      => $out,
                                          dbh      => $dbh,
                                          settings => $settings,
                                          session  => $session)
@@ -439,7 +439,7 @@ my $sess_support = SessionSupport -> new(logger   => $logger,
 
 # We also need a form validator object
 my $validators = FormValidators -> new(logger   => $logger,
-                                       cgi      => $out, 
+                                       cgi      => $out,
                                        dbh      => $dbh,
                                        settings => $settings,
                                        session  => $session,
@@ -468,7 +468,7 @@ my $debug = $template -> load_template("debug.tem", {"***secs***"   => sprintf("
                                                      "***user***"   => $user,
                                                      "***system***" => $system,
                                                      "***memory***" => $template -> bytes_to_human(get_proc_size())});
-                                                     
+
 print Encode::encode_utf8($template -> process_template($content, {"***debug***" => $debug}));
 $template -> set_module_obj(undef);
 
