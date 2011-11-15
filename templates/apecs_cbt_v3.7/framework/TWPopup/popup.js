@@ -1,4 +1,3 @@
-
 /* Script: popup.js
  *  
  *  A class to create popups in a document, relative to another element with a user-
@@ -26,10 +25,12 @@ var Popup = new Class({
         onShow: function(popup){
             // uses the long version of fading in, as fade('in')
             // may not work properly on initial load. NFC why this is.
-            popup.get('tween').start('opacity', 0, 1);
+            // popup.get('tween').start('opacity', 0, 1);
+            popup.fade('in');
         },
         onHide: function(popup){
-            popup.get('tween').start('opacity', 1, 0);
+            //popup.get('tween').start('opacity', 1, 0);
+            popup.fade('out');
         },
         showDelay: 100,
         hideDelay: 100,
@@ -275,11 +276,11 @@ function isString() {
 function buildpopup(element, hDel, sDel, xOff, yOff, hEl, sys) 
 {
     // Get the child inner
-    var core = element.getElement('span.twpopup-inner');
-    if(core == null) alert("Malformed element, can't get core!");
+    var coreElem = element.getElement('span.twpopup-inner');
+    if(!coreElem) return;
 
     // Get the element title and parse if it needed...
-    var title = core.getProperty('title');
+    var title = coreElem.getProperty('title');
     if(title) {
         // nuke the title to prevent stray popups
         element.removeProperty('title');
@@ -300,7 +301,7 @@ function buildpopup(element, hDel, sDel, xOff, yOff, hEl, sys)
     }
 
     new Popup(element, 
-              { coreElem: core,
+              { coreElem: coreElem,
                 hideDelay: hDel,
                 showDelay: sDel,
                 offset: {'x': xOff, 'y': yOff},
