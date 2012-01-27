@@ -26,7 +26,7 @@
     <link rel="up" href="../index.html" title="Theme index" />
 
     ***startlink***
-    ***prevlink*** 
+    ***prevlink***
     ***nextlink***
     ***lastlink***
 
@@ -35,11 +35,11 @@
     <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
     <script type="text/javascript" src="../../TWPopup/popup.js"></script>
     <script type="text/javascript" src="../../twtools/zebra.js"></script>
-    <script type="text/javascript" src="../../flowplayer/flowplayer-3.2.4.min.js"></script>
+    <script type="text/javascript" src="../../flowplayer/flowplayer-3.2.6.min.js"></script>
     <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
     <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
     <link href="../../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
-    
+
 </head>
 <body id="step" onload="initializeStepPage('***level***');">
 <a tabindex="1" href="#content" class="accesshide"><img src="../../framework-images/accessibility/1px.gif" alt="Skip to main content of page" border="0" /></a>
@@ -57,7 +57,7 @@
 
                 <div class="right">
 ***previous***
-***next***                
+***next***
                 </div>
 
                 <div class="center">
@@ -106,7 +106,7 @@
             <div id="content">
             ***body***
             </div><!-- id="content" -->
-            
+
             <div class="clearer"></div>
         </div><!-- id="middle-center" --></div><!-- id="middle-right" --></div><!-- id="middle-left" -->
 
@@ -138,7 +138,7 @@
     </div><!--footer-->
 
     <!-- activate flowplayer links -->
-    <script type="text/javascript">flowplayer("a.streamplayer", "../../flowplayer/flowplayer-3.2.5.swf");</script>
+    <script type="text/javascript">flowplayer("a.streamplayer", "../../flowplayer/flowplayer-3.2.7.swf");</script>
 </div><!-- id="page" -->
 </body>
 </html>
