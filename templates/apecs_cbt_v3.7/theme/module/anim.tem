@@ -2,7 +2,7 @@
 <!-- NOTE: THIS IS NOT VALID XHTML! Unfortunately, no reliable, user-transparedn method appears
      to exist to avoid this mess because of browser compatibility issues. Pages including this template
      will break XHTML Strict and there's nothing we can do about it. -->
-<object id="../../***mediadir***/***name***" height="***height***" width="***width***" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0">
+<object style="z-index: 100" id="../../***mediadir***/***name***" height="***height***" width="***width***" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0">
 <param name="allowScriptAccess" value="sameDomain" />
 <param name="movie" value="../../***mediadir***/***name***" />
 <param name="src" value="../../***mediadir***/***name***" />
@@ -15,6 +15,6 @@
 <param name="devicefont" value="0" />
 <param name="embedmovie" value="0" />
 <param name="bgcolor" value="#ffffff" />
-<embed src="../../***mediadir***/***name***" wmode="opaque" quality="high" bgcolor="#ffffff" name="../../***mediadir***/***name***" allowscriptaccess="sameDomain" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" height="***height***" width="***width***">
+<embed style="z-index: 100" src="../../***mediadir***/***name***" wmode="opaque" quality="high" bgcolor="#ffffff" name="../../***mediadir***/***name***" allowscriptaccess="sameDomain" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" height="***height***" width="***width***">
 </object>
 </div>
