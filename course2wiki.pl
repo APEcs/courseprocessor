@@ -475,6 +475,137 @@ sub convert_content {
     return $mwcontent;
 }
 
+# -----------------------------------------------------------------------------
+#  HTML loader functions
+
+## @method @ load_step_version3($stepfile)
+# Load a step file whose contents were written in a format compatible with course
+# processor version 3.
+#
+# @param stepfile The name of the step file to load.
+# @return The step title and body on success, undefs otherwise.
+sub load_step_version3 {
+    my $stepfile = shift;
+
+    $logger -> print($logger -> DEBUG, "Processing step $stepfile as a version 3 step.");
+
+    my $root = eval { HTML::TreeBuilder -> new_from_file($stepfile) };
+    die "FATAL: Unable to load and parse $stepfile: $@" if($@);
+    $root = $root -> elementify();
+
+    # find the page body
+    my $body = $root -> look_down("id", "page-body");
+    if(!$body) {
+        $logger -> print($logger -> DEBUG, "Unable to locate 'page-body' div in $stepfile. Unable to load step.");
+        $root -> delete();
+        return (undef, undef);
+    }
+
+    # Try to get the title
+    my $titleelem = $body -> look_down("_tag", "h1",
+                                       "class", "main");
+    if(!$titleelem) {
+        $logger -> print($logger -> DEBUG, "Unable to locate step title in $stepfile. Unable to load step.");
+        $root -> delete();
+        return (undef, undef);
+    }
+    my $titletext = $titleelem -> as_text();
+
+    # And now the content div
+    my $content = $body -> look_down("id", "content");
+    if(!$content) {
+        $logger -> print($logger -> DEBUG, "Unable to locate content div in $stepfile. Unable to load step.");
+        $root -> delete();
+        return (undef, undef);
+    }
+
+    # get the contents
+    my $realcontent = $content -> as_HTML();
+    $realcontent =~ s|^<div id="content">(.*)</div>$|$1|s;
+
+    return ($titletext, $realcontent);
+}
+
+
+## @method @ load_step_version2($stepfile)
+# Load a step file whose contents were written in a format compatible with course
+# processor version 2.
+#
+# @param stepfile The name of the step file to load.
+# @return The step title and body on success, undefs otherwise.
+sub load_step_version2 {
+    my $stepfile = shift;
+
+    $logger -> print($logger -> DEBUG, "Processing step $stepfile as a version 2 step.");
+
+    my $root = eval { HTML::TreeBuilder -> new_from_file($stepfile) };
+    die "FATAL: Unable to load and parse $stepfile: $@" if($@);
+    $root = $root -> elementify();
+
+    # Try to get the title
+    my $titleelem = $root -> find("title");
+    if(!$titleelem) {
+        $logger -> print($logger -> DEBUG, "Unable to locate step title in $stepfile. Unable to load step.");
+        $root -> delete();
+        return (undef, undef);
+    }
+    my $titletext = $titleelem -> as_text();
+
+    # And now the content div
+    my $content = $body -> look_down("id", "content");
+    if(!$content) {
+        $logger -> print($logger -> DEBUG, "Unable to locate content div in $stepfile. Unable to load step.");
+        $root -> delete();
+        return (undef, undef);
+    }
+
+    # get the contents
+    my $realcontent = $content -> as_HTML();
+    $realcontent =~ s|^<div id="content">(.*)</div>$|$1|s;
+
+    return ($titletext, $realcontent);
+}
+
+
+## @method @ load_step_version1($stepfile)
+# Load a step file in a completely naive way - just loading the title and whole
+# body contents. This is probably never what is needed!
+#
+# @param stepfile The name of the step file to load.
+# @return The step title and body on success, undefs otherwise.
+sub load_step_version1 {
+    my $stepfile = shift;
+
+    $logger -> print($logger -> WARNING, "Processing step $stepfile using naive loader. THIS IS PROBABLY NOT WHAT YOU WANT TO HAPPEN!");
+
+    my $root = eval { HTML::TreeBuilder -> new_from_file($stepfile) };
+    die "FATAL: Unable to load and parse $stepfile: $@" if($@);
+    $root = $root -> elementify();
+
+    # Try to get the title
+    my $titleelem = $root -> find("title");
+    if(!$titleelem) {
+        $logger -> print($logger -> DEBUG, "Unable to locate step title in $stepfile. Unable to load step.");
+        $root -> delete();
+        return (undef, undef);
+    }
+    my $titletext = $titleelem -> as_text();
+
+    # And now the content div
+    my $content = $root -> find("body");
+    if(!$content) {
+        $logger -> print($logger -> DEBUG, "Unable to locate content div in $stepfile. Unable to load step.");
+        $root -> delete();
+        return (undef, undef);
+    }
+
+    # get the contents
+    my $realcontent = $content -> as_HTML();
+    $realcontent =~ s|^<body.*>(.*)</body>$|$1|s;
+
+    return ($titletext, $realcontent);
+}
+
 
 # -----------------------------------------------------------------------------
 #  Scanning functions
@@ -494,39 +625,22 @@ sub load_step_file {
 
     $logger -> print($logger -> DEBUG, "Processing step $stepfile.");
 
-    my $root = eval { HTML::TreeBuilder -> new_from_file($stepfile) };
-    die "FATAL: Unable to load and parse $stepfile: $@" if($@);
-    $root = $root -> elementify();
+    # Try each loader version on the file until one understands it, or it can't be parsed.
+    my ($titletext, $realcontent) = load_step_version3($stepfile);
+    if(!$titletext || !$realcontent) {
+        $logger -> print($logger -> DEBUG, "Version 3 loader failed, trying Version 2.");
+        ($titletext, $realcontent) = load_step_version2($stepfile);
 
-    # find the page body
-    my $body = $root -> look_down("id", "page-body");
-    if(!$body) {
-        $logger -> print($logger -> WARNING, "Unable to locate 'page-body' div in $stepfile. Unable to load step.");
-        $root -> delete();
-        return (undef, undef);
+        if(!$titletext || !$realcontent) {
+            $logger -> print($logger -> DEBUG, "Version 2 loader failed, trying Version 1.");
+            ($titletext, $realcontent) = load_step_version1($stepfile);
+
+            if(!$titletext || !$realcontent) {
+                $logger -> print($logger -> WARNING, "All loaders failed to parse step $stepfile, unable to process this step.");
+                return (undef, undef);
+            }
+        }
     }
-
-    # Try to get the title
-    my $titleelem = $body -> look_down("_tag", "h1",
-                                       "class", "main");
-    if(!$titleelem) {
-        $logger -> print($logger -> WARNING, "Unable to locate step title in $stepfile. Unable to load step.");
-        $root -> delete();
-        return (undef, undef);
-    }
-    my $titletext = $titleelem -> as_text();
-
-    # And now the content div
-    my $content = $body -> look_down("id", "content");
-    if(!$content) {
-        $logger -> print($logger -> WARNING, "Unable to locate content div in $stepfile. Unable to load step.");
-        $root -> delete();
-        return (undef, undef);
-    }
-
-    # get the contents
-    my $realcontent = $content -> as_HTML();
-    $realcontent =~ s|^<div id="content">(.*)</div>$|$1|s;
 
     my $mwcontent = convert_content($wikih, $realcontent, $media);
 
