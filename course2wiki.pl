@@ -293,7 +293,40 @@ sub fix_media_name {
 # -----------------------------------------------------------------------------
 #  HTML fixing functions
 
-## @fn $ fix_link($link, $text)
+## @fn $ fix_local($popup, $title)
+# Convert a version 2 'local' popup link to a new style 'twpopup' popup. Note
+# that this converts the old popup into the *html version* of a new popup, not
+# <popup> taged, to avoid problems with WikiConverter.
+#
+# @param popup The popup javascript.
+# @param title The title to show for the popup anchor.
+# @return A string containing the popup.
+sub fix_local {
+    my $popup = shift;
+    my $title = shift;
+    my $wikih = shift;
+    my $media = shift;
+
+    # Get the name of the popup
+    my ($localfile) = $popup =~ /^javascript:OpenPopup\((?:'|&#39;)(.*?)(?:'|&#39;)/;
+
+    if(!$localfile) {
+        $logger -> print($logger -> WARNING, "Unable to parse local popup file from '$popup'.");
+        return "";
+    }
+
+    # Load the local file as if it was a step. This should be safe, provided locals never recurse
+    my ($pagetitle, $body) = load_step_file($wikih, $localfile, $media);
+    if(!$body) {
+        $logger -> print($logger -> WARNING, "Unable to load local popup file from '$localfile'.");
+        return "";
+    }
+
+    return "<span class=\"twpopup\">$title<span class=\"twpopup-inner\">".encode_base64($body)."</span></span>";
+}
+
+
+## @fn $ fix_link($link, $text, $wikih, $media)
 # Attempt to convert the specified link and text to [link] tag suitable for
 # passing through to output handlers. This will only convert links that appear
 # to be relative links to anchors in the course - any links to external
@@ -301,13 +334,23 @@ sub fix_media_name {
 #
 # @param link The URL to process.
 # @param text The text to show for the link.
+# @param wikih    A reference to the MediaWiki::API wiki handle.
+# @param media    A refrence to an array to store media file links in.
 # @return A string containing the link - either the [link] tag, or a <a> tag.
 sub fix_link {
-    my $link = shift;
-    my $text = shift;
+    my $link  = shift;
+    my $text  = shift;
+    my $wikih = shift;
+    my $media = shift;
+
+    # Is the link actually a version 2 "local" popup?
+    if($link =~ /javascript:OpenPopup/) {
+        $logger -> print($logger -> DEBUG, "Detected version 2 'local' popup. Converting to <popup>");
+
+        return fix_local($link, $text, $wikih, $media)
 
     # if the link looks absolute, or has no anchor return it as-is
-    if($link =~ m|://| || $link !~ /#/) {
+    } elsif($link =~ m|://| || $link !~ /#/) {
         return "<a href=\"$link\">$text</a>";
 
     # We have a relative anchored link, so convert to a [link] tag
@@ -449,10 +492,12 @@ sub convert_content {
 
     # Convert links with anchors to [target] and [link] as needed...
     $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|g;
-    $content =~ s|<a\s*href="(.*?)">(.*?)</a>|fix_link($1, $2)|ges;
+    $content =~ s|<a\s*href="(.*?)">(.*?)</a>|fix_link($1, $2, $wikih, $media)|ges;
 
     # Fix flash, stage 1
     $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
+    $content =~ s|<center>\s*(<object.*?</object>)\s*</center>|fix_flash($wikih, $1, $media)|geis;
+    $content =~ s|(<object.*?</object>)|fix_flash($wikih, $1, $media)|geis;
 
     # Fix images, stage 1
     $content =~ s|<div.*?><img\s+(.*?)></div>|fix_image($wikih, $1, $media)|ges;
