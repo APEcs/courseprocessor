@@ -284,7 +284,7 @@ sub fix_media_name {
     $name =~ s|^.*?/([^/]+)$|$1|;
 
     # Prefix the name with the namespace if it isn't already
-    $name = $namespace."_".$name if($name =~ /^${namespace}_/);
+    $name = $namespace."_".$name unless($name =~ /^${namespace}_/);
 
     return $name;
 }
