@@ -75,7 +75,7 @@ my $default_config = { course_page   => "Course",
     };
 
 # various globals set via the arguments
-my ($coursedir, $username, $password, $namespace, $dryrun, $force, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet) = ('', '', '', '', 0, 0, WIKIURL, UPLOADURL, 0, '', '', 0);
+my ($coursedir, $username, $password, $namespace, $dryrun, $force, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet, $allow_naive) = ('', '', '', '', 0, 0, WIKIURL, UPLOADURL, 0, '', '', 0, 0);
 my $man = 0;
 my $help = 0;
 
@@ -576,6 +576,12 @@ sub load_step_version2 {
 sub load_step_version1 {
     my $stepfile = shift;
 
+    # Do nothing if the naive loader is disabled.
+    if(!$allow_naive) {
+        $logger -> print($logger -> DEBUG, "Naive loader is disabled, aborting step load.");
+        return (undef, undef);
+    }
+
     $logger -> print($logger -> WARNING, "Processing step $stepfile using naive loader. THIS IS PROBABLY NOT WHAT YOU WANT TO HAPPEN!");
 
     my $root = eval { HTML::TreeBuilder -> new_from_file($stepfile) };
@@ -893,6 +899,7 @@ GetOptions('course|c=s'    => \$coursedir,
            'username|u=s'  => \$username,
            'password|p=s'  => \$password,
            'dry-run!'      => \$dryrun,
+           'allow-naive!'  => \$allow_naive,
            'force!'        => \$force,
            'wiki|w=s'      => \$apiurl,
            'uploadurl=s'   => \$uploadurl,
@@ -984,6 +991,8 @@ course2wiki [options]
 
  Options:
     -c, --course=PATH        The location of the course to import.
+    --allow-naive            Allow the naive step loader to run if other
+                             step loaders fail (defaults to disabled).
     --dry-run                Perform the import without updating the wiki.
     --force                  Suppress the startup warning and countdown.
     -g, --config=FILE        Use an alternative configuration file.
@@ -1008,6 +1017,15 @@ course2wiki [options]
 I<This argument must be provided.> This argument tells the script where the
 course to be imported is stored. The specified path should be the root of the
 course (the directory containing the course themes).
+
+=item B<--allow-naive>
+
+If set, the import script is allowed to fall back on a very naive step loader
+(the title and body are pulled straight out of the html, potentially including
+any navigation and overall layout elements defined in the page) if the other
+step loaders fail to parse the step. This is generally not what you want to
+happen, so the naive loader is disabled unless this flag is provided. Use it
+with extreme caution, or you are likely to end up with a very messy import.
 
 =item B<--dry-run>
 
