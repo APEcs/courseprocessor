@@ -523,6 +523,9 @@ sub load_step_version3 {
     my $realcontent = $content -> as_HTML();
     $realcontent =~ s|^<div id="content">(.*)</div>$|$1|s;
 
+    # must explicitly delete the html tree to prevent leaks
+    $root -> delete();
+
     return ($titletext, $realcontent);
 }
 
@@ -552,7 +555,7 @@ sub load_step_version2 {
     my $titletext = $titleelem -> as_text();
 
     # And now the content div
-    my $content = $body -> look_down("id", "content");
+    my $content = $root -> look_down("id", "content");
     if(!$content) {
         $logger -> print($logger -> DEBUG, "Unable to locate content div in $stepfile. Unable to load step.");
         $root -> delete();
@@ -562,6 +565,9 @@ sub load_step_version2 {
     # get the contents
     my $realcontent = $content -> as_HTML();
     $realcontent =~ s|^<div id="content">(.*)</div>$|$1|s;
+
+    # must explicitly delete the html tree to prevent leaks
+    $root -> delete();
 
     return ($titletext, $realcontent);
 }
@@ -609,6 +615,9 @@ sub load_step_version1 {
     my $realcontent = $content -> as_HTML();
     $realcontent =~ s|^<body.*>(.*)</body>$|$1|s;
 
+    # must explicitly delete the html tree to prevent leaks
+    $root -> delete();
+
     return ($titletext, $realcontent);
 }
 
@@ -652,9 +661,6 @@ sub load_step_file {
 
     # now try to deal with popups
     $mwcontent =~ s|<span class="twpopup">(.*?)<span class="twpopup-inner">([a-zA-Z0-9+=/\n ]+)</span>\s*</span>|fix_twpopup($wikih, $1, $2, $media)|ges;
-
-    # must explicitly delete the html tree to prevent leaks
-    $root -> delete();
 
     return ($titletext, $mwcontent);
 }
