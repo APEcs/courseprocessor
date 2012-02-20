@@ -205,7 +205,7 @@ sub validate_metadata_theme {
             $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "$module in metadata for theme $shortname can not be validated. Output from input plugin checks is: ".join("\n", @errors));
             return 0;
         } else {
-            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$module in metadta for theme $shortname appears to be valid.");
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "$module in metadata for theme $shortname appears to be valid.");
         }
     }
 

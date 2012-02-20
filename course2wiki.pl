@@ -75,7 +75,7 @@ my $default_config = { course_page   => "Course",
     };
 
 # various globals set via the arguments
-my ($coursedir, $username, $password, $namespace, $dryrun, $force, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet, $allow_naive) = ('', '', '', '', 0, 0, WIKIURL, UPLOADURL, 0, '', '', 0, 0);
+my ($coursedir, $username, $password, $namespace, $dryrun, $force, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet, $allow_naive, $only_theme) = ('', '', '', '', 0, 0, WIKIURL, UPLOADURL, 0, '', '', 0, 0, '');
 my $man = 0;
 my $help = 0;
 
@@ -785,6 +785,11 @@ sub scan_theme_directory {
     my $dirname   = shift;
     my $mediahash = shift;
 
+    if($only_theme && $dirname ne $only_theme) {
+        $logger -> print($logger -> DEBUG, "Skipping directory $dirname as it does not match theme restriction.");
+        return undef;
+    }
+
     $logger -> print($logger -> DEBUG, "Processing directory $dirname.");
 
     # Do we have a metadata file? If not, give up...
@@ -911,21 +916,27 @@ sub make_coursedata {
     my $themes    = shift;
     my $coursemap = shift;
 
-    # Horribly messy concatenation of all the page data
-    my $cdpage = wiki_link($namespace.":".$config -> {"wiki2course"} -> {"course_page"}, "View ".lc($config -> {"wiki2course"} -> {"course_page"})." page")."\n".
-                 "== ".$config -> {"wiki2course"} -> {"themes_title"}." ==\n".
-                 $themes."\n".
-                 "== Resources ==\n".
-                 wiki_link($namespace.":".$config -> {"wiki2course"} -> {"media_page"}, "Media")."\n".
-                 "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n".
-                 "<source lang=\"xml\" style=\"emacs\">\n".
-                 "<course version=\"\" title=\"\" splash=\"\" type=\"\" width=\"\" height=\"\">\n".
-                 "<message><![CDATA[ ]]></message>\n".
-                 ($coursemap ? "<maps><map><![CDATA[$coursemap]]></map></maps>\n" : "").
+    if($only_theme) {
+        $logger -> print($logger -> DEBUG, "Theme-restricted import is active, skipping coursedata page.");
+    } else {
+        $logger -> print($logger -> DEBUG, "Writing coursedata page.");
+
+        # Horribly messy concatenation of all the page data
+        my $cdpage = wiki_link($namespace.":".$config -> {"wiki2course"} -> {"course_page"}, "View ".lc($config -> {"wiki2course"} -> {"course_page"})." page")."\n".
+            "== ".$config -> {"wiki2course"} -> {"themes_title"}." ==\n".
+            $themes."\n".
+            "== Resources ==\n".
+            wiki_link($namespace.":".$config -> {"wiki2course"} -> {"media_page"}, "Media")."\n".
+            "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n".
+            "<source lang=\"xml\" style=\"emacs\">\n".
+            "<course version=\"\" title=\"\" splash=\"\" type=\"\" width=\"\" height=\"\">\n".
+            "<message><![CDATA[ ]]></message>\n".
+            ($coursemap ? "<maps><map><![CDATA[$coursemap]]></map></maps>\n" : "").
                  "</course>\n</source>\n";
 
-    # and do the page edit.
-    wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"data_page"}), \$cdpage, $dryrun);
+        # and do the page edit.
+        wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"data_page"}), \$cdpage, $dryrun);
+    }
 }
 
 
@@ -936,14 +947,20 @@ sub make_coursedata {
 sub make_course {
     my $wikih = shift;
 
-    my $course = "== Development resources ==\n".
-                 "[[$namespace:".ucfirst($config -> {"wiki2course"} -> {"data_page"})."]]<br/>\n".
-                 "[[$namespace:TODO]]\n\n".
-                 "== Source data ==\n".
-                 "[[$namespace:Anim Source]]<br/>\n".
-                 "[[$namespace:Image Source]]<br/>";
+    if($only_theme) {
+        $logger -> print($logger -> DEBUG, "Theme-restricted import is active, skipping coursedata page.");
+    } else {
+        $logger -> print($logger -> DEBUG, "Writing course page.");
 
-    wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"course_page"}), \$course, $dryrun);
+        my $course = "== Development resources ==\n".
+            "[[$namespace:".ucfirst($config -> {"wiki2course"} -> {"data_page"})."]]<br/>\n".
+            "[[$namespace:TODO]]\n\n".
+            "== Source data ==\n".
+            "[[$namespace:Anim Source]]<br/>\n".
+            "[[$namespace:Image Source]]<br/>";
+
+        wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"course_page"}), \$course, $dryrun);
+    }
 }
 
 # -----------------------------------------------------------------------------
@@ -955,21 +972,22 @@ binmode STDOUT, ':utf8';
 my $markers = { };
 
 # Process the command line
-GetOptions('course|c=s'    => \$coursedir,
-           'username|u=s'  => \$username,
-           'password|p=s'  => \$password,
-           'dry-run!'      => \$dryrun,
-           'allow-naive!'  => \$allow_naive,
-           'force!'        => \$force,
-           'wiki|w=s'      => \$apiurl,
-           'uploadurl=s'   => \$uploadurl,
-           'namespace|n=s' => \$namespace,
-           'config|g=s'    => \$configfile,
-           'pid=s'         => \$pidfile,
-           'verbose|v+'    => \$verbose,
-           'quiet|q!'      => \$quiet,
-           'help|?|h'      => \$help,
-           'man'           => \$man) or pod2usage(2);
+GetOptions('course|c=s'     => \$coursedir,
+           'username|u=s'   => \$username,
+           'password|p=s'   => \$password,
+           'dry-run!'       => \$dryrun,
+           'allow-naive!'   => \$allow_naive,
+           'force!'         => \$force,
+           'wiki|w=s'       => \$apiurl,
+           'uploadurl=s'    => \$uploadurl,
+           'namespace|n=s'  => \$namespace,
+           'only-theme|t=s' => \$only_theme,
+           'config|g=s'     => \$configfile,
+           'pid=s'          => \$pidfile,
+           'verbose|v+'     => \$verbose,
+           'quiet|q!'       => \$quiet,
+           'help|?|h'       => \$help,
+           'man'            => \$man) or pod2usage(2);
 if(!$help && !$man) {
     die "FATAL: No course directory specified.\n" if(!$coursedir);
     die "FATAL: No namespace specified.\n" if(!$namespace);
@@ -1050,9 +1068,9 @@ course2wiki - import a course into a wiki namespace.
 course2wiki [options]
 
  Options:
-    -c, --course=PATH        The location of the course to import.
     --allow-naive            Allow the naive step loader to run if other
                              step loaders fail (defaults to disabled).
+    -c, --course=PATH        The location of the course to import.
     --dry-run                Perform the import without updating the wiki.
     --force                  Suppress the startup warning and countdown.
     -g, --config=FILE        Use an alternative configuration file.
@@ -1063,6 +1081,7 @@ course2wiki [options]
                              not provided, it will be requested at runtime.
     --pid=FILE               Write the process id to a file.
     -q, --quiet              Suppress all normal status output.
+    -t, --only-theme         Only import the named theme from the course.
     -u, --username=NAME      The name to log into the wiki as.
     --uploadurl=URL          The location of the wiki's Special:Upload page.
     -v, --verbose            If specified, produce more progress output.
@@ -1072,12 +1091,6 @@ course2wiki [options]
 
 =over 8
 
-=item B<-c, --course>
-
-I<This argument must be provided.> This argument tells the script where the
-course to be imported is stored. The specified path should be the root of the
-course (the directory containing the course themes).
-
 =item B<--allow-naive>
 
 If set, the import script is allowed to fall back on a very naive step loader
@@ -1086,6 +1099,12 @@ any navigation and overall layout elements defined in the page) if the other
 step loaders fail to parse the step. This is generally not what you want to
 happen, so the naive loader is disabled unless this flag is provided. Use it
 with extreme caution, or you are likely to end up with a very messy import.
+
+=item B<-c, --course>
+
+I<This argument must be provided.> This argument tells the script where the
+course to be imported is stored. The specified path should be the root of the
+course (the directory containing the course themes).
 
 =item B<--dry-run>
 
@@ -1146,6 +1165,12 @@ is primarily needed to support the web interface.
 Suppresses all non-fatal output. If quiet is set, the script will not print
 any status, warning, or debugging information to stdout regardless of the
 verbosity setting. Fatal errors will still be printed to stderr as normal.
+
+=item B<-t, --only-theme>
+
+Restrict the import process to the named theme. No coursedata content will
+be generated if this is specified, but it can be useful to import individual
+themes into an existing course, or as part of incremental porting.
 
 =item B<-u, --username>
 
