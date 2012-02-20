@@ -619,7 +619,13 @@ sub load_step_version2 {
     $realcontent =~ s|^\s*<center>\s*<table width="98%">\s*<tr><td>\s*(.*)\s*</td></tr>\s*</table>\s*</center>\s*(?:&nbsp;)?\s*|$1|si;
 
     # And has some odd <div><ul>...</ul></div> setups..
-    $realcontent =~ s|<div>\s*(<ul>.*?</ul>)\s*</div>|$1|gis;
+    $realcontent =~ s|<div>\s*(<ul>.*?</ul>)\s*(?:</div>)?|$1|gis;
+    $realcontent =~ s|<div>\s*(<ol>.*?</ol>)\s*(?:</div>)?|$1|gis;
+
+    # Lots of <center></center> going on, try to clean them up a bit
+    $realcontent =~ s|<center>\s*</center>||gis;
+    $realcontent =~ s|<center>|<div style="text-align: center">|gis;
+    $realcontent =~ s|</center>|</div>|gis;
 
     # And random empty divs...
     $realcontent =~ s|<div>\s*</div>||gis;
