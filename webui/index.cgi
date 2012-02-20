@@ -3,8 +3,8 @@
 ## @file
 # APEcs course processor web frontend. This script provides a user-friendly,
 # if not entirely user-obsequious, web-based frontend to the APEcs course
-# processor and wiki export tools. 
-# 
+# processor and wiki export tools.
+#
 # @version 1.0.4 (9 March 2011)
 # @copy 2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -59,7 +59,7 @@ my $contact = 'webmaster@starforge.co.uk'; # global contact address, for error m
 # install more useful error handling
 BEGIN {
     $ENV{"PATH"} = ""; # Force no path.
-    
+
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
     sub handle_errors {
         my $msg = shift;
@@ -160,7 +160,7 @@ sub make_wikiconfig_select {
     foreach my $wiki (sort(keys(%{$wikihash}))) {
         $options .= "<option value=\"$wiki\"";
         $options .= ' selected="selected"' if($default && $wiki eq $default);
-        $options .= ">".$wikihash -> {$wiki} -> {"WebUI"} -> {"name"}." (".$wikihash -> {$wiki} -> {"WebUI"} -> {"wiki_url"}.")</option>\n";
+        $options .= ">".$wikihash -> {$wiki} -> {"WebUI"} -> {"name"}." (".$wikihash -> {$wiki} -> {"wiki2course"} -> {"wiki_url"}.")</option>\n";
     }
 
     return $sysvars -> {"template"} -> load_template("webui/wiki_select.tem", {"***entries***" => $options});
@@ -180,7 +180,7 @@ sub make_course_select {
     my $sysvars    = shift;
     my $coursehash = shift;
     my $default    = shift;
-    
+
     my $options = "";
     foreach my $ns (sort {$coursehash -> {$a} cmp $coursehash -> {$b}} (keys(%{$coursehash}))) {
         $options .= "<option value=\"$ns\"";
@@ -233,7 +233,7 @@ sub launch_exporter {
               " -p ".$wikiconfig -> {"WebUI"} -> {"password"}.
               " -n $course".
               " -o $outpath".
-              " -w ".$wikiconfig -> {"WebUI"} -> {"api_url"}.
+              " -w ".$wikiconfig -> {"wiki2course"} -> {"api_url"}.
               " -g ".untaint_path(path_join($sysvars -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name)).
               " --pid $pidfile".
               " > $logfile".
@@ -392,7 +392,7 @@ sub halt_processor {
 
 
 ## @fn void launch_zip($sysvars)
-# Start the zip script to pack the course into a zip file the user can download. 
+# Start the zip script to pack the course into a zip file the user can download.
 #
 # @param sysvars A reference to a hash containing database, session, and settings objects.
 sub launch_zip {
@@ -407,7 +407,7 @@ sub launch_zip {
     my $sessid = $sysvars -> {"session"} -> {"sessid"};
     my ($sid) = $sessid =~ /^([a-fA-F0-9]{32})$/;
 
-    # Create the command to launch the zippery 
+    # Create the command to launch the zippery
     my $cmd = $sysvars -> {"settings"} -> {"paths"} -> {"nohup"}." ".$sysvars -> {"settings"} -> {"config"} -> {"base"}."/tools/zipcourse.pl".
         " $sid $name".
         " > $logfile".
@@ -551,7 +551,7 @@ sub do_stage1_login {
 
     # Get the wiki the user selected, if they did
     my $setwiki = $sysvars -> {"cgi"} -> param("wiki");
-    
+
     # Yes - do we have a wiki selected?
     if($setwiki) {
         # Get a hash of wikis we know how to talk to
@@ -561,7 +561,7 @@ sub do_stage1_login {
         if($setwiki =~ /^\w+\.config$/ && $wikis -> {$setwiki}) {
             # Do we have login details? If so, try to validate them...
             if($sysvars -> {"cgi"} -> param("username") && $sysvars -> {"cgi"} -> param("password")) {
-                if($sysvars -> {"wiki"} -> check_wiki_login($sysvars -> {"cgi"} -> param("username"), 
+                if($sysvars -> {"wiki"} -> check_wiki_login($sysvars -> {"cgi"} -> param("username"),
                                                             $sysvars -> {"cgi"} -> param("password"),
                                                             $wikis -> {$setwiki})) {
                     $sysvars -> {"sess_supp"} -> set_sess_login($setwiki, $sysvars -> {"cgi"} -> param("username"));
@@ -575,7 +575,7 @@ sub do_stage1_login {
                 # No user details entered.
                 return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_NOLOGIN"));
             }
-        } else { # if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki})  
+        } else { # if($setwiki =~ /^[\w].config/ && $wikis -> {$setwiki})
             # Wiki selection is not valid
             return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_BADWIKI"));
         }
@@ -604,7 +604,7 @@ sub build_stage2_course {
 
     # did the user submit from login?
     if($sysvars -> {"cgi"} -> param("dologin")) {
-        # Yes, attempt to process the login. Also, why can't perl have a 'returnif' so this could be 
+        # Yes, attempt to process the login. Also, why can't perl have a 'returnif' so this could be
         # returnif do_stage0_login($sysvars);, damnit.
         my @result = do_stage1_login($sysvars);
         return @result if($result[0] && $result[1]);
@@ -631,12 +631,12 @@ sub build_stage2_course {
 
     # Get the list of courses
     my $courses = $sysvars -> {"wiki"} -> get_wiki_courses($wiki);
-    
+
     # And convert to a select box
     my $courselist = make_course_select($sysvars, $courses, $sysvars -> {"cgi"} -> param("course"));
-    
+
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"),
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Do we need to make a template block?
@@ -697,9 +697,9 @@ sub build_stage2_course {
 sub do_stage2_course {
     my $sysvars    = shift;
     my $wikiconfig = shift;
-    
+
     # Precalculate these to avoid duplication later...
-    my $subcourse = {"***course***"   => ($wikiconfig -> {"wiki2course"} -> {"course_page"} || "Course"), 
+    my $subcourse = {"***course***"   => ($wikiconfig -> {"wiki2course"} -> {"course_page"} || "Course"),
                      "***lccourse***" => lc($wikiconfig -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Has the user selected a course?
@@ -707,7 +707,7 @@ sub do_stage2_course {
     if($selected) {
         # Get the list of courses...
         my $courses = $sysvars -> {"wiki"} -> get_wiki_courses($wikiconfig);
-        
+
         # Is the selected course in the list?
         if($courses -> {$selected}) {
             # Course is good, store it
@@ -718,7 +718,7 @@ sub do_stage2_course {
             if($filterlist) {
                 # split the filters up
                 my @filters = split(/,/, $filterlist);
-                
+
                 # And enhashinate
                 my %filterhash = map { $_,1 } @filters;
 
@@ -728,9 +728,9 @@ sub do_stage2_course {
                 my @cgifilters = $sysvars -> {"cgi"} -> param('filters');
                 foreach my $filter (@cgifilters) {
                     my ($safefilter) = $filter =~ /^(\w+)$/; # Ensure that we're only looking at alphanumerics
-                
+
                     next if(!$safefilter); # And skip anything that didn't pass
-                    
+
                     # Store the filter if it is valid
                     push(@setfilter, $safefilter) if($filterhash{$safefilter});
                 }
@@ -771,7 +771,7 @@ sub do_stage2_course {
             # return sweet nothings, as all is well.
             return (undef, undef);
 
-        } else { # if($courses -> {$selected}) 
+        } else { # if($courses -> {$selected})
             # User has selected a non-existent course...
             return build_stage2_course($sysvars,  $sysvars -> {"template"} -> replace_langvar("COURSE_ERR_BADCOURSE", $subcourse));
         }
@@ -811,7 +811,7 @@ sub build_stage3_export {
         return @result if($result[0] && $result[1]);
     }
 
-    # We have a course selected, so now we need to start the export. First get the 
+    # We have a course selected, so now we need to start the export. First get the
     # course name for later...
     my $course = $sysvars -> {"sess_supp"} -> get_sess_course();
 
@@ -819,11 +819,11 @@ sub build_stage3_export {
     launch_exporter($sysvars, $wiki, $config_name, $course) unless(check_exporter($sysvars));
 
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"),
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Get the default delay, but override it if verbosity is enabled.
-    my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
+    my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"};
     $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_export_delay"} if($sysvars -> {"sess_supp"} -> get_sess_verbosity("export"));
 
     # If we have an error, encapsulate it
@@ -840,14 +840,14 @@ sub build_stage3_export {
                                                                                                                              "***course***"   => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***" => $subcourse -> {"***lccourse***"},
                                                                                                                              "***delay***"    => $delay}));
-    return ($title, $message);    
+    return ($title, $message);
 }
 
 
 ## @fn $ build_stage4_process($sysvars, $error)
 # Generate the content for the processing stage of the wizard. This will check that the
 # wiki2course script has actually finished, and the course data directory exists, and if
-# both are true it will launch the processor script in the background before sending back 
+# both are true it will launch the processor script in the background before sending back
 # the status form to the user.
 #
 # @param sysvars  A reference to a hash containing database, session, and settings objects.
@@ -868,7 +868,7 @@ sub build_stage4_process {
     return build_stage3_export($sysvars, $sysvars -> {"template"} -> replace_langvar("PROCESS_EXPORTING"))
         if(check_exporter($sysvars));
 
-    # We have a course selected, so now we need to start the export. First get the 
+    # We have a course selected, so now we need to start the export. First get the
     # course name for later...
     my $course = $sysvars -> {"sess_supp"} -> get_sess_course();
 
@@ -876,11 +876,11 @@ sub build_stage4_process {
     launch_processor($sysvars, $config_name) unless(check_processor($sysvars));
 
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"),
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     # Get the default delay, but override it if verbosity is enabled.
-    my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"}; 
+    my $delay = $sysvars -> {"settings"} -> {"config"} -> {"default_ajax_delay"};
     $delay = $sysvars -> {"settings"} -> {"config"} -> {"verbose_process_delay"} if($sysvars -> {"sess_supp"} -> get_sess_verbosity("process"));
 
     # If we have an error, encapsulate it
@@ -897,14 +897,14 @@ sub build_stage4_process {
                                                                                                                              "***course***"   => $subcourse -> {"***course***"},
                                                                                                                              "***lccourse***" => $subcourse -> {"***lccourse***"},
                                                                                                                              "***delay***"    => $delay}));
-    return ($title, $message);    
+    return ($title, $message);
 }
 
 
 ## @fn $ build_stage5_finish($sysvars)
 # Generate the content for the final stage of the wizard. This will check that the
 # processor script has actually finished, and the course data directory exists, and if
-# both are true it will launch the zip wrapper script in the background before sending back 
+# both are true it will launch the zip wrapper script in the background before sending back
 # the status form to the user.
 #
 # @param sysvars  A reference to a hash containing database, session, and settings objects.
@@ -923,7 +923,7 @@ sub build_stage5_finish {
     return build_stage4_process($sysvars, $sysvars -> {"template"} -> replace_langvar("FINISH_PROCESSING"))
         if(check_processor($sysvars));
 
-    # We have a course selected, so now we need to start the export. First get the 
+    # We have a course selected, so now we need to start the export. First get the
     # course name for later...
     my $course = $sysvars -> {"sess_supp"} -> get_sess_course();
 
@@ -938,7 +938,7 @@ sub build_stage5_finish {
                              $course.".zip");
 
     # Precalculate some variables to use in templating
-    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"), 
+    my $subcourse = {"***course***"   => ($wiki -> {"wiki2course"} -> {"course_page"} || "Course"),
                      "***lccourse***" => lc($wiki -> {"wiki2course"} -> {"course_page"} || "Course")};
 
     my $timeout = $sysvars -> {"template"} -> humanise_seconds($sysvars -> {"settings"} -> {"config"} -> {"session_length"});
@@ -954,7 +954,7 @@ sub build_stage5_finish {
                                                                                                                              "***previewurl***"  => $preview,
                                                                                                                              "***downloadurl***" => $download,
                                                                                                                              "***timeout***"     => $timeout}));
-    return ($title, $message);    
+    return ($title, $message);
 }
 
 
@@ -964,7 +964,7 @@ sub build_stage5_finish {
 ## @fn $ page_display($sysvars)
 # Generate the contents of the page based on the current step in the wizard.
 #
-# @param sysvars A reference to a hash containing references to the template, 
+# @param sysvars A reference to a hash containing references to the template,
 #                database, settings, and cgi objects.
 # @return A string containing the page to display.
 sub page_display {
@@ -987,8 +987,8 @@ sub page_display {
     # Do we have a function?
     my $func = $stages -> [$stage] -> {"func"}; # these two lines could be done in one, but it would look horrible...
     ($title, $body, $extrahead) = $func -> ($sysvars) if($func);
-    
-    return $sysvars -> {"template"} -> load_template("page.tem", 
+
+    return $sysvars -> {"template"} -> load_template("page.tem",
                                                      { "***title***"     => $title,
                                                        "***extrahead***" => $extrahead,
                                                        "***core***"      => $body || '<p class="error">No page content available, this should not happen.</p>'});
@@ -1033,21 +1033,21 @@ my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {
 
 # Create something to help out with wiki interaction
 my $wiki = WikiSupport -> new(logger   => $logger,
-                              cgi      => $out, 
+                              cgi      => $out,
                               dbh      => $dbh,
                               settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create wiki support object: ".$WikiSupport::errstr);
 
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
-                                    cgi      => $out, 
+                                    cgi      => $out,
                                     dbh      => $dbh,
                                     settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # And the support object to provide webui specific functions
 my $sess_support = SessionSupport -> new(logger   => $logger,
-                                         cgi      => $out, 
+                                         cgi      => $out,
                                          dbh      => $dbh,
                                          settings => $settings,
                                          session  => $session)
@@ -1084,7 +1084,7 @@ my $debug = $template -> load_template("debug.tem", {"***secs***"   => sprintf("
                                                      "***user***"   => $user,
                                                      "***system***" => $system,
                                                      "***memory***" => $template -> bytes_to_human(get_proc_size())});
-                                                     
+
 print Encode::encode_utf8($template -> process_template($content, {"***debug***" => $debug}));
 $template -> set_module_obj(undef);
 

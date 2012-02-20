@@ -56,12 +56,6 @@ use ProcessorVersion;
 use Utils qw(load_file path_join find_bin write_pid get_password makedir load_config);
 use MediaWiki::Wrap;
 
-# Location of the API script in the default wiki.
-use constant WIKIURL    => 'http://elearn.cs.man.ac.uk/devwiki/api.php';
-
-# Location of the Special:Upload page in the wiki
-use constant UPLOADURL  => 'http://elearn.cs.man.ac.uk/devwiki/index.php/Special:Upload';
-
 # How long should the user have to abort the process?
 use constant ABORT_TIME => 5;
 
@@ -75,7 +69,7 @@ my $default_config = { course_page   => "Course",
     };
 
 # various globals set via the arguments
-my ($coursedir, $username, $password, $namespace, $dryrun, $force, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet, $allow_naive, $only_theme) = ('', '', '', '', 0, 0, WIKIURL, UPLOADURL, 0, '', '', 0, 0, '');
+my ($coursedir, $username, $password, $namespace, $dryrun, $force, $apiurl, $uploadurl, $verbose, $configfile, $pidfile, $quiet, $allow_naive, $only_theme) = ('', '', '', '', 0, 0, '', '', 0, '', '', 0, 0, '');
 my $man = 0;
 my $help = 0;
 
@@ -1014,6 +1008,16 @@ print "course2wiki.pl version ",get_version("course2wiki")," started.\n";
 $logger -> set_verbosity($verbose);
 $config = load_config($configfile, $default_config, "wiki2course", $logger);
 
+# Override the api and uploadurl if set on the command like
+$config -> {"wiki2course"} -> {"api_url"}    = $apiurl if($apiurl);
+$config -> {"wiki2course"} -> {"upload_url"} = $uploadurl if($uploadurl);
+
+die "FATAL: No wiki API URL has been specified either on the command line or in your configuration file. Unable to continue.\n"
+    unless($config -> {"wiki2course"} -> {"api_url"});
+
+die "FATAL: No wiki upload URL has been specified either on the command line or in your configuration file. Unable to continue.\n"
+    unless($config -> {"wiki2course"} -> {"upload_url"});
+
 # Do we have a course directory to work on?
 if(-d $coursedir) {
     # predict doom if the program is launched without dry-run and force
@@ -1023,10 +1027,10 @@ if(-d $coursedir) {
     $password = get_password() if(!$password);
 
     # Get the show on the road...
-    my $wikih = MediaWiki::API -> new({api_url => $apiurl });
+    my $wikih = MediaWiki::API -> new({api_url => $config -> {"wiki2course"} -> {"api_url"} });
 
-    # Set the upload url if needed
-    $wikih -> {"config"} -> {"upload_url"} = $uploadurl if($uploadurl);
+    # Set the upload url
+    $wikih -> {"config"} -> {"upload_url"} = $config -> {"wiki2course"} -> {"upload_url"};
 
     # Now we need to get logged in so we can get anywhere
     wiki_login($wikih, $username, $password);

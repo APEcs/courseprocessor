@@ -57,9 +57,6 @@ use MediaWiki::Wrap;
 # The maximum number of levels of page transclusion that may be processed
 use constant MAXLEVEL => 5;
 
-# Location of the API script in the default wiki.
-use constant WIKIURL  => 'http://elearn.cs.man.ac.uk/devwiki/api.php';
-
 # default settings
 my $default_config = { course_page   => "Course",
                        data_page     => "coursedata",
@@ -70,7 +67,7 @@ my $default_config = { course_page   => "Course",
     };
 
 # various globals set via the arguments
-my ($retainold, $quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile, $pidfile) = ('', '', '', '', '', '', WIKIURL, '', '', 0, 'media', '', '');
+my ($retainold, $quiet, $basedir, $username, $password, $namespace, $apiurl, $fileurl, $convert, $verbose, $mediadir, $configfile, $pidfile) = ('', '', '', '', '', '', '', '', '', 0, 'media', '', '');
 my $man = 0;
 my $help = 0;
 
@@ -778,6 +775,16 @@ print "wiki2course.pl version ",get_version("wiki2course")," started.\n" unless(
 $logger -> set_verbosity($verbose);
 $config = load_config($configfile, $default_config, "wiki2course", $logger);
 
+# Override the api and wiki if set on the command like
+$config -> {"wiki2course"} -> {"api_url"}  = $apiurl if($apiurl);
+$config -> {"wiki2course"} -> {"wiki_url"} = $fileurl if($fileurl);
+
+die "FATAL: No wiki API URL has been specified either on the command line or in your configuration file. Unable to continue.\n"
+    unless($config -> {"wiki2course"} -> {"api_url"});
+
+die "FATAL: No wiki URL has been specified either on the command line or in your configuration file. Unable to continue.\n"
+    unless($config -> {"wiki2course"} -> {"wiki_url"});
+
 # Locate necessary binaries
 find_bins($config);
 
@@ -802,10 +809,10 @@ if(-e $basedir && !$retainold) {
 # Now we need to process the output directory. Does it exist?
 if(makedir($basedir, $logger)) {
     # Get the show on the road...
-    my $wikih = MediaWiki::API -> new({api_url => $apiurl });
+    my $wikih = MediaWiki::API -> new({api_url => $config -> {"wiki2course"} -> {"api_url"} });
 
-    # Set the file url if needed
-    $wikih -> {"config"} -> {"files_url"} = $fileurl if($fileurl);
+    # Set the file url
+    $wikih -> {"config"} -> {"files_url"} = $config -> {"wiki2course"} -> {"wiki_url"};
 
     # Now we need to get logged in so we can get anywhere
     wiki_login($wikih, $username, $password);

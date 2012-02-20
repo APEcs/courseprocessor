@@ -71,7 +71,7 @@ sub new {
 ## @fn $ metadata_find($wikiconfig, $page)
 # Attempt to extract the contents of a metadata block from the specified page.
 # This will search for the == Metadata == marker in the specified page content, and
-# attempt to extract any metadata enclosed in <pre> or <source> tags within the 
+# attempt to extract any metadata enclosed in <pre> or <source> tags within the
 # section following the marker.
 #
 # @param wikiconfig A reference to the wiki's configuration object.
@@ -83,7 +83,7 @@ sub metadata_find {
 
     # We have a page, can we pull the metadata out?
     my ($metadata) = $page =~ m|==\s*$wikiconfig->{wiki2course}->{metadata}\s*==\s*<pre>\s*(.*?)\s*</pre>|ios;
-    
+
     # Do we have metadata? If not, try again with <source> instead of <pre>
     # Yes, we could do this in one regexp above, but
     ($metadata) = $page =~ m|==\s*$wikiconfig->{wiki2course}->{metadata}\s*==\s*<source.*?>\s*(.*?)\s*</source>|ios
@@ -103,7 +103,7 @@ sub metadata_find {
 sub metadata_filters {
     my $metadata   = shift;
     my $filterhash = shift;
-    
+
     # Do nothing if we have no metadata to wrangle
     return if(!$metadata);
 
@@ -155,7 +155,7 @@ sub check_wiki_login {
     my $password   = shift;
     my $wikiconfig = shift;
 
-    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
+    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"wiki2course"} -> {"api_url"} })
         or die "FATAL: Unable to create new MediaWiki API object.";
 
     my $status = $mw -> login( { lgname => $username, lgpassword => $password });
@@ -189,10 +189,10 @@ sub wiki_transclude {
                                    text   => $templatestr} )
         or die "FATAL: Unable to process transclusion in page $pagename. Error from the API was:".$wikih->{"error"}->{"code"}.': '.$wikih->{"error"}->{"details"}."\n";
 
-    # Fall over if the query returned nothing. This probably shouldn't happen - the only situation I can 
+    # Fall over if the query returned nothing. This probably shouldn't happen - the only situation I can
     # think of is when the target of the transclusion is itself empty, and we Don't Want That anyway.
     die "FATAL: Unable to obtain any content for transclusion in page $pagename" if(!$response -> {"expandtemplates"} -> {"*"});
-    
+
     return $response -> {"expandtemplates"} -> {"*"};
 }
 
@@ -226,7 +226,7 @@ sub wiki_fetch {
     while($content =~ s|(<nowiki>.*?)\{\{([^<]+?)\}\}(.*?</nowiki>)|$1\{\(\{$2\}\)\}$3|is) { };
 
     # recursively process any remaining transclusions
-    $content =~ s/(\{\{.*?\}\})/wiki_transclude($wikih, $pagename, $1)/ges; 
+    $content =~ s/(\{\{.*?\}\})/wiki_transclude($wikih, $pagename, $1)/ges;
 
     # revert the breakage we did above
     while($content =~ s|(<nowiki>.*?)\{\(\{([^<]+?)\}\)\}(.*?</nowiki>)|$1\{\{$2\}\}$3|is) { };
@@ -237,8 +237,8 @@ sub wiki_fetch {
 
 
 ## @fn $ get_course_filters($wikiconfig, $course)
-# Attempt to build up a list of all the filters available in the specified 
-# course. This will check through the metadata for the specified course 
+# Attempt to build up a list of all the filters available in the specified
+# course. This will check through the metadata for the specified course
 # looking for <filters> elements and records any filter names it encounters.
 #
 # @note This function will ignore any structuring problems with the wiki,
@@ -254,17 +254,17 @@ sub get_course_filters {
     my $course     = shift;
     my $filterhash = {}; # A hash to act as a set of filter names.
 
-    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
+    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"wiki2course"} -> {"api_url"} })
         or die "FATAL: Unable to create new MediaWiki API object.";
 
     # Log in using the 'internal' export user.
-    $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"}, 
+    $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"},
                     lgpassword => $wikiconfig -> {"WebUI"} -> {"password"}})
         or die "FATAL: Unable to log into wiki. This is possibly a serious configuration error.\nAPI reported: ".$mw -> {"error"} -> {"code"}.': '. $mw -> {"error"} -> {"details"};
 
     # now get the course 'Course' page, whatever it is called
     my $coursepage = wiki_fetch($mw, $course.":".$wikiconfig -> {"wiki2course"} -> {"course_page"}, 1);
-    
+
     # if we have no content, give up now
     return "" unless($coursepage);
 
@@ -288,7 +288,7 @@ sub get_course_filters {
 
     # We have names, so split them so we can pull theme pages
     my @themes = $names =~ m{^\s*\[\[(.*?)(?:\|.*?)?\]\]}gim;
-    
+
     # Process each of the theme pages, pulling the metadata for each
     foreach my $theme (@themes) {
         my $page = wiki_fetch($mw, $theme, 1);
@@ -300,10 +300,10 @@ sub get_course_filters {
         metadata_filters(metadata_find($wikiconfig, $page), $filterhash);
     }
 
-    # We have checked everywhere that can have metadata, so return the 
+    # We have checked everywhere that can have metadata, so return the
     # list of filters...
     return join(',', keys(%{$filterhash}));
-}    
+}
 
 
 ## @fn $ get_wiki_courses($wikiconfig)
@@ -316,11 +316,11 @@ sub get_wiki_courses {
     my $self       = shift;
     my $wikiconfig = shift;
 
-    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"WebUI"} -> {"api_url"} })
+    my $mw = MediaWiki::API -> new({ api_url => $wikiconfig -> {"wiki2course"} -> {"api_url"} })
         or die "FATAL: Unable to create new MediaWiki API object.";
 
     # Log in using the 'internal' export user.
-    $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"}, 
+    $mw -> login( { lgname     => $wikiconfig -> {"WebUI"} -> {"username"},
                     lgpassword => $wikiconfig -> {"WebUI"} -> {"password"}})
         or die "FATAL: Unable to log into wiki. This is possibly a serious configuration error.\nAPI reported: ".$mw -> {"error"} -> {"code"}.': '. $mw -> {"error"} -> {"details"};
 
@@ -338,14 +338,14 @@ sub get_wiki_courses {
     # Process each course into the hash, using the namespace as the key
     foreach my $course (@courselist) {
         my ($ns, $title) = $course =~ /^(\w+):.*?\|(.*)$/;
-        
+
         # Skip image/media just in case the user has an image on the page
         next if($ns eq "Image" || $ns eq "Media");
 
         # shove the results into the hash
         $coursehash -> {$ns} = $title;
     }
-    
+
     # Probably not needed, but meh...
     $mw -> logout();
 
@@ -400,7 +400,7 @@ sub get_wiki_config {
     my $self     = shift;
     my $config_name = shift;
 
-    # Try to load the config. 
+    # Try to load the config.
     my $config = ConfigMicro -> new(path_join($self -> {"settings"} -> {"config"} -> {"wikiconfigs"}, $config_name))
         or $self -> {"logger"} -> warn_log($self -> {"cgi"} -> remote_host(), "index.cgi: Unable to open wiki configuration $config_name: ".$ConfigMicro::errstr);
 
