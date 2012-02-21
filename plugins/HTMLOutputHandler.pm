@@ -36,7 +36,7 @@ use ImageTools;
 use MIME::Base64;
 use URI::Encode qw(uri_encode);
 use Utils qw(check_directory resolve_path load_file save_file lead_zero path_join);
-
+use MediaWiki::Wrap;
 
 # The location of htmltidy, this must be absolute as we can not rely on path being set.
 use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
@@ -496,16 +496,19 @@ sub get_extrahead {
 # one anchor has the same name, the second anchor with the name encountered by
 # this function will cause the program to die with a fatal error.
 #
-# @note This function does not enforce values in theme, module, or step other
-#       than requiring that step eiter be undef or in the standard step naming
-#       format. theme, module and step /can/ be undef, but having all three be
-#       undef makes no sense.
+# @note This function does not enforce values in theme, module, or stepid. While
+#       theme, module and step /can/ be undef, but having all three be undef
+#       makes no sense - generally you will set wither just theme, or all three.
 # @param name   The name of the anchor point.
 # @param theme  The name of the theme the anchor is in (should be the theme dir name).
 # @param module The module the anchor is in (should be the module directory name).
 # @param stepid The id of step the anchor is in.
 sub set_anchor_point {
-    my ($self, $name, $theme, $module, $stepid) = @_;
+    my $self   = shift;
+    my $name   = shift;
+    my $theme  = shift;
+    my $module = shift || "";
+    my $stepid = shift || "";
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting anchor $name in $theme/$module/$stepid");
 
@@ -545,13 +548,20 @@ sub convert_link {
 
     my $backup = $level eq "step" ? "../../" : $level eq "theme" ? "../" : die "FATAL: Illegal level specified in convert_link. This should not happen.\n";
 
-    return $self -> {"template"} -> load_template("theme/module/link.tem",
-                                                  {"***backup***" => $backup,
-                                                   "***theme***"  => $targ -> {"theme"},
-                                                   "***module***" => $targ -> {"module"},
-                                                   "***step***"   => $self -> get_step_name($targ -> {"theme"}, $targ -> {"module"}, $targ -> {"stepid"}),
-                                                   "***anchor***" => $anchor,
-                                                   "***text***"   => $text});
+    if($targ -> {"module"} && $targ -> {"stepid"}) {
+        return $self -> {"template"} -> load_template("theme/module/link.tem",
+                                                      {"***backup***" => $backup,
+                                                       "***theme***"  => $targ -> {"theme"},
+                                                       "***module***" => $targ -> {"module"},
+                                                       "***step***"   => $self -> get_step_name($targ -> {"theme"}, $targ -> {"module"}, $targ -> {"stepid"}),
+                                                       "***anchor***" => $anchor,
+                                                       "***text***"   => $text});
+    } else {
+        return $self -> {"template"} -> load_template("theme/module/themelink.tem",
+                                                      {"***backup***" => $backup,
+                                                       "***theme***"  => $targ -> {"theme"},
+                                                       "***text***"   => $text});
+    }
 }
 
 
@@ -1811,6 +1821,9 @@ sub preprocess {
             next if($metadata == 1 || !$metadata -> {"theme"});
 
             $self -> {"mdata"} -> {"themes"} -> {$theme} = $metadata; # otherwise, store it.
+
+            # Also, add an auto anchor for the theme
+            $self -> set_anchor_point("AUTO-".space_to_underscore($metadata -> {"theme"} -> {"title"}), $theme);
 
             # We can remove the theme metadata now
             unlink path_join($fulltheme, "metadata.xml")
