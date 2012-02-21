@@ -8,7 +8,6 @@
 # For full documentation please see http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Wiki2course.pl
 #
 # @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.13.0 (4 November 2010)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,6 +75,9 @@ my $logger = new Logger();
 
 # Likewise with the configuration object.
 my $config;
+
+# A global anchor hash is needed to keep track of defined targets
+my $anchorhash = {};
 
 
 ## @fn void warn_die_handler($fatal, @messages)
@@ -221,6 +223,53 @@ sub broken_media_link {
 }
 
 
+## @fn $ process_link($linkref, $title)
+# Convert a link within the course namespace into a [link to="" /] tag.
+#
+# @param linkref The location being linked to, may be a module page or an anchor in it.
+# @param title   The title to show in the link, if not set uses the linkref
+# @return The link tag to replace the mediawiki link with.
+sub process_link {
+    my $linkref = shift;
+    my $title   = shift || $linkref;
+
+    # Convert any #<anchor> in the linkref
+    $linkref =~ s/\#/-/g;
+    $linkref = space_to_underscore($linkref);
+
+    my $link = '[link to="AUTO-'.$linkref.'"]'.$title.'[/link]';
+
+    $logger -> print($logger -> DEBUG, "Converted mediawiki link to $namespace:$linkref (title: $title) to '$link'");
+    return $link;
+}
+
+
+## @fn $ make_anchor_name($module, $title)
+# Generate a unique anchor for the specified module and, if specified, step title.
+#
+# @param module The name of the module.
+# @param title  The optional name of the step title.
+# @return A string containing the anchor name.
+sub make_anchor_name {
+    my $module = shift;
+    my $title  = shift;
+
+    my $basename = space_to_underscore($module);
+    $basename .= "-".space_to_underscore($title) if($title);
+    my $testname = $basename;
+
+    # Keep appending an incrementing number until an unused anchor is encountered
+    my $num = 2;
+    while($anchorhash -> {$testname}) {
+        $testname = $basename."_".$num;
+        ++$num;
+    }
+
+    $anchorhash -> {$testname} = 1;
+    return $testname;
+}
+
+
 ## @fn $ process_entities_html($wikih, $page, $text)
 # Process the entities in the specified text, allowing through only approved tags, and
 # convert wiki markup to html.
@@ -236,8 +285,23 @@ sub broken_media_link {
 sub process_entities_html {
     my $wikih     = shift;
     my $page      = shift;
+    my $title     = shift;
     my $text      = shift;
+    my $stepnum   = shift;
     my $mediahash = shift;
+
+    # Fix up local links within the course
+    $text =~ s{\[\[$namespace:([^\|\]]+?)(?:\|(.*?))?\]\]}{process_link($1,$2)}ges;
+
+    my ($module) = $page =~ /^$namespace:(.*)$/;
+
+    # work out a [target] unique to each step
+    my $targ = '[target name="'.make_anchor_name($module, $title)."\"]\n";
+    $targ .= '[target name="AUTO-'.make_anchor_name($module)."\"]\n" if($stepnum == 1); # first step gets a special module marker
+
+    $logger -> print($logger -> DEBUG, "Adding auto-targets to $page/$title:\n$targ");
+
+    $text = $targ.$text;
 
     my $content = wiki_parsetext($wikih, $page, $text);
 
@@ -415,7 +479,7 @@ sub wiki_export_module {
 
                             if($convert) {
                                 $logger -> print($logger -> NOTICE, "Converting mediawiki markup in $stepname to html.") unless($quiet);
-                                $body = process_entities_html($wikih, $module, $body, $mediahash);
+                                $body = process_entities_html($wikih, $module, $title, $body, $stepnum, $mediahash);
                             }
 
                             save_file($stepname,
