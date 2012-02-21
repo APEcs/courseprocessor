@@ -22,9 +22,10 @@
 package MediaWiki::Wrap;
 use Exporter;
 use MediaWiki::API;
+use URI::Encode qw(uri_encode);
 
 our @ISA       = qw(Exporter);
-our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace wiki_link wiki_edit_page wiki_upload_media);
+our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_course_exists wiki_download wiki_download_direct wiki_media_url wiki_media_size wiki_valid_namespace wiki_link wiki_edit_page wiki_upload_media space_to_underscore);
 our @EXPORT_OK = qw();
 our $VERSION   = 1.0;
 
@@ -479,6 +480,27 @@ sub wiki_upload_media {
             or return "Upload of $name failed: ".$wikih -> {"error"} -> {"code"}.': '.$wikih -> {"error"} -> {"details"};
     }
     return undef;
+}
+
+
+## @fn $ space_to_underscore($text)
+# Convert any spaces in the specified text to underscores.
+#
+# @param text The text to convert.
+# @return The converted text.
+sub space_to_underscore {
+    my $text = shift;
+
+    $text =~ s/ /_/g;
+    $text = uri_encode($text, 1);
+
+    # colons are actually allowed
+    $text =~ s/%3A/:/gi;
+
+    # Mediawiki uses . rather than % for escaped
+    $text =~ s/%/./g;
+
+    return $text;
 }
 
 1;
