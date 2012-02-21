@@ -3,10 +3,9 @@
 ## @file
 # APEcs course processor, front-end and dispatcher. This script is the core of
 # the APEcs course processor, it handles command line and configuration loading,
-# loading of the various input and output handler plugins, and invocation of 
+# loading of the various input and output handler plugins, and invocation of
 # the appropriate plugins over the course material to do the actual work.
-# 
-# @version 3.7.12 (4 November 2010)
+#
 # @copy 2010, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
@@ -54,7 +53,7 @@ use Utils qw(check_directory resolve_path path_join find_bin write_pid);
 use constant DEFAULT_VERBOSITY => 0;
 
 # What should the media directory be called if the user does not specify it?
-use constant DEFAULT_MEDIADIR  => 'media'; 
+use constant DEFAULT_MEDIADIR  => 'media';
 
 
 ## @fn void warn_die_handler($fatal, @messages)
@@ -157,8 +156,8 @@ sub merge_commandline {
 
 
 ## @fn $ load_plugins($plugindir, $list, $logger, $metadata, $template, $filter)
-# Load all available plugins from the plugin directory, and return a hashref of 
-# plugins organised by type and name. 
+# Load all available plugins from the plugin directory, and return a hashref of
+# plugins organised by type and name.
 #
 # @param plugindir The directory containing the plugins to load.
 # @param config    A reference to the global configuration.
@@ -183,15 +182,15 @@ sub load_plugins {
         $logger -> print($logger -> DEBUG, "Detected plugin $plugin, attempting to load...");
 
         # load the plugin
-        require $plugin; 
+        require $plugin;
 
         # Attempt to work out what its package name is from the filename
         my ($package) = $plugin =~ m|^$path/plugins/(\w+).pm$|;
 
         # Create an instance of the new plugin so we can interrogate it
-        my $obj = $package -> new(config   => $config, 
-                                  logger   => $logger,  
-                                  path     => $path, 
+        my $obj = $package -> new(config   => $config,
+                                  logger   => $logger,
+                                  path     => $path,
                                   metadata => $metadata,
                                   template => $template,
                                   filter   => $filter);
@@ -200,11 +199,11 @@ sub load_plugins {
 
         # Obtain the handler type (should be input, output, or reference)
         my $htype = $obj -> get_type();
-        
+
         $logger -> print($logger -> DEBUG, "loaded, adding $htype plugin $package (".$obj -> get_description().").");
-        
+
         # store the instance of the plugin for use later.
-        $plugins -> {$htype} -> {$package} -> {"obj"} = $obj; 
+        $plugins -> {$htype} -> {$package} -> {"obj"} = $obj;
     }
     use strict;
 
@@ -214,14 +213,14 @@ sub load_plugins {
 
 ## @fn $ check_input_plugins($plugins, $config, $logger)
 # Run the input handler checks over the source tree, to determine which ones understand it.
-# This will ask each of the input plugins to look at the tree and check whether it is in 
+# This will ask each of the input plugins to look at the tree and check whether it is in
 # a format that the plugin understands and can work on. Every plugin that can process the
 # source will mark this in the plugins structure accordingly.
 #
 # @param plugins A reference to the hash of plugins.
 # @param config  A reference to the global configuration.
 # @param logger  A reference to the log support object.
-# @return The number of plugins that can process the course. If none of the plugins can 
+# @return The number of plugins that can process the course. If none of the plugins can
 #         process the source, this function will print an error and not return.
 sub check_input_plugins {
     my $plugins = shift;
@@ -247,7 +246,7 @@ sub check_input_plugins {
 
 ## @fn void check_output_plugin($plugins, $config, $logger)
 # Determine whether the selected output plugin (if one has been selected) can process the
-# output of the course. This will generally always work, provided that the selected 
+# output of the course. This will generally always work, provided that the selected
 # output handler exists. If this function encounters any problems - no handler specified,
 # the handler hasn't been created or the selected handler doesn't exist, or the handler
 # can not process the course - this will exit the script with a fatal error.
@@ -264,7 +263,7 @@ sub check_output_plugin {
     if(!$config -> {"Processor"} -> {"output_handler"} && scalar(keys(%{$plugins -> {"output"}})) == 1) {
         $config -> {"Processor"} -> {"output_handler"} = (keys(%{$plugins -> {"output"}}))[0];
         $logger -> print($logger -> WARNING, "OutputHander not specified, falling back on ".$config -> {"Processor"} -> {"output_handler"});
-    } 
+    }
     # If we still have no output handler, give up with an error...
     setting_error("Output handler", "--outhandler") if(!$config -> {"Processor"} -> {"output_handler"});
 
@@ -287,7 +286,7 @@ sub check_output_plugin {
 #
 # @param configfile Optional filename of the configuration to load. If this is not
 #                   given, the configuration is loaded from the user's home directory.
-# @return A reference to a configuration object, or undef if the configuration can 
+# @return A reference to a configuration object, or undef if the configuration can
 #         not be loaded.
 sub load_config {
     my $configfile = shift;
@@ -300,7 +299,7 @@ sub load_config {
     }
 
     # Get configmicro to load the configuration
-    return ConfigMicro -> new($configfile) 
+    return ConfigMicro -> new($configfile)
         if(-f $configfile);
 
     return undef;
@@ -309,7 +308,7 @@ sub load_config {
 
 ## @fn void setting_error($arg, $param, $opt)
 # Prints an error message about missing arguments and tells the user to provide them.
-# 
+#
 # @param arg   The name of the setting that is missing.
 # @param param The name of the command-line parameter used to set the setting.
 # @param opt   Optional configuration file directive that can be used to set the setting.
@@ -361,12 +360,12 @@ my $metadata = Metadata -> new("logger" => $log)
 # so all the template engine will do is simple translates, {L_..} and {B_[...]} will
 # be passed through unaltered.
 my $template = Template -> new("lang" => '', "theme" => '')
-    or die "FATAL: Unable to initialise template engine.\n"; 
+    or die "FATAL: Unable to initialise template engine.\n";
 
 # Create a filter engine for use within the plugins
 my $filter = Filter -> new($config -> {"Processor"} -> {"filters"})
-    or die "FATAL: Unable to initialise filtering engine.\n"; 
-                               
+    or die "FATAL: Unable to initialise filtering engine.\n";
+
 # Obtain a hashref of available plugin object handles.
 my $plugins = load_plugins("$path/plugins", $config, $log, $metadata, $template, $filter);
 
@@ -402,7 +401,7 @@ $config -> {"Processor"} -> {"outputdir"}  = resolve_path($config -> {"Processor
 # Dump the input/output names for reference
 $log -> print($log -> DEBUG, "Using data directory  : ".$config -> {"Processor"} -> {"datasource"});
 $log -> print($log -> DEBUG, "Using output directory: ".$config -> {"Processor"} -> {"outputdir"});
- 
+
 # Verify that the source dirs /are/ dirs
 check_directory($config -> {"Processor"} -> {"datasource"}, "course data source directory");
 check_directory($config -> {"Processor"} -> {"outputdir"} , "output directory", {"exists" => 0, "nolink" => 1, "checkdir" => 0});
@@ -490,7 +489,7 @@ processor will exit with an error if it is not supplied.
 
 Specifies the name of the directory into which the course should be processed.
 NOTE: if this directory exists B<it will be deleted during processing>. Take
-great care to ensure that the output directory does not contain any 
+great care to ensure that the output directory does not contain any
 pre-existing data as the processed course will completely overwrite it.
 
 =item B<-f, --config>
@@ -530,7 +529,7 @@ the option name and value with a colon, eg: --outargs templates:some_template_na
 =item B<-o, --outhandler>
 
 Overrides the outputhandler specified in the configuration file (if there is
-one). Note that this must be the full name of an outputhandler loaded by 
+one). Note that this must be the full name of an outputhandler loaded by
 the software and it is case sensitive. Use B<-l> to obtain the list of known
 handlers for valid values.
 

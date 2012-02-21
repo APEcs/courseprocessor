@@ -8,7 +8,6 @@
 # For full documentation please see http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Course2wiki.pl
 #
 # @copy 2011, Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.0.0 (22 June 2011)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
