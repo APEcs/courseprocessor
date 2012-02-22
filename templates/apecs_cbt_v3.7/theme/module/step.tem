@@ -39,6 +39,8 @@
     <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
     <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
     <link href="../../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="../../MediaWiki/cdfplugin.js"></script>
+    <script type="text/javascript" src="../../MediaWiki/swfobject.js"></script>
 
 </head>
 <body id="step" onload="initializeStepPage('***level***');">
