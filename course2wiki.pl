@@ -78,6 +78,8 @@ my $logger = new Logger();
 # Likewise with the configuration object.
 my $config;
 
+# A global metadata hash to help with course map generation
+my $course_mdata = {};
 
 ## @fn void warn_die_handler($fatal, @messages)
 # A simple handler for warn and die events that changes the normal behaviour of both
@@ -507,7 +509,7 @@ sub convert_content {
     $mwcontent =~ s|{(/?math)}|<$1>|g;
     $mwcontent =~ s|{(Image:.*?)}|[[$1]]|g;
 
-    # Trim any trailing <br/>
+    # Trim any trailing <br />
     $mwcontent =~ s|<br\s*/>\s*$||g;
 
     return $mwcontent;
@@ -763,6 +765,9 @@ sub scan_module_directory {
         $pagecontent .= "== $title ==\n$content\n" if($title && $content);
     }
 
+    # Add the course nav block
+    $pagecontent .= "\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
+
     # Do the edit and then return a link to the new module page.
     wiki_edit_page($wikih, $namespace, $module, \$pagecontent, $dryrun);
 
@@ -807,6 +812,8 @@ sub scan_theme_directory {
         return undef;
     }
 
+    $course_mdata -> {$dirname} = $xmltree;
+
     $logger -> print($logger -> DEBUG, "Directory $dirname contains the theme '".$xmltree -> {"theme"} -> {"title"}."', scanning modules.");
 
     # Process each module in order.
@@ -833,7 +840,7 @@ sub scan_theme_directory {
         $themepage .= "$link<br />\n" if($link);
     }
 
-    $themepage .= "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n<source lang=\"xml\" style=\"emacs\">\n$metadata</source>\n";
+    $themepage .= "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n<source lang=\"xml\" style=\"emacs\">\n$metadata</source>\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
 
     # Check the metadata for images
     my @mdimages = $metadata =~ m|<img\s+(.*?)>|gs;
@@ -902,6 +909,9 @@ sub make_mediapage {
         $mediapage .= "\n";
     }
 
+    # Add the course nav block
+    $mediapage .= "\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
+
     # and do the page edit.
     wiki_edit_page($wikih, $namespace, $config -> {"wiki2course"} -> {"media_page"}, \$mediapage, $dryrun);
 }
@@ -934,11 +944,68 @@ sub make_coursedata {
             "<course version=\"\" title=\"\" splash=\"\" type=\"\" width=\"\" height=\"\">\n".
             "<message><![CDATA[ ]]></message>\n".
             ($coursemap ? "<maps><map><![CDATA[$coursemap]]></map></maps>\n" : "").
-                 "</course>\n</source>\n";
+                 "</course>\n</source>\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
 
         # and do the page edit.
         wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"data_page"}), \$cdpage, $dryrun);
     }
+}
+
+
+## @fn void make_coursenav($wikih, $metadata)
+# Generate the course navigation page in the wiki.
+#
+# @param wikih    A reference to a MediaWiki::API object.
+# @param metadata A reference to a hash containing the course metadata.
+sub make_coursenav {
+    my $wikih    = shift;
+    my $metadata = shift;
+
+    if($only_theme) {
+        $logger -> print($logger -> DEBUG, "Theme-restricted import is active, skipping course nav page.");
+    } else {
+        $logger -> print($logger -> DEBUG, "Writing course navigation.");
+
+        # The start of the navbox is easy...
+        my $coursenav = "{{Navbox course\n|support = [[$namespace:TODO]]{{dot}} [[$namespace:Image Source]]{{dot}} [[$namespace:Anim Source]]\n".
+            "| cdpage = $namespace:".ucfirst($config -> {"wiki2course"} -> {"data_page"})."\n";
+
+        # Now generate the themes and modules. This is nastier...
+        my @themenames =  sort { die "Attempt to sort theme without indexorder while comparing $a and $b"
+                               if(!$metadata -> {$a} -> {"theme"} -> {"indexorder"} ||
+                                  !$metadata -> {$b} -> {"theme"} -> {"indexorder"});
+
+                                 return ($metadata -> {$a} -> {"theme"} -> {"indexorder"}
+                                         <=>
+                                         $metadata -> {$a} -> {"theme"} -> {"indexorder"});
+        }
+        keys(%{$metadata});
+
+        for(my $tnum = 0; $tnum < scalar(@themenames); ++$tnum) {
+            $coursenav .= "| theme".($tnum + 1)." = [[$namespace:".$metadata -> {$themenames[$tnum]} -> {"theme"} -> {"title"}."]]\n";
+
+            my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
+                                       if(!$metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
+                                          !$metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+
+                                   return ($metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}
+                                           <=>
+                                           $metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+            }
+            keys(%{$metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"}});
+
+            my $namelist = "";
+            foreach my $mod (@modnames) {
+                $namelist .= "{{dot}} " if($namelist);
+                $namelise .= "[[$namespace:".$metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"} -> {$mod} -> {"title"}."]]";
+            }
+            $coursenav .= "| modules".($tnum + 1)." = $namelist\n";
+        }
+
+        $coursenav .= "}}";
+
+        wiki_edit_page($wikih, $namespace, "CourseNav", \$coursenav, $dryrun);
+    } # if($only_theme) else
 }
 
 
@@ -955,11 +1022,12 @@ sub make_course {
         $logger -> print($logger -> DEBUG, "Writing course page.");
 
         my $course = "== Development resources ==\n".
-            "[[$namespace:".ucfirst($config -> {"wiki2course"} -> {"data_page"})."]]<br/>\n".
+            "[[$namespace:".ucfirst($config -> {"wiki2course"} -> {"data_page"})."]]<br />\n".
+            "[[$namespace:CourseNav]]<br />\n".
             "[[$namespace:TODO]]\n\n".
             "== Source data ==\n".
-            "[[$namespace:Anim Source]]<br/>\n".
-            "[[$namespace:Image Source]]<br/>";
+            "[[$namespace:Anim Source]]<br />\n".
+            "[[$namespace:Image Source]]<br />\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
 
         wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"course_page"}), \$course, $dryrun);
     }
@@ -1060,6 +1128,9 @@ if(-d $coursedir) {
 
     # Finish off the course page as much as possible
     make_coursedata($wikih, $themelist, $coursemap);
+
+    # write the nav page
+    make_coursenav($wikih, $course_mdata);
 
     # and update the course page to make sure the link is correct
     make_course($wikih);
