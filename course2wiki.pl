@@ -997,7 +997,7 @@ sub make_coursenav {
             my $namelist = "";
             foreach my $mod (@modnames) {
                 $namelist .= "{{dot}} " if($namelist);
-                $namelise .= "[[$namespace:".$metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"} -> {$mod} -> {"title"}."]]";
+                $namelist .= "[[$namespace:".$metadata -> {$themenames[$tnum]} -> {"theme"} -> {"module"} -> {$mod} -> {"title"}."]]";
             }
             $coursenav .= "| modules".($tnum + 1)." = $namelist\n";
         }
