@@ -964,7 +964,7 @@ sub make_coursenav {
     if($only_theme) {
         $logger -> print($logger -> DEBUG, "Theme-restricted import is active, skipping course nav page.");
     } else {
-        $logger -> print($logger -> DEBUG, "Writing course navigation.");
+        $logger -> print($logger -> DEBUG, "Writing course navigation.\nMetadata is:\n".Dumper([$metadata]));
 
         # The start of the navbox is easy...
         my $coursenav = "{{Navbox course\n|support = [[$namespace:TODO]]{{dot}} [[$namespace:Image Source]]{{dot}} [[$namespace:Anim Source]]\n".
