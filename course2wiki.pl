@@ -977,7 +977,7 @@ sub make_coursenav {
 
                                  return ($metadata -> {$a} -> {"theme"} -> {"indexorder"}
                                          <=>
-                                         $metadata -> {$a} -> {"theme"} -> {"indexorder"});
+                                         $metadata -> {$b} -> {"theme"} -> {"indexorder"});
         }
         keys(%{$metadata});
 
