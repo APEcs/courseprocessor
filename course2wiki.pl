@@ -386,7 +386,7 @@ sub fix_flash {
         # store the media link for inclusion in the media page later, even if upload failed
         push(@$media, wiki_link("File:$outname"));
 
-        return '{flash}file='.$outname.'|width='.$width.'|height='.$height.'{/flash}';
+        return '{flash width="'.$width.'" height="'.$height.'"}'.$outname.'{/flash}';
     }
 
     $logger -> print($logger -> DEBUG, "Unable to convert potential flash object ($object)");
@@ -501,7 +501,7 @@ sub convert_content {
     my $mwcontent = $mw -> html2wiki($content);
 
     # Fix flash, stage 2
-    $mwcontent =~ s|{(/?flash)}|<$1>|g;
+    $mwcontent =~ s|{(/?flash.*?)}|<$1>|g;
 
     # Fix images, stage 2
     $mwcontent =~ s|{(/?math)}|<$1>|g;
