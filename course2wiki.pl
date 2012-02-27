@@ -495,8 +495,9 @@ sub convert_content {
     $content =~ s|(<object.*?</object>)|fix_flash($wikih, $1, $media)|geis;
 
     # Fix images, stage 1
-    $content =~ s|<div.*?><img\s+(.*?)></div>|fix_image($wikih, $1, $media)|ges;
-    $content =~ s|<a.*?><img\s+(.*?)></a>|fix_image($wikih, $1, $media)|ges;
+    $content =~ s|<div.*?><img\s+(.*?)></div>|fix_image($wikih, $1, $media)|gies;
+    $content =~ s|<a.*?><img\s+(.*?)></a>|fix_image($wikih, $1, $media)|gies;
+    $content =~ s|<img\s+(.*?)>|fix_image($wikih, $1, $media)|gies;
 
     # Do html conversion
     my $mw = new HTML::WikiConverter(dialect => 'MediaWiki', preserve_templates => 1 );
