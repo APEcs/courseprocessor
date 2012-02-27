@@ -322,22 +322,29 @@ sub fix_local {
 }
 
 
-## @fn $ fix_link($link, $text, $wikih, $media)
+## @fn $ fix_link($linkargs, $text, $wikih, $media)
 # Attempt to convert the specified link and text to [link] tag suitable for
 # passing through to output handlers. This will only convert links that appear
 # to be relative links to anchors in the course - any links to external
 # resources are returned as-is.
 #
-# @param link The URL to process.
-# @param text The text to show for the link.
+# @param linkargs The contents of the <a...> element to process.
+# @param text     The text to show for the link.
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param media    A refrence to an array to store media file links in.
 # @return A string containing the link - either the [link] tag, or a <a> tag.
 sub fix_link {
-    my $link  = shift;
-    my $text  = shift;
-    my $wikih = shift;
-    my $media = shift;
+    my $linkargs  = shift;
+    my $text      = shift;
+    my $wikih     = shift;
+    my $media     = shift;
+
+    # Try to pull out the link
+    my ($link) = $linkargs =~ /href="(.*?)"/i;
+    if(!$link) {
+        $logger -> print($logger -> WARNING, "Unable to parse href from $linkargs - link will be removed");
+        return $text;
+    }
 
     # Is the link actually a version 2 "local" popup?
     if($link =~ /javascript:OpenPopup/) {
@@ -492,7 +499,7 @@ sub convert_content {
 
     # Convert links with anchors to [target] and [link] as needed...
     $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|g;
-    $content =~ s|<a\s*href="(.*?)">(.*?)</a>|fix_link($1, $2, $wikih, $media)|ges;
+    $content =~ s|<a\s*(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $media)|ges;
 
     # Fix flash, stage 1
     $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
