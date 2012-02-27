@@ -356,13 +356,13 @@ sub fix_link {
 
         $result = fix_local($link, $text, $wikih, $media)
 
-    # if the link looks absolute, or has no anchor return it as-is
-    } elsif($link =~ m|://| || $link !~ /#/) {
-        $result = "<a href=\"$link\">$text</a>";
-
     # if the link ends in step1.html then it is a module link
     } elsif($link =~ m/step0?1.html?$/) {
         $result =  '{link}'."$namespace:$text".'{/link}';
+
+    # if the link looks absolute, or has no anchor return it as-is
+    } elsif($link =~ m|://| || $link !~ /#/) {
+        $result = "<a href=\"$link\">$text</a>";
 
     # We have a relative anchored link, so convert to a [link] tag
     } else {
