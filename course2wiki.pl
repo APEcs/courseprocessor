@@ -373,6 +373,11 @@ sub fix_link {
             $result = "<a href=\"$link\">$text</a><!-- can't convert cross-theme link in only_theme mode -->";
         }
 
+    # Identify steps, but pass them through
+    } elsif($link =~ m|step\d+.html?$|) {
+        $logger -> print($logger -> WARNING, "Detected link to step '$link' ('$text'), unable to fix. Needs manual intervention.");
+        $result = "<a href=\"$link\">$text</a>";
+
     # if the link looks absolute, or has no anchor return it as-is
     } elsif($link =~ m|://| || $link !~ /#/) {
         $logger -> print($logger -> WARNING, "Unable to convert link '$link' ('$text') - check and correct if needed.");
