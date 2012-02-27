@@ -1134,9 +1134,12 @@ if(-d $coursedir) {
 
     # and update the course page to make sure the link is correct
     make_course($wikih);
-}
 
-print "Import finished.\n";
+    print "Import finished.\n";
+
+} else {
+    die "FATAL: course directory $coursedir does not exist. Nothing to do.\n";
+}
 
 
 # THE END!
