@@ -351,7 +351,7 @@ sub fix_link {
 
     # if the link ends in step1.html then it is a module link
     } elsif($link =~ m/step0?1.html?$/) {
-        return "{link}$namespace:$text{/link}";
+        return '{link}'."$namespace:$text".'{/link}';
 
     # We have a relative anchored link, so convert to a [link] tag
     } else {
