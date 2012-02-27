@@ -363,11 +363,11 @@ sub fix_link {
 
     # Try to fix up links to modules. Module in the same theme
     } elsif($link =~ m|^../([^/]+)/step0?1.html?$|) {
-        $result =  '{link}'."$namespace:".$course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$1} -> {"title"}.'{/link}';
+        $result =  '{link}'."$namespace:".$course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$1} -> {"title"}."|$text".'{/link}';
 
     # Try to fix up links to modules. Module in another theme
     } elsif($link =~ m|^../../([^/]+)/([^/]+)/step0?1.html?$|) {
-        $result =  '{link}'."$namespace:".$course_xmltree -> {$1} -> {"theme"} -> {"module"} -> {$2} -> {"title"}.'{/link}';
+        $result =  '{link}'."$namespace:".$course_xmltree -> {$1} -> {"theme"} -> {"module"} -> {$2} -> {"title"}."|$text".'{/link}';
 
     # if the link looks absolute, or has no anchor return it as-is
     } elsif($link =~ m|://| || $link !~ /#/) {
