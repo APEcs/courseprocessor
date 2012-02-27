@@ -386,9 +386,32 @@ sub fix_link {
     # Identify steps, but pass them through
     } elsif($link =~ m|step\d+.html?$|) {
         $logger -> print($logger -> WARNING,
-                         $course_xmltree -> {$themedir} -> {"theme"} -> {"title"}." -> ".
-                         $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}." -> ".
-                         "$steptitle: Detected link to step '$link' ('$text'), unable to fix.");
+                         "'".$course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}."' -> '".
+                         "$steptitle': Detected link to step '".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}."' -> '".
+                         $link."' ('$text'), unable to fix.");
+        $result = "<a href=\"$link\">$text</a>";
+
+    } elsif($link =~ m|../([^/])/step\d+.html?$|) {
+        $logger -> print($logger -> WARNING,
+                         "'".$course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}."' -> '".
+                         "$steptitle': Detected link to step '".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$1} -> {"title"}."' -> '".
+                         $link."' ('$text'), unable to fix.");
+        $result = "<a href=\"$link\">$text</a>";
+
+    } elsif($link =~ m|../../([^/])/([^/])/step\d+.html?$|) {
+        $logger -> print($logger -> WARNING,
+                         "'".$course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}."' -> '".
+                         "$steptitle': Detected link to step '".
+                         $course_xmltree -> {$1} -> {"theme"} -> {"title"}."' -> '".
+                         $course_xmltree -> {$1} -> {"theme"} -> {"module"} -> {$2} -> {"title"}."' -> '".
+                         $link."' ('$text'), unable to fix.");
         $result = "<a href=\"$link\">$text</a>";
 
     # if the link looks absolute, or has no anchor return it as-is
