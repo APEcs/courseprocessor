@@ -348,25 +348,30 @@ sub fix_link {
 
     $logger -> print($logger -> DEBUG, "Attempting to convert link '$link' to wiki format.");
 
+    my $result = "";
+
     # Is the link actually a version 2 "local" popup?
     if($link =~ /javascript:OpenPopup/) {
         $logger -> print($logger -> DEBUG, "Detected version 2 'local' popup. Converting to <popup>");
 
-        return fix_local($link, $text, $wikih, $media)
+        $result = fix_local($link, $text, $wikih, $media)
 
     # if the link looks absolute, or has no anchor return it as-is
     } elsif($link =~ m|://| || $link !~ /#/) {
-        return "<a href=\"$link\">$text</a>";
+        $result = "<a href=\"$link\">$text</a>";
 
     # if the link ends in step1.html then it is a module link
     } elsif($link =~ m/step0?1.html?$/) {
-        return '{link}'."$namespace:$text".'{/link}';
+        $result =  '{link}'."$namespace:$text".'{/link}';
 
     # We have a relative anchored link, so convert to a [link] tag
     } else {
         my ($anchor) = $link =~ /#(.*)$/;
-        return "[link to=\"$anchor\"]".$text."[/link]";
+        $result = "[link to=\"$anchor\"]".$text."[/link]";
     }
+
+    $logger -> print($logger -> DEBUG, "Link '$link' converted to '$result'.");
+    return $result;
 }
 
 
