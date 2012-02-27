@@ -367,7 +367,11 @@ sub fix_link {
 
     # Try to fix up links to modules. Module in another theme
     } elsif($link =~ m|^../../([^/]+)/([^/]+)/step0?1.html?$|) {
-        $result =  '{link}'."$namespace:".$course_xmltree -> {$1} -> {"theme"} -> {"module"} -> {$2} -> {"title"}."|$text".'{/link}';
+        if(!$only_theme || $only_theme eq $1) {
+            $result = '{link}'."$namespace:".$course_xmltree -> {$1} -> {"theme"} -> {"module"} -> {$2} -> {"title"}."|$text".'{/link}';
+        } else {
+            $result = "<a href=\"$link\">$text</a><!-- can't convert cross-theme link in only_theme mode -->";
+        }
 
     # if the link looks absolute, or has no anchor return it as-is
     } elsif($link =~ m|://| || $link !~ /#/) {
