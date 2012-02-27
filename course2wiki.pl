@@ -349,6 +349,10 @@ sub fix_link {
     } elsif($link =~ m|://| || $link !~ /#/) {
         return "<a href=\"$link\">$text</a>";
 
+    # if the link ends in step1.html then it is a module link
+    } elsif($link =~ m/step0?1.html?$/) {
+        return "{link}$namespace:$text{/link}";
+
     # We have a relative anchored link, so convert to a [link] tag
     } else {
         my ($anchor) = $link =~ /#(.*)$/;
@@ -503,6 +507,9 @@ sub convert_content {
     # Do html conversion
     my $mw = new HTML::WikiConverter(dialect => 'MediaWiki', preserve_templates => 1 );
     my $mwcontent = $mw -> html2wiki($content);
+
+    # Fix links, stage 2
+    $mwcontent =~ s|{link}(.*?){/link}|[[$1]]|g;
 
     # Fix flash, stage 2
     $mwcontent =~ s|{(/?flash.*?)}|<$1>|g;
@@ -677,6 +684,8 @@ sub load_step_version1 {
 
     # must explicitly delete the html tree to prevent leaks
     $root -> delete();
+
+    $logger -> print($logger -> DEBUG, "Converted content for $stepfile:\n$realcontent\n");
 
     return ($titletext, $realcontent);
 }
