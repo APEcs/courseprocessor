@@ -346,6 +346,8 @@ sub fix_link {
         return $text;
     }
 
+    $logger -> print($logger -> DEBUG, "Attempting to convert link '$link' to wiki format.");
+
     # Is the link actually a version 2 "local" popup?
     if($link =~ /javascript:OpenPopup/) {
         $logger -> print($logger -> DEBUG, "Detected version 2 'local' popup. Converting to <popup>");
