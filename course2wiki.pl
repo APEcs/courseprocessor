@@ -79,7 +79,10 @@ my $logger = new Logger();
 my $config;
 
 # A global metadata hash to help with course map generation
-my $course_mdata = {};
+my $course_xmltree = {};
+
+# And the source metadata needed to handle images
+my $course_mdata   = {};
 
 ## @fn void warn_die_handler($fatal, @messages)
 # A simple handler for warn and die events that changes the normal behaviour of both
@@ -322,7 +325,7 @@ sub fix_local {
 }
 
 
-## @fn $ fix_link($linkargs, $text, $wikih, $media)
+## @fn $ fix_link($linkargs, $text, $wikih, $themedir, $media)
 # Attempt to convert the specified link and text to [link] tag suitable for
 # passing through to output handlers. This will only convert links that appear
 # to be relative links to anchors in the course - any links to external
@@ -331,12 +334,14 @@ sub fix_local {
 # @param linkargs The contents of the <a...> element to process.
 # @param text     The text to show for the link.
 # @param wikih    A reference to the MediaWiki::API wiki handle.
+# @param themedir The name of the current theme directory.
 # @param media    A refrence to an array to store media file links in.
 # @return A string containing the link - either the [link] tag, or a <a> tag.
 sub fix_link {
     my $linkargs  = shift;
     my $text      = shift;
     my $wikih     = shift;
+    my $themedir  = shift;
     my $media     = shift;
 
     # Try to pull out the link
@@ -356,9 +361,13 @@ sub fix_link {
 
         $result = fix_local($link, $text, $wikih, $media)
 
-    # if the link ends in step1.html then it is a module link
-    } elsif($link =~ m/step0?1.html?$/) {
-        $result =  '{link}'."$namespace:$text".'{/link}';
+    # Try to fix up links to modules. Module in the same theme
+    } elsif($link =~ m|^../([^/]+)/step0?1.html?$|) {
+        $result =  '{link}'."$namespace:".$course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$1} -> {"title"}.'{/link}';
+
+    # Try to fix up links to modules. Module in another theme
+    } elsif($link =~ m|^../../([^/]+)/([^/]+)/step0?1.html?$|) {
+        $result =  '{link}'."$namespace:".$course_xmltree -> {$1} -> {"theme"} -> {"module"} -> {$2} -> {"title"}.'{/link}';
 
     # if the link looks absolute, or has no anchor return it as-is
     } elsif($link =~ m|://| || $link !~ /#/) {
@@ -492,21 +501,23 @@ sub fix_image {
 }
 
 
-## @fn $ convert_content($wikih, $content, $media)
+## @fn $ convert_content($wikih, $content, $themedir, $media)
 # Convert the provided content from HTML to MediaWiki markup.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
-# @param content The html content to convert to MediaWiki markup.
+# @param content  The html content to convert to MediaWiki markup.
+# @param themedir The name of the current theme directory.
 # @param media    A refrence to an array to store media file links in.
 # @return The converted content.
 sub convert_content {
-    my $wikih   = shift;
-    my $content = shift;
-    my $media   = shift;
+    my $wikih    = shift;
+    my $content  = shift;
+    my $themedir = shift;
+    my $media    = shift;
 
     # Convert links with anchors to [target] and [link] as needed...
     $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|g;
-    $content =~ s|<a\s*(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $media)|ges;
+    $content =~ s|<a\s*(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $themedir, $media)|ges;
 
     # Fix flash, stage 1
     $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
@@ -708,17 +719,19 @@ sub load_step_version1 {
 # -----------------------------------------------------------------------------
 #  Scanning functions
 
-## @fn @ load_step_file($wikih, $stepfile, $media)
+## @fn @ load_step_file($wikih, $stepfile, $themedir, $media)
 # Load the contents of the specified step file, converting as much as possible
 # back into wiki markup.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param stepfile The step file to load into memory.
+# @param themedir The name of the current theme directory.
 # @param media    A refrence to an array to store media file links in.
 # @return An array containing the step title and content on success, undefs otherwise.
 sub load_step_file {
     my $wikih    = shift;
     my $stepfile = shift;
+    my $themedir = shift;
     my $media    = shift;
 
     $logger -> print($logger -> DEBUG, "Processing step $stepfile.");
@@ -740,7 +753,7 @@ sub load_step_file {
         }
     }
 
-    my $mwcontent = convert_content($wikih, $realcontent, $media);
+    my $mwcontent = convert_content($wikih, $realcontent, $themedir, $media);
 
     # now try to deal with popups
     $mwcontent =~ s|<span class="twpopup">(.*?)<span class="twpopup-inner">([a-zA-Z0-9+=/\n ]+)</span>\s*</span>|fix_twpopup($wikih, $1, $2, $media)|ges;
@@ -749,18 +762,20 @@ sub load_step_file {
 }
 
 
-## @fn $ scan_module_directory($wikih, $fullpath, $module, $media)
+## @fn $ scan_module_directory($wikih, $fullpath, $themedir, $module, $media)
 # Scan the specified module directory for steps, concatenating their contents into
 # a single wiki page.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param fullpath The path to the module directory.
+# @param themedir The name of the current theme directory.
 # @param module   The title of the module.
 # @param media    A refrence to an array to store media file links in.
 # @return A wiki link for the module on success, undef otherwise.
 sub scan_module_directory {
     my $wikih    = shift;
     my $fullpath = shift;
+    my $themedir = shift;
     my $module   = shift;
     my $media    = shift;
 
@@ -784,7 +799,7 @@ sub scan_module_directory {
     # Now process each step into an appropriate page
     my $pagecontent = "";
     foreach my $stepname (@sorted) {
-        my ($title, $content) = load_step_file($wikih, path_join($fullpath, $stepname), $media);
+        my ($title, $content) = load_step_file($wikih, path_join($fullpath, $stepname), $themedir, $media);
 
         # Make the step in wiki format
         $pagecontent .= "== $title ==\n$content\n" if($title && $content);
@@ -802,20 +817,18 @@ sub scan_module_directory {
 }
 
 
-## @fn $ scan_theme_directory($wikih, $fullpath, $dirname, $mediahash)
+## @fn void check_theme_directory($wikih, $fullpath, $dirname, $mediahash)
 # Check whether the specified directory is a theme directory (it contains a
-# metadata.xml file) and if it is, process its contents.
+# metadata.xml file) and if it is, store the theme metadata
 #
 # @param wikih     A reference to a Mediawiki::API object.
 # @param fullpath  The path to the theme directory to process.
 # @param dirname   The name of the theme directory.
 # @param mediahash A reference to a hash to store media links in.
-# @return A wiki link to the theme page on success, undef on failure.
-sub scan_theme_directory {
+sub check_theme_directory {
     my $wikih     = shift;
     my $fullpath  = shift;
     my $dirname   = shift;
-    my $mediahash = shift;
 
     if($only_theme && $dirname ne $only_theme) {
         $logger -> print($logger -> DEBUG, "Skipping directory $dirname as it does not match theme restriction.");
@@ -837,20 +850,37 @@ sub scan_theme_directory {
         return undef;
     }
 
-    $course_mdata -> {$dirname} = $xmltree;
+    $logger -> print($logger -> DEBUG, "Directory $dirname contains the theme '".$xmltree -> {"theme"} -> {"title"}."', recording for later scanning.");
+    $course_xmltree -> {$dirname} = $xmltree;
+    $course_mdata -> {$dirname} = $metadata;
+}
 
-    $logger -> print($logger -> DEBUG, "Directory $dirname contains the theme '".$xmltree -> {"theme"} -> {"title"}."', scanning modules.");
+
+## @fn void scan_theme_directory($wikih, $fullpath, $dirname, $mediahash)
+# Process the contents of a theme directory.
+#
+# @param wikih     A reference to a Mediawiki::API object.
+# @param fullpath  The path to the theme directory to process.
+# @param dirname   The name of the theme directory.
+# @param mediahash A reference to a hash to store media links in.
+sub scan_theme_directory {
+    my $wikih     = shift;
+    my $fullpath  = shift;
+    my $dirname   = shift;
+    my $mediahash = shift;
+
+    $logger -> print($logger -> DEBUG, "Processing theme $dirname.");
 
     # Process each module in order.
     my @modnames =  sort { die "Attempt to sort module without indexorder while comparing $a and $b"
-                               if(!$xmltree -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
-                                  !$xmltree -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+                               if(!$course_xmltree -> {$dirname} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"} ||
+                                  !$course_xmltree -> {$dirname} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
 
-                           return ($xmltree -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}
+                           return ($course_xmltree -> {$dirname} -> {"theme"} -> {"module"} -> {$a} -> {"indexorder"}
                                    <=>
-                                   $xmltree -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
+                                   $course_xmltree -> {$dirname} -> {"theme"} -> {"module"} -> {$b} -> {"indexorder"});
                          }
-                         keys(%{$xmltree -> {"theme"} -> {"module"}});
+                         keys(%{$course_xmltree -> {$dirname} -> {"theme"} -> {"module"}});
 
     my $themepage  = "== ".$config -> {"wiki2course"} -> {"modules_title"}." ==\n";
     my $thememedia = [];
@@ -859,7 +889,8 @@ sub scan_theme_directory {
     foreach my $module (@modnames) {
         my $link = scan_module_directory($wikih,
                                          path_join($fullpath, $module),
-                                         $xmltree -> {"theme"} -> {"module"} -> {$module} -> {"title"},
+                                         $dirname,
+                                         $course_xmltree -> {$dirname} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
                                          $thememedia);
 
         $themepage .= "$link<br />\n" if($link);
@@ -868,7 +899,7 @@ sub scan_theme_directory {
     $themepage .= "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n<source lang=\"xml\" style=\"emacs\">\n$metadata</source>\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
 
     # Check the metadata for images
-    my @mdimages = $metadata =~ m|<img\s+(.*?)>|gs;
+    my @mdimages = $course_mdata -> {$dirname} =~ m|<img\s+(.*?)>|gs;
     if(scalar(@mdimages)) {
         $logger -> print($logger -> DEBUG, "Got ",scalar(@mdimages)," images in metadata");
 
@@ -902,14 +933,15 @@ sub scan_theme_directory {
     }
 
     # store the media hash if we have any entries
-    $mediahash -> {$xmltree -> {"theme"} -> {"title"}} = $thememedia
+    $mediahash -> {$course_xmltree -> {$dirname} -> {"theme"} -> {"title"}} = $thememedia
         if(scalar(@$thememedia));
 
     # Add the theme page...
-    wiki_edit_page($wikih, $namespace, $xmltree -> {"theme"} -> {"title"}, \$themepage, $dryrun);
+    wiki_edit_page($wikih, $namespace, $course_xmltree -> {$dirname} -> {"theme"} -> {"title"}, \$themepage, $dryrun);
 
-    return wiki_link($namespace.':'.$xmltree -> {"theme"} -> {"title"}, $xmltree -> {"theme"} -> {"title"});
+    return wiki_link($namespace.':'.$course_xmltree -> {$dirname} -> {"theme"} -> {"title"}, $course_xmltree -> {$dirname} -> {"theme"} -> {"title"});
 }
+
 
 # -----------------------------------------------------------------------------
 #  Generation code
@@ -1131,16 +1163,28 @@ if(-d $coursedir) {
     die "FATAL: The specified namespace does not appear in the wiki. You must create the namespace before it can be used.\n"
         unless(wiki_valid_namespace($wikih, $namespace));
 
+
+    $logger -> print($logger -> DEBUG, "Scanning for themes.");
+
     # Okay, now we hope the course is a course...
     opendir(CDIR, $coursedir)
         or die "FATAL: Unable to open course directory: $!\n";
 
-    my $themelist = "";
-    my $mediahash = { };
     while(my $entry = readdir(CDIR)) {
         # skip anything that isn't a directory for now
         next if($entry =~ /^\.\.?$/ || !(-d path_join($coursedir, $entry)));
 
+        check_theme_directory($wikih, path_join($coursedir, $entry), $entry);
+        $themelist .= "$themelink<br />\n" if($themelink);
+    }
+    closedir(CDIR);
+
+    $logger -> print($logger -> DEBUG, "Theme scan complete. Metadata available:\n".Dumper([$course_xmltree])."\n");
+
+    $logger -> print($logger -> DEBUG, "Processing themes.");
+    my $themelist = "";
+    my $mediahash = { };
+    foreach my $entry (keys(%{$course_xmltree})) {
         my $themelink = scan_theme_directory($wikih, path_join($coursedir, $entry), $entry, $mediahash);
         $themelist .= "$themelink<br />\n" if($themelink);
     }
@@ -1155,7 +1199,7 @@ if(-d $coursedir) {
     make_coursedata($wikih, $themelist, $coursemap);
 
     # write the nav page
-    make_coursenav($wikih, $course_mdata);
+    make_coursenav($wikih, $course_xmltree);
 
     # and update the course page to make sure the link is correct
     make_course($wikih);
