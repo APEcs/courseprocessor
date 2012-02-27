@@ -327,7 +327,7 @@ sub fix_local {
     }
     $logger -> print($logger -> DEBUG, "Loaded popup body for $title = '$localfile'. Body is:\n$body\n");
 
-    return "<span class=\"twpopup\">$title<span class=\"twpopup-inner\">".encode_base64($body)."</span></span>";
+    return "<span class=\"twpopup-fixed\">$title<span class=\"twpopup-inner\">".encode_base64($body)."</span></span>";
 }
 
 
@@ -449,19 +449,21 @@ sub fix_flash {
 }
 
 
-## @fn $ fix_twpopup($wikih, $title, $encdata, $media)
+## @fn $ fix_twpopup($wikih, $title, $encdata, $media, $fixed)
 # Convert a TWPopup span sequence into a <popup> tag.
 #
 # @param wikih   A reference to the MediaWiki::API wiki handle.
 # @param title   The title string for the popup.
 # @param encdata The Base64 encoded popup body.
 # @param media   A refrence to an array to store media file links in.
+# @param fixed   If true, the content has already been converted.
 # @return A string containing the <popup> tag.
 sub fix_twpopup {
     my $wikih   = shift;
     my $title   = shift;
     my $encdata = shift;
     my $media   = shift;
+    my $fixed   = shift;
 
     # Converting to mediawiki format will have killed the newlines in thebase64 encoded data, fix that
     $encdata =~ s/ /\n/g;
@@ -469,7 +471,7 @@ sub fix_twpopup {
     # decode so that we can convert the content
     my $content = decode_base64($encdata);
     if($content) {
-        $content = convert_content($wikih, $content, $media);
+        $content = convert_content($wikih, $content, $media) if(!$fixed);
     } else {
         $content = $encdata;
     }
@@ -786,6 +788,7 @@ sub load_step_file {
 
     # now try to deal with popups
     $mwcontent =~ s|<span class="twpopup">(.*?)<span class="twpopup-inner">([a-zA-Z0-9+=/\n ]+)</span>\s*</span>|fix_twpopup($wikih, $1, $2, $media)|ges;
+    $mwcontent =~ s|<span class="twpopup-fixed">(.*?)<span class="twpopup-inner">([a-zA-Z0-9+=/\n ]+)</span>\s*</span>|fix_twpopup($wikih, $1, $2, $media, 1)|ges;
 
     return ($titletext, $mwcontent);
 }
