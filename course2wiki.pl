@@ -375,6 +375,7 @@ sub fix_link {
 
     # if the link looks absolute, or has no anchor return it as-is
     } elsif($link =~ m|://| || $link !~ /#/) {
+        $logger -> print($logger -> WARNING, "Unable to convert link '$link' ('$text') - check and correct if needed.");
         $result = "<a href=\"$link\">$text</a>";
 
     # We have a relative anchored link, so convert to a [link] tag
