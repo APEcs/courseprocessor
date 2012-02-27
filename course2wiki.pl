@@ -316,6 +316,7 @@ sub fix_local {
         $logger -> print($logger -> WARNING, "Unable to load local popup file from '$localfile'.");
         return "";
     }
+    $logger -> print($logger -> DEBUG, "Loaded popup body for $title = '$localfile'. Body is:\n$body\n");
 
     return "<span class=\"twpopup\">$title<span class=\"twpopup-inner\">".encode_base64($body)."</span></span>";
 }
