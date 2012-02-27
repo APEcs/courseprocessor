@@ -896,7 +896,7 @@ sub scan_theme_directory {
         $themepage .= "$link<br />\n" if($link);
     }
 
-    $themepage .= "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n<source lang=\"xml\" style=\"emacs\">\n$metadata</source>\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
+    $themepage .= "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n<source lang=\"xml\" style=\"emacs\">\n".$course_mdata -> {$dirname}."</source>\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
 
     # Check the metadata for images
     my @mdimages = $course_mdata -> {$dirname} =~ m|<img\s+(.*?)>|gs;
@@ -1175,7 +1175,6 @@ if(-d $coursedir) {
         next if($entry =~ /^\.\.?$/ || !(-d path_join($coursedir, $entry)));
 
         check_theme_directory($wikih, path_join($coursedir, $entry), $entry);
-        $themelist .= "$themelink<br />\n" if($themelink);
     }
     closedir(CDIR);
 
