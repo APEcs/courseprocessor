@@ -291,19 +291,25 @@ sub fix_media_name {
 # -----------------------------------------------------------------------------
 #  HTML fixing functions
 
-## @fn $ fix_local($popup, $title)
+## @fn $ fix_local($popup, $title, $wikih, $themedir, $moddir, $media)
 # Convert a version 2 'local' popup link to a new style 'twpopup' popup. Note
 # that this converts the old popup into the *html version* of a new popup, not
 # <popup> taged, to avoid problems with WikiConverter.
 #
-# @param popup The popup javascript.
-# @param title The title to show for the popup anchor.
+# @param popup    The popup javascript.
+# @param title    The title to show for the popup anchor.
+# @param wikih    A reference to the MediaWiki::API wiki handle.
+# @param themedir The name of the current theme directory.
+# @param moddir   The name of the current module directory.
+# @param media    A refrence to an array to store media file links in.
 # @return A string containing the popup.
 sub fix_local {
-    my $popup = shift;
-    my $title = shift;
-    my $wikih = shift;
-    my $media = shift;
+    my $popup    = shift;
+    my $title    = shift;
+    my $wikih    = shift;
+    my $themedir = shift;
+    my $moddir   = shift;
+    my $media    = shift;
 
     # Get the name of the popup
     my ($localfile) = $popup =~ /^javascript:OpenPopup\((?:'|&#39;)(.*?)(?:'|&#39;)/;
@@ -314,7 +320,7 @@ sub fix_local {
     }
 
     # Load the local file as if it was a step. This should be safe, provided locals never recurse
-    my ($pagetitle, $body) = load_step_file($wikih, $localfile, $media);
+    my ($pagetitle, $body) = load_step_file($wikih, $localfile, $themedir, $moddir, $media);
     if(!$body) {
         $logger -> print($logger -> WARNING, "Unable to load local popup file from '$localfile'.");
         return "";
@@ -325,23 +331,27 @@ sub fix_local {
 }
 
 
-## @fn $ fix_link($linkargs, $text, $wikih, $themedir, $media)
+## @fn $ fix_link($linkargs, $text, $wikih, $themedir, $moddir, $media)
 # Attempt to convert the specified link and text to [link] tag suitable for
 # passing through to output handlers. This will only convert links that appear
 # to be relative links to anchors in the course - any links to external
 # resources are returned as-is.
 #
-# @param linkargs The contents of the <a...> element to process.
-# @param text     The text to show for the link.
-# @param wikih    A reference to the MediaWiki::API wiki handle.
-# @param themedir The name of the current theme directory.
-# @param media    A refrence to an array to store media file links in.
+# @param linkargs  The contents of the <a...> element to process.
+# @param text      The text to show for the link.
+# @param wikih     A reference to the MediaWiki::API wiki handle.
+# @param themedir  The name of the current theme directory.
+# @param moddir    The name of the current module directory.
+# @param steptitle The title of the current step.
+# @param media     A refrence to an array to store media file links in.
 # @return A string containing the link - either the [link] tag, or a <a> tag.
 sub fix_link {
     my $linkargs  = shift;
     my $text      = shift;
     my $wikih     = shift;
     my $themedir  = shift;
+    my $moddir    = shift;
+    my $steptitle = shift;
     my $media     = shift;
 
     # Try to pull out the link
@@ -375,7 +385,10 @@ sub fix_link {
 
     # Identify steps, but pass them through
     } elsif($link =~ m|step\d+.html?$|) {
-        $logger -> print($logger -> WARNING, "Detected link to step '$link' ('$text'), unable to fix. Needs manual intervention.");
+        $logger -> print($logger -> WARNING,
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"title"}." -> ".
+                         $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}." -> ".
+                         "$steptitle: Detected link to step '$link' ('$text'), unable to fix. Needs manual intervention.");
         $result = "<a href=\"$link\">$text</a>";
 
     # if the link looks absolute, or has no anchor return it as-is
@@ -511,23 +524,27 @@ sub fix_image {
 }
 
 
-## @fn $ convert_content($wikih, $content, $themedir, $media)
+## @fn $ convert_content($wikih, $content, $titletext, $themedir, $moddir, $media)
 # Convert the provided content from HTML to MediaWiki markup.
 #
-# @param wikih    A reference to the MediaWiki::API wiki handle.
-# @param content  The html content to convert to MediaWiki markup.
-# @param themedir The name of the current theme directory.
-# @param media    A refrence to an array to store media file links in.
+# @param wikih     A reference to the MediaWiki::API wiki handle.
+# @param content   The html content to convert to MediaWiki markup.
+# @param titletext The title of the step.
+# @param themedir  The name of the current theme directory.
+# @param moddir    The name of the current module directory.
+# @param media     A refrence to an array to store media file links in.
 # @return The converted content.
 sub convert_content {
-    my $wikih    = shift;
-    my $content  = shift;
-    my $themedir = shift;
-    my $media    = shift;
+    my $wikih     = shift;
+    my $content   = shift;
+    my $titletext = shift;
+    my $themedir  = shift;
+    my $moddir    = shift;
+    my $media     = shift;
 
     # Convert links with anchors to [target] and [link] as needed...
     $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|g;
-    $content =~ s|<a\s*(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $themedir, $media)|ges;
+    $content =~ s|<a\s*(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $themedir, $moddir, $titletext, $media)|ges;
 
     # Fix flash, stage 1
     $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
@@ -736,12 +753,14 @@ sub load_step_version1 {
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param stepfile The step file to load into memory.
 # @param themedir The name of the current theme directory.
+# @param moddir   The name of the current module directory.
 # @param media    A refrence to an array to store media file links in.
 # @return An array containing the step title and content on success, undefs otherwise.
 sub load_step_file {
     my $wikih    = shift;
     my $stepfile = shift;
     my $themedir = shift;
+    my $moddir   = shift;
     my $media    = shift;
 
     $logger -> print($logger -> DEBUG, "Processing step $stepfile.");
@@ -763,7 +782,7 @@ sub load_step_file {
         }
     }
 
-    my $mwcontent = convert_content($wikih, $realcontent, $themedir, $media);
+    my $mwcontent = convert_content($wikih, $realcontent, $titletext, $themedir, $moddir, $media);
 
     # now try to deal with popups
     $mwcontent =~ s|<span class="twpopup">(.*?)<span class="twpopup-inner">([a-zA-Z0-9+=/\n ]+)</span>\s*</span>|fix_twpopup($wikih, $1, $2, $media)|ges;
@@ -772,13 +791,14 @@ sub load_step_file {
 }
 
 
-## @fn $ scan_module_directory($wikih, $fullpath, $themedir, $module, $media)
+## @fn $ scan_module_directory($wikih, $fullpath, $themedir, $moddir, $module, $media)
 # Scan the specified module directory for steps, concatenating their contents into
 # a single wiki page.
 #
 # @param wikih    A reference to the MediaWiki::API wiki handle.
 # @param fullpath The path to the module directory.
 # @param themedir The name of the current theme directory.
+# @param moddir   The name of the module directory.
 # @param module   The title of the module.
 # @param media    A refrence to an array to store media file links in.
 # @return A wiki link for the module on success, undef otherwise.
@@ -786,6 +806,7 @@ sub scan_module_directory {
     my $wikih    = shift;
     my $fullpath = shift;
     my $themedir = shift;
+    my $moddir   = shift;
     my $module   = shift;
     my $media    = shift;
 
@@ -809,7 +830,7 @@ sub scan_module_directory {
     # Now process each step into an appropriate page
     my $pagecontent = "";
     foreach my $stepname (@sorted) {
-        my ($title, $content) = load_step_file($wikih, path_join($fullpath, $stepname), $themedir, $media);
+        my ($title, $content) = load_step_file($wikih, path_join($fullpath, $stepname), $themedir, $moddir, $media);
 
         # Make the step in wiki format
         $pagecontent .= "== $title ==\n$content\n" if($title && $content);
@@ -900,6 +921,7 @@ sub scan_theme_directory {
         my $link = scan_module_directory($wikih,
                                          path_join($fullpath, $module),
                                          $dirname,
+                                         $module,
                                          $course_xmltree -> {$dirname} -> {"theme"} -> {"module"} -> {$module} -> {"title"},
                                          $thememedia);
 
