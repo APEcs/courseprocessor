@@ -388,7 +388,7 @@ sub fix_link {
         $logger -> print($logger -> WARNING,
                          $course_xmltree -> {$themedir} -> {"theme"} -> {"title"}." -> ".
                          $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}." -> ".
-                         "$steptitle: Detected link to step '$link' ('$text'), unable to fix. Needs manual intervention.");
+                         "$steptitle: Detected link to step '$link' ('$text'), unable to fix.");
         $result = "<a href=\"$link\">$text</a>";
 
     # if the link looks absolute, or has no anchor return it as-is
