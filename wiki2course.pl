@@ -283,7 +283,10 @@ sub fix_popup_wikitext {
     my $b64body   = shift;
     my $mediahash = shift;
 
-    return '<span class="twpopup-inner">'.encode_base64(fix_wikitext($wikih, $page, decode_base64($b64body), $mediahash)).'</span>';
+    my $decoded = decode_base64($b64body);
+    $logger -> print($logger -> DEBUG, "Processing popup.\nData: $b64body\nDeocded: $decoded\n") unless($quiet);
+
+    return '<span class="twpopup-inner">'.encode_base64(fix_wikitext($wikih, $page, $decoded, $mediahash)).'</span>';
 }
 
 
