@@ -407,7 +407,7 @@ sub get_fixedlabel_size {
 
             # If the string didn't fit into the width, but it did fit the height, wrap it
             } elsif($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} <= $maxheight) {
-                $Text::Wrap::columns = length($workstring) / ++$lines;
+                $Text::Wrap::columns = int(length($workstring) / ++$lines);
                 $workstring = eval { wrap("", "", $string) };
 
                 die "FATAL: Generating fixed button string failed: $@" if($@);
@@ -497,7 +497,7 @@ sub get_elasticlabel_size {
 
                 # If the string didn't fit into the width, but it did fit the height, wrap it
                 } elsif($sdata -> {"_"} -> {"maxwide"} > $pwidth && $sdata -> {"_"} -> {"sumhigh"} <= $pheight) {
-                    $Text::Wrap::columns   = length($workstring) / ++$lines;
+                    $Text::Wrap::columns   = int(length($workstring) / ++$lines);
                     $workstring = eval { wrap("", "", $label) };
 
                     die "Generating elastic button string failed: $@" if($@);
