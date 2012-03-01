@@ -231,36 +231,9 @@ sub ttf_string_wrap {
     # Set a vaguely sane default for line spacing if needed
     $linespacing = 0.5 if(!defined($linespacing));
 
-    # Start off with the string 'as is'
-    my $wstring = $string;
-
-    $Text::Wrap::huge = "overflow";
-    $Text::Wrap::separator = "|";
-
-    my $sdata;     # somewhere to store size data
-    my $lines = 1; # there's currently only one line in the string, we assume...
-    do {
-        # Split the string into lines if needed
-        my @strings = split /\|/, $wstring;
-
-        # Will the string fit into the space needed?
-        $sdata = $self -> ttf_string_calcsize($fontname, $colour, \@strings, $minsize, $linespacing)
-            or die "Unable to calculate size for $wstring!\n";
-
-        # If it won't fit in the width, we need to wrap it (height will be handled for us, but that should
-        # never be an issue in normal situations anyway)
-        if($sdata -> {"_"} -> {"maxwide"} > $maxwidth) {
-            $Text::Wrap::columns = length($string) / ++$lines;
-            $wstring = eval { wrap("", "", $string) };
-
-            return "Unable to wrap string: $@" if($@);
-        }
-
-    # keep going until the string fits, or we hit the line limit
-    } while(($sdata -> {"_"} -> {"maxwide"} > $maxwidth) && ($lines <= $self -> {"line_limit"}));
-
-    # Bomb if we hit the split limit
-    return "Unable to wrap text into the available space. Line limit exceeded." if($lines > $self -> {"line_limit"});
+    # Work out the wrapped, fitted string.
+    my ($wstring, $sdata, $fontsize) = $self -> get_fixedlabel_size($fontname, $string, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing);
+    return $wstring unless(!$fontsize);
 
     # Okay, get here and wstring contains the wrapped string, so draw it
     return $self -> ttf_string_centred($image, $fontname, $colour, $wstring, $cx, $cy, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing);
@@ -389,6 +362,71 @@ sub copy_fragment {
         $ypos += $frag -> {"height"};
         $xpos = $dsx;
     }
+}
+
+
+## @method @ get_fixedlabel_size($fontname, $string, $fontsize, $minsize, $maxwidth, $maxheight, $linespacing)
+# Determine the optimal size to draw the specified string so that it will fit within the
+# width and height.
+#
+# @param fontname    The path to the truetype font to use.
+# @param string      The text to draw into the image.
+# @param fontsize    The preferred size to draw the string at in points.
+# @param minsize     The minimum point size that can be tolerated before an error.
+# @param maxwidth    The width the string must fit entirely within.
+# @param maxheight   The height the string must fit entirely within.
+# @param linespacing Optional argument passed to stringFT to control spacing in multiline strings.
+# @return An array of three values: the string wrapped so it will fit, the size data hash, and the font
+#         size to draw the string in. If the string will not fit, this returns undefs.
+sub get_fixedlabel_size {
+    my $self = shift;
+    my ($fontname, $string, $fontsize, $minsize, $maxwidth, $maxheight, $linespacing) = @_;
+
+    do { # while($fontsize >= $minsize});
+
+        my $lines = 1;            # there's currently only one line in the string, see above
+        my $workstring = $string; # make a working copy of the string so we can wrap it as needed
+        do { # while($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} < $maxheight);
+
+            # Split the string into lines if needed
+            my @strings = split /\|/, $workstring;
+
+            # Will the string fit into the space needed?
+            $sdata = $self -> ttf_string_calcsize($fontname,
+                                                  0, # colour should be irrelivant here...
+                                                  \@strings,
+                                                  $fontsize,
+                                                  $linespacing)
+                or die "Unable to calculate size for $workstring!\n";
+
+            # If the string fits into the preferred size, we're good to go
+            if($sdata -> {"_"} -> {"maxwide"} <= $maxwidth &&$sdata -> {"_"} -> {"sumhigh"} <= $maxheight) {
+                # Return the string that worked, and the dimensions
+                return ($workstring, $sdata, $fontsize);
+
+            # If the string didn't fit into the width, but it did fit the height, wrap it
+            } elsif($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} <= $maxheight) {
+                $Text::Wrap::columns   = length($workstring) / ++$lines;
+                $workstring = eval { wrap("", "", $label) };
+
+                die "Generating elastic button string failed: $@" if($@);
+            }
+
+        # keep going until the string fits the width, or we overflow the height
+        } while($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} <= $maxheight && $lines <= $self -> {"line_limit"});
+
+        # reduce the font size a notch
+        --$fontsize;
+
+    # Keep trying until we either need a smaller font than we're allowed
+    } while($fontsize >= $minsize  && $lines <= $self -> {"line_limit"});
+
+    # Bomb if we have hit the split limit
+    return ("Unable to wrap text into the available space. Line limit exceeded.", undef, undef)
+        if($lines > $self -> {"line_limit"});
+
+    # Get here and it won't fit
+    return ("Unable to fit text into the available space. Font size too small (aborted at $fontsize)", undef, undef);
 }
 
 
