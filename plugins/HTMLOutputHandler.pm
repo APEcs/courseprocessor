@@ -781,6 +781,9 @@ sub write_glossary_file {
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Writing glossary page '$filename'");
 
+    # we could use this straight in the regexp, but this is more readable
+    my $mediadir = $self -> {"config"} -> {"Processor"} -> {"mediadir"};
+
     # Generate the entries for this letter.
     my $entries = "";
     foreach my $term (@{$charmap -> {$letter}}) {
@@ -802,10 +805,14 @@ sub write_glossary_file {
                                                                        "***text***" => ($i + 1) });
             }
 
+            # Fix media links in definitions
+            my $def = $self -> {"terms"} -> {$term} -> {"definition"};
+            $def =~ s|../../$mediadir|../$mediadir|gs;
+
             $entries .= $self -> {"template"} -> load_template("glossary/entry.tem",
                                                                { "***termname***"   => cleanup_term_name($term),
                                                                  "***term***"       => $self -> {"terms"} -> {$term} -> {"term"},
-                                                                 "***definition***" => $self -> {"terms"} -> {$term} -> {"definition"},
+                                                                 "***definition***" => $def,
                                                                  "***backlinks***"  => $backlinks
                                                                });
         }
