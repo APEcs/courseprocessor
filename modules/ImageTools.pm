@@ -233,7 +233,7 @@ sub ttf_string_wrap {
 
     # Work out the wrapped, fitted string.
     my ($wstring, $sdata, $fontsize) = $self -> get_fixedlabel_size($fontname, $string, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing);
-    return $wstring unless(!$fontsize);
+    return $wstring unless($fontsize);
 
     # Okay, get here and wstring contains the wrapped string, so draw it
     return $self -> ttf_string_centred($image, $fontname, $colour, $wstring, $cx, $cy, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing);
