@@ -609,6 +609,7 @@ sub build_glossary_references {
     $level = "" if($level eq "course");
     $level = "theme/" if($level eq "theme");
     $level = "theme/module/" if($level eq "module");
+    $level = "glossary/" if($level eq "glossary");
 
     # construct the filename for the subtemplates
     my $glossary   = ($self -> {"terms"} && scalar(keys(%{$self -> {"terms"}}))) ? "glossary_en" : "glossary_dis";
