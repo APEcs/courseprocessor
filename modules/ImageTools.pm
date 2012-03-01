@@ -383,6 +383,10 @@ sub get_fixedlabel_size {
     my ($fontname, $string, $fontsize, $minsize, $maxwidth, $maxheight, $linespacing) = @_;
     my ($sdata, $lines, $workstring);
 
+    # Long words shouldn't be broken
+    $Text::Wrap::huge = "overflow";
+    $Text::Wrap::separator = "|";
+
     do { # while($fontsize >= $minsize});
         $lines = 1;            # there's currently only one line in the string
         $workstring = $string; # make a working copy of the string so we can wrap it as needed
