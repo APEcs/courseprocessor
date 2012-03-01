@@ -524,7 +524,7 @@ sub set_anchor_point {
 }
 
 
-## @method $ convert_link($anchor, $text, $level)
+## @method $ convert_link($anchor, $text, $level, $theme, $module, $stepid)
 # Convert a link to a target into a html hyperlink. This will attempt to locate
 # the anchor specified and create a link to it.
 #
@@ -532,6 +532,9 @@ sub set_anchor_point {
 # @param text   The text to use as the link text.
 # @param level  The level at which the link resides. Can be 'theme', or 'step'.
 #               If this is not specified, it defaults to 'step'.
+# @param theme  The name of the theme the anchor is in (should be the theme dir name).
+# @param module The module the anchor is in (should be the module directory name).
+# @param stepid The id of step the anchor is in.
 # @return A HTML link to the specified anchor, or an error message if the anchor
 #         can not be found.
 sub convert_link {
@@ -539,10 +542,13 @@ sub convert_link {
     my $anchor = shift;
     my $text   = shift;
     my $level  = shift || "step";
+    my $theme  = shift;
+    my $module = shift || "";
+    my $stepid = shift || "";
 
     my $targ = $self -> {"anchors"} -> {$anchor};
     if(!$targ) {
-        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unable to locate anchor $anchor. Link text is '$text'.");
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "$theme/$module/$stepid: Unable to locate anchor $anchor. Link text is '$text'.");
         return '<span class="error">'.$text.' (Unable to locate anchor '.$anchor.')</span>';
     }
 
@@ -2546,7 +2552,7 @@ sub convert_step_tags {
     $content =~ s/\[clear\s*\/?\s*\]/<div style="clear: both;"><\/div>/giso; # [clear /]
 
     # links
-    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"(.*?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_link($1, $2, 'step')}isge; # [link to=""]link text[/link]
+    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"(.*?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_link($1, $2, 'step', $theme, $module, $stepid)}isge; # [link to=""]link text[/link]
 
     # anchors
     $content =~ s/\[target\s+name\s*=\s*\"(.*?)\"\s*\/?\s*\]/<a name=\"$1\"><\/a>/gis; # [target name="" /]
