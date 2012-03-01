@@ -405,12 +405,12 @@ sub get_fixedlabel_size {
                 or die "Unable to calculate size for $workstring!\n";
 
             # If the string fits into the preferred size, we're good to go
-            if($sdata -> {"_"} -> {"maxwide"} <= $maxwidth &&$sdata -> {"_"} -> {"sumhigh"} <= $maxheight) {
+            if($sdata -> {"_"} -> {"maxwide"} <= $maxwidth && $sdata -> {"_"} -> {"sumhigh"} < $maxheight) {
                 # Return the string that worked, and the dimensions
                 return ($workstring, $sdata, $fontsize);
 
             # If the string didn't fit into the width, but it did fit the height, wrap it
-            } elsif($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} <= $maxheight) {
+            } elsif($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} < $maxheight) {
                 $Text::Wrap::columns = int(length($workstring) / ++$lines);
                 $workstring = eval { wrap("", "", $string) };
 
@@ -418,12 +418,12 @@ sub get_fixedlabel_size {
             }
 
         # keep going until the string fits the width, or we overflow the height
-        } while($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} <= $maxheight && $lines <= $self -> {"line_limit"});
+        } while($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} < $maxheight && $lines <= $self -> {"line_limit"});
 
         # reduce the font size a notch
         --$fontsize;
 
-    # Keep trying until we either need a smaller font than we're allowed
+    # Keep trying until we either need a smaller font than we're allowed or run out of lines
     } while($fontsize >= $minsize  && $lines <= $self -> {"line_limit"});
 
     # Bomb if we have hit the split limit
