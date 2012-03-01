@@ -2012,6 +2012,12 @@ sub scan_step_media {
 
         $self -> {"used_media"} -> {lc($file)} = $file;
     }
+
+    # Check all the popups
+    my @popups = $body =~ m|<span class="twpopup-inner">(.*?)</span>|gs;
+    foreach my $popup (@popups) {
+        $self -> scan_step_media(decode_base64($popup));
+    }
 }
 
 
