@@ -230,9 +230,14 @@ sub process {
         if(!$self -> {"config"} -> {"Processor"} -> {"quiet"} && $self -> {"config"} -> {"Processor"} -> {"verbosity"} == 0);
     my $processed = 0;
 
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing themes.");
+
     # Go through all the directory entries, processing each one
     foreach my $theme (@srcentries) {
         $theme = path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, $theme); # prepend the source directory
+
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing theme '$theme'.");
 
         # if this is a directory, check inside for subdirs ($entry is a theme, subdirs are modules)
         if(-d $theme) {
@@ -241,8 +246,12 @@ sub process {
 
             my @modentries = grep(!/^\./, readdir(THEMEDIR));
 
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing modules.");
+
             foreach my $module (@modentries) {
                 $module = path_join($theme, $module); # prepend the module directory...
+
+                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing module '$module'.");
 
                 # If this is a module directory, we want to scan it for steps
                 if(-d $module) {
@@ -259,9 +268,13 @@ sub process {
                         # obtain the sorted files
                         my ($stepfiles, $numlength) = $self -> sort_step_files(\@subfiles);
 
+                        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing steps.");
+
                         # for each file we know how to process, pass it to the html processor
                         # to be converted.
                         for(my $i = 0; $i < scalar(@$stepfiles); ++$i) {
+                            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing step '".$stepfiles -> [$i]."'.");
+
                             $self -> process_html_page($stepfiles -> [$i], $i, $numlength, $self -> {"config"} -> {"Processor"} -> {"outputdir"}, $module);
 
                             # Update the progress bar if needed
@@ -271,6 +284,8 @@ sub process {
                         # Remove files we don't need from the module directory.
                         $self -> cleanup() if($self -> {"config"} -> {"HTMLInputHandler"} -> {"cleanup"});
 
+                        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Steps done.");
+
                         chdir($cwd);
                     } # if(scalar(@subfiles)) {
 
@@ -278,10 +293,14 @@ sub process {
                 } # if(-d $module) {
             } # foreach my $module (@modentries) {
 
+            $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Modules done.");
+
             closedir(THEMEDIR);
 
         } # if(-d $theme) {
     } # foreach my $theme (@srcentries) {
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Themes done.");
 
     closedir(SRCDIR);
 
