@@ -322,7 +322,7 @@ sub fix_wikitext {
     $content =~ s{<a href=".*?\?title=Special:Upload&amp;wpDestFile=.*?" class="new" title="(File:[^"]+)">File:.*?</a>}{broken_media_link($1, $page)}ges;
 
     # Fix popups
-    $content =~ s{<span class="twpopup-inner">(.*?)</span>}{fix_popup_wikitext($wikih, $1, $mediahash)}ges;
+    $content =~ s{<span class="twpopup-inner">(.*?)</span>}{fix_popup_wikitext($wikih, $page, $1, $mediahash)}ges;
 
     return $content;
 }
