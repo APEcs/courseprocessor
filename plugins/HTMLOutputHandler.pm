@@ -1919,7 +1919,7 @@ sub preprocess {
                             # Record the locations of any anchors in the course
                             if(!$exclude_step) {
                                 pos($content) = 0;
-                                while($content =~ /\[target\s+name\s*=\s*\"([-\w]+)\"\s*\/?\s*\]/isg) {
+                                while($content =~ /\[target\s+name\s*=\s*\"([^"]+?)\"\s*\/?\s*\]/isg) {
                                     $self -> set_anchor_point($1, $theme, $module, $stepid);
                                 }
                             }
@@ -2552,7 +2552,7 @@ sub convert_step_tags {
     $content =~ s/\[clear\s*\/?\s*\]/<div style="clear: both;"><\/div>/giso; # [clear /]
 
     # links
-    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"(.*?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_link($1, $2, 'step', $theme, $module, $stepid)}isge; # [link to=""]link text[/link]
+    $content =~ s{\[link\s+(?:to|name)\s*=\s*\"([^"]+?)\"\s*\](.*?)\[/\s*link\s*\]}{$self -> convert_link($1, $2, 'step', $theme, $module, $stepid)}isge; # [link to=""]link text[/link]
 
     # anchors
     $content =~ s/\[target\s+name\s*=\s*\"(.*?)\"\s*\/?\s*\]/<a name=\"$1\"><\/a>/gis; # [target name="" /]
