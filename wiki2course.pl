@@ -270,30 +270,34 @@ sub make_anchor_name {
 }
 
 
-## @fn $ fix_popup_wikitext($wikih, $b64body, $mediahash)
+## @fn $ fix_popup_wikitext($wikih, $page, $b64body, $mediahash)
 # Fix the media and other links inside a popup.
 #
 # @param wikih   The wiki API handle to issue requests through if needed.
+# @param page      The page on which this content appears.
 # @param b64body The base64-encoded popup body.
 # @return A new popup inner block with fixed links and media.
 sub fix_popup_wikitext {
     my $wikih     = shift;
+    my $page      = shift;
     my $b64body   = shift;
     my $mediahash = shift;
 
-    return '<span class="twpopup-inner">'.encode_base64(fix_wikitext($wikih, decode_base64($b64body), $mediahash)).'</span>';
+    return '<span class="twpopup-inner">'.encode_base64(fix_wikitext($wikih, $page, decode_base64($b64body), $mediahash)).'</span>';
 }
 
 
-## @fn $ fix_wikitext($wikih, $content, $mediahash)
+## @fn $ fix_wikitext($wikih, $page, $content, $mediahash)
 # Fix media and other links inside step content.
 #
 # @param wikih     The wiki API handle to issue requests through if needed.
+# @param page      The page on which this content appears.
 # @param content   The content to fix.
 # @param mediahash A reference to a hash of media files in the media directory.
 # @return The text with links and media files corrected.
 sub fix_wikitext {
     my $wikih     = shift;
+    my $page      = shift;
     my $content   = shift;
     my $mediahash = shift;
 
@@ -355,7 +359,7 @@ sub process_entities_html {
     $text = $targ.$text;
 
     my $content = wiki_parsetext($wikih, $page, $text);
-    return fix_wikitext($wikih, $content, $mediahash);
+    return fix_wikitext($wikih, $page, $content, $mediahash);
 }
 
 
