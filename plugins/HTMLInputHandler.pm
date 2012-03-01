@@ -705,7 +705,7 @@ sub process_html_page {
     $body =~ s|\[local text="([^\]]?)" src="(.+?)"\s*(.*?)\s*\/?\]|$self -> read_local_tag($1, $2, $3)|iesg;
 
     # link correction
-    $body =~ s|<a(.*?)href="((?:../)+(?:.*?/)+\D+(?:\d+(?:.\d+)?).html?#(?:.*?))"(.*?)>|$self -> fix_anchor_links($1, $2, $3)|iesg;
+    $body =~ s|<a(.*?)href="((?:../)+(?:.*?/)+\D+(?:\d+(?:\.\d+)?).html?#(?:.*?))"(.*?)>|$self -> fix_anchor_links($1, $2, $3)|iesg;
 
     # mark latex inside glossary tags
     $body =~ s|\[glossary\s+term="(.+?)"\](.+?)\[/glossary\]|$self -> mark_glossary_latex($1, $2)|iesg;
