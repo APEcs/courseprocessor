@@ -236,7 +236,7 @@ sub ttf_string_wrap {
     return $wstring unless($fontsize);
 
     # Okay, get here and wstring contains the wrapped string, so draw it
-    return $self -> ttf_string_centred($image, $fontname, $colour, $wstring, $cx, $cy, $reqsize, $minsize, $maxwidth, $maxheight, $linespacing);
+    return $self -> ttf_string_centred($image, $fontname, $colour, $wstring, $cx, $cy, $fontsoze, $minsize, $maxwidth, $maxheight, $linespacing);
 }
 
 
