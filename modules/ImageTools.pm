@@ -381,6 +381,7 @@ sub copy_fragment {
 sub get_fixedlabel_size {
     my $self = shift;
     my ($fontname, $string, $fontsize, $minsize, $maxwidth, $maxheight, $linespacing) = @_;
+    my $sdata;
 
     do { # while($fontsize >= $minsize});
 
@@ -407,7 +408,7 @@ sub get_fixedlabel_size {
             # If the string didn't fit into the width, but it did fit the height, wrap it
             } elsif($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} <= $maxheight) {
                 $Text::Wrap::columns   = length($workstring) / ++$lines;
-                $workstring = eval { wrap("", "", $label) };
+                $workstring = eval { wrap("", "", $string) };
 
                 die "Generating elastic button string failed: $@" if($@);
             }
