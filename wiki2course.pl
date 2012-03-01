@@ -296,7 +296,7 @@ sub process_entities_html {
     my ($module) = $page =~ /^$namespace:(.*)$/;
 
     # work out a [target] unique to each step
-    my $targ = '[target name="'.make_anchor_name($module, $title)."\"]\n";
+    my $targ = '[target name="AUTO-'.make_anchor_name($module, $title)."\"]\n";
     $targ .= '[target name="AUTO-'.make_anchor_name($module)."\"]\n" if($stepnum == 1); # first step gets a special module marker
 
     $logger -> print($logger -> DEBUG, "Adding auto-targets to $page/$title:\n$targ");
