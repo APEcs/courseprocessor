@@ -381,12 +381,12 @@ sub copy_fragment {
 sub get_fixedlabel_size {
     my $self = shift;
     my ($fontname, $string, $fontsize, $minsize, $maxwidth, $maxheight, $linespacing) = @_;
-    my $sdata;
+    my ($sdata, $lines, $workstring);
 
     do { # while($fontsize >= $minsize});
+        $lines = 1;            # there's currently only one line in the string
+        $workstring = $string; # make a working copy of the string so we can wrap it as needed
 
-        my $lines = 1;            # there's currently only one line in the string, see above
-        my $workstring = $string; # make a working copy of the string so we can wrap it as needed
         do { # while($sdata -> {"_"} -> {"maxwide"} > $maxwidth && $sdata -> {"_"} -> {"sumhigh"} < $maxheight);
 
             # Split the string into lines if needed
