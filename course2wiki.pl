@@ -271,7 +271,7 @@ sub load_legacy_glossary {
 
     $logger -> print($logger -> DEBUG, "Loading glosary data from '$gfile'");
 
-    my $root = eval { HTML::TreeBuilder -> new_from_content($gfile) };
+    my $root = eval { HTML::TreeBuilder -> new_from_file($gfile) };
     die "FATAL: Unable to load and parse glossary file '$gfile': $@" if($@);
     $root = $root -> elementify();
 
