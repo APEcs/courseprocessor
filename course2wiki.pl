@@ -315,7 +315,7 @@ sub load_legacy_glossary {
             $logger -> print($logger -> WARNING, "Unable to locate definition list in glossary page.");
         }
     } else {
-        $logger -> print($logger -> WARNING, "Unable to locate content div in glossary page.");
+        $logger -> print($logger -> WARNING, "Unable to locate content div in glossary page. Content is: ".$root -> as_HTML());
     }
     $root -> delete();
 
