@@ -308,7 +308,7 @@ sub fix_wikitext {
     $content =~ s{src="$wikih->{siteinfo}->{imagepath}/math(/.+?)"}{process_generated_media($wikih, "math", $1, $mediahash)}ges;
 
     # And any thumbnails
-    $content =~ s{src="$wikih->{siteinfo}->{imagepath}/thumb(/.+?)"}{process_generated_media($wikih, "thumb", $1), $mediahash}ges;
+    $content =~ s{src="$wikih->{siteinfo}->{imagepath}/thumb(/.+?)"}{process_generated_media($wikih, "thumb", $1, $mediahash)}ges;
 
     # Fix up any local media links
     $content =~ s|"$wikih->{siteinfo}->{imagepath}/(?:[\w\.]+/)*([^"]+?)"|"../../$mediadir/$1"|gs;
@@ -361,13 +361,8 @@ sub process_entities_html {
 
     $text = $targ.$text;
 
-    $logger -> print($logger -> DEBUG, "Content for $module/$title before processing:\n$text\n");
-
     my $content = wiki_parsetext($wikih, $page, $text);
     my $result =  fix_wikitext($wikih, $page, $content, $mediahash);
-
-    $logger -> print($logger -> DEBUG, "Content for $module/$title after processing:\n$result\n");
-
     return $result;
 }
 
