@@ -269,7 +269,7 @@ sub load_legacy_glossary {
     my $glosshash = shift;
     my $count = 0;
 
-    $logger -> print($logger -> DEBUG, "Loading glosary data from '$gfile'\n");
+    $logger -> print($logger -> DEBUG, "Loading glosary data from '$gfile'");
 
     my $root = eval { HTML::TreeBuilder -> new_from_content($gfile) };
     die "FATAL: Unable to load and parse glossary file '$gfile': $@" if($@);
@@ -308,8 +308,14 @@ sub load_legacy_glossary {
                     # Walk the level of the dt/dds here, until we hit the end of the secion.
                     $node = $node -> right();
                 } while($node);
+            }  else {
+                $logger -> print($logger -> WARNING, "Glossary page definition list is empty.");
             }
+        }  else {
+            $logger -> print($logger -> WARNING, "Unable to locate definition list in glossary page.");
         }
+    } else {
+        $logger -> print($logger -> WARNING, "Unable to locate content div in glossary page.");
     }
     $root -> delete();
 
