@@ -84,6 +84,10 @@ my $course_xmltree = {};
 # And the source metadata needed to handle images
 my $course_mdata   = {};
 
+# And course glossary data
+my $course_glosshash = {};
+
+
 ## @fn void warn_die_handler($fatal, @messages)
 # A simple handler for warn and die events that changes the normal behaviour of both
 # so that they print to STDOUT rather than STDERR.
@@ -253,6 +257,64 @@ sub load_legacy_metadata {
 }
 
 
+## @fn $ load_legacy_glossary($gfile, $glosshash)
+# Attempt to load the contents of the specified glossary file, and store the
+# glossary terms in the provided glossary hash.
+#
+# @param gfile     The name of the glossary file to load.
+# @parma glosshash A reference to a hash to store glossary entries in.
+# @return The number of glossary entries loaded.
+sub load_legacy_glossary {
+    my $gfile     = shift;
+    my $glosshash = shift;
+    my $count = 0;
+
+    my $root = eval { HTML::TreeBuilder -> new_from_content($gfile) };
+    die "FATAL: Unable to load and parse glossary file '$gfile': $@" if($@);
+    $root = $root -> elementify();
+
+    # Locate the content div, should be present even in old material
+    my $content = $root -> look_down("id", "content");
+
+    if($content) {
+        # Locate the definition list, should be the first one, and get its first child
+        my $node = $content -> find('dl');
+        if($node) {
+            $node = $node -> content -> [0];
+
+            # This should be a dt node in a normal glossary page.
+            if($node) {
+                do {
+                    # Each glossary dt contains the glossary term, and then the glossary
+                    # data immediately after it contains the glossary explanation (usually
+                    # followed by another dd with the reverse links, and a spacer, but they
+                    # can be ignored).
+                    if($node -> tag() eq "dt") {
+                        my $name = $node -> as_text();
+                        $node = $node -> right();
+                        if($node -> tag() eq "dd") {
+                            my $data = $node -> as_HTML();
+                            # Remove leading dd and potentially trailing close.
+                            $data =~ s/^<dd>//;
+                            $data =~ s|</dd>$||;
+
+                            # Store the glossary term
+                            $glosshash -> {$name} = {"definition" => $data};
+                            ++$count;
+                        }
+                    }
+                    # Walk the level of the dt/dds here, until we hit the end of the secion.
+                    $node = $node -> right();
+                } while($node);
+            }
+        }
+    }
+    $root -> delete();
+
+    return $count;
+}
+
+
 ## @fn $ sort_step_func()
 # Sort filenames based on the first number in the name, discarding all letters.
 #
@@ -290,6 +352,36 @@ sub fix_media_name {
 
 # -----------------------------------------------------------------------------
 #  HTML fixing functions
+
+## @fn $ fix_glossary($term)
+# Attempt to insert a glossary tag for the specified term. If a definition is found
+# for the term, and it hasn't been included in the material yet, this will include
+# the glossary term.
+#
+# @param term The term to generate a glossary tag for.
+# @return the glossary tag to insert.
+sub fix_glossary {
+    my $term = shift;
+    my $wikih     = shift;
+    my $themedir  = shift;
+    my $moddir    = shift;
+    my $steptitle = shift;
+    my $media     = shift;
+
+    # Is the term defined, and not yet been included?
+    if($course_glosshash -> {$term} &&
+       $course_glosshash -> {$term} -> {"definition"} &&
+       !$course_glosshash -> {$term} -> {"included"}) {
+        $course_glosshash -> {$term} -> {"included"} = 1;
+
+        # Convert the content of the definition - it may contain media of various forms.
+        return "[glossary term=\"$term\"]".convert_content($wikih, $course_glosshash -> {$term} -> {"definition"}, $steptitle, $themedir, $moddir, $media)."[/glossary]";
+    }
+
+    # Otherwise, return a basic tag
+    return "[glossary term=\"$term\"]";
+}
+
 
 ## @fn $ fix_local($popup, $title, $wikih, $themedir, $moddir, $media)
 # Convert a version 2 'local' popup link to a new style 'twpopup' popup. Note
@@ -370,6 +462,12 @@ sub fix_link {
         $logger -> print($logger -> DEBUG, "Detected version 2 'local' popup. Converting to <popup>");
 
         $result = fix_local($link, $text, $wikih, $media)
+
+    # Is the link a glossar entry?
+    } elsif($link =~ m|(?:../)+glossary/\w+\.html#(?:.*)$|) {
+        $logger -> print($logger -> DEBUG, "Detected glossary link to term $1, converting.");
+
+        $result = fix_glossary($text);
 
     # Try to fix up links to modules. Module in the same theme
     } elsif($link =~ m|^../([^/]+)/step0?1.html?$|) {
@@ -770,6 +868,28 @@ sub load_step_version1 {
 
 # -----------------------------------------------------------------------------
 #  Scanning functions
+
+## @fn $ scan_glossary($glossarydir)
+# Load the contents of the course glossary into memory, so that the step loader
+# can replace glossary terms on the fly.
+#
+# @param glossarydir The path to the glossary directory.
+# @return The number of glossary terms loaded.
+sub scan_glossary {
+    my $glossarydir = shift;
+    my $termcount   = 0;
+
+    # If the glossary directory does not exist, do nothing.
+    return 0 if(!-d $glossarydir);
+
+    foreach my $glosfile ("a".."z", "digits", "symbols") {
+        $termcount += load_legacy_glossary(path_join($glossarydir, "$glosfile.html"), $course_glosshash)
+            if(-f path_join($glossarydir, "$glosfile.html"));
+    }
+
+    return $termcount;
+}
+
 
 ## @fn @ load_step_file($wikih, $stepfile, $themedir, $media)
 # Load the contents of the specified step file, converting as much as possible
@@ -1237,6 +1357,10 @@ if(-d $coursedir) {
     closedir(CDIR);
 
     $logger -> print($logger -> DEBUG, "Theme scan complete. Metadata available:\n".Dumper([$course_xmltree])."\n");
+
+    $logger -> print($logger -> DEBUG, "Loading glossary.");
+    my $termcount = scan_glossary(path_join($coursedir, "glossary"));
+    $logger -> print($logger -> DEBUG, "Loaded $termcount glossary terms.");
 
     $logger -> print($logger -> DEBUG, "Processing themes.");
     my $themelist = "";
