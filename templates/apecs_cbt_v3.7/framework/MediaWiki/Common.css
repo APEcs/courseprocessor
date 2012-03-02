@@ -1,24 +1,24 @@
 #mainpage_topbox {
-background: #f9f9f9; 
-padding: 0px; 
-border: 1px solid #aaaaaa; 
+background: #f9f9f9;
+padding: 0px;
+border: 1px solid #aaaaaa;
 margin: 0.2em 10px 10px;
 }
 .mainpage_boxtitle, .mainpage_hubtitle, #mainpage_pagetitle {
-font-size: 105%; 
-padding: 0.4em; 
-background-color: #eeeeee; 
-border-bottom: 1px solid #aaaaaa; 
+font-size: 105%;
+padding: 0.4em;
+background-color: #eeeeee;
+border-bottom: 1px solid #aaaaaa;
 }
 .mainpage_boxtitle {
 line-height: 120%;
 }
 #mainpage_pagetitle {
-color: #cf7606; 
+color: #cf7606;
 font-size: 200% !important;
 }
 #mainpage_sitelinks {
-padding: 0.2em; 
+padding: 0.2em;
 text-align: center;
 background-color: white;
 }
@@ -124,24 +124,24 @@ display: inline;
 padding-left: 20px;
 background-image: url('/skins/monobook/user.gif');
 background-repeat: no-repeat;
-background-position: 4px 2px; 
+background-position: 4px 2px;
 }
 
 /* Cell sizes for ambox/tmbox/imbox/cmbox/ombox/fmbox/dmbox message boxes */
 th.mbox-text, td.mbox-text {     /* The message body cell(s) */
-    border: none; 
+    border: none;
     padding: 0.25em 0.9em;       /* 0.9em left/right */
     width: 100%;    /* Make all mboxes the same width regardless of text length */
 }
 td.mbox-image {                  /* The left image cell */
-    border: none; 
+    border: none;
     padding: 2px 0 2px 0.9em;    /* 0.9em left, 0px right */
-    text-align: center; 
+    text-align: center;
 }
 td.mbox-imageright {             /* The right image cell */
     border: none;
     padding: 2px 0.9em 2px 0;    /* 0px left, 0.9em right */
-    text-align: center; 
+    text-align: center;
 }
 td.mbox-empty-cell {         /* An empty narrow cell */
     border: none;
@@ -152,14 +152,14 @@ td.mbox-empty-cell {         /* An empty narrow cell */
 /* Article message box styles */
 table.ambox {
     margin: 0px 10%;   /* 10% = Will not overlap with other elements */
-    border: 1px solid #aaa; 
+    border: 1px solid #aaa;
     border-left: 10px solid #1e90ff;    /* Default "notice" blue */
-    background: #fbfbfb; 
+    background: #fbfbfb;
 }
 table.ambox + table.ambox {   /* Single border between stacked boxes. */
     margin-top: -1px;
 }
-.ambox th.mbox-text, 
+.ambox th.mbox-text,
 .ambox td.mbox-text {            /* The message body cell(s) */
     padding: 0.25em 0.5em;       /* 0.5em left/right */
 }
@@ -169,7 +169,7 @@ table.ambox + table.ambox {   /* Single border between stacked boxes. */
 .ambox td.mbox-imageright {      /* The right image cell */
     padding: 2px 0.5em 2px 0;    /* 0px left, 0.5em right */
 }
- 
+
 table.ambox-notice {
     border-left: 10px solid #1e90ff;    /* Blue */
 }
@@ -221,12 +221,12 @@ table.ambox-protection {
 .infobox.bordered .borderless th {
     border: 0;
 }
- 
+
 .infobox.sisterproject {
     width: 20em;
     font-size: 90%;
 }
- 
+
 .infobox.standard-talk {
     border: 1px solid #c0c090;
     background-color: #f8eaba;
@@ -235,7 +235,7 @@ table.ambox-protection {
 .infobox.standard-talk.bordered th {
     border: 1px solid #c0c090;
 }
- 
+
 /* styles for bordered infobox with merged rows */
 .infobox.bordered .mergedtoprow td,
 .infobox.bordered .mergedtoprow th {
@@ -243,22 +243,22 @@ table.ambox-protection {
     border-top: 1px solid #aaa;
     border-right: 1px solid #aaa;
 }
- 
+
 .infobox.bordered .mergedrow td,
 .infobox.bordered .mergedrow th {
     border: 0;
     border-right: 1px solid #aaa;
 }
- 
+
 /* Styles for geography infoboxes, eg countries,
    country subdivisions, cities, etc.            */
 .infobox.geography {
     text-align: left;
     border-collapse: collapse;
-    line-height: 1.2em; 
+    line-height: 1.2em;
     font-size: 90%;
 }
- 
+
 .infobox.geography  td,
 .infobox.geography  th {
     border-top: solid 1px #aaa;
@@ -269,20 +269,20 @@ table.ambox-protection {
     border-top: solid 1px #aaa;
     padding: 0.4em 0.6em 0.2em 0.6em;
 }
- 
+
 .infobox.geography .mergedrow td,
 .infobox.geography .mergedrow th {
     border: 0;
     padding: 0 0.6em 0.2em 0.6em;
 }
- 
+
 .infobox.geography .mergedbottomrow td,
 .infobox.geography .mergedbottomrow th {
     border-top: 0;
     border-bottom: solid 1px #aaa;
     padding: 0 0.6em 0.4em 0.6em;
 }
- 
+
 .infobox.geography .maptable td,
 .infobox.geography .maptable th {
     border: 0;
@@ -294,4 +294,8 @@ table.ambox-protection {
     overflow: auto;
     overflow-x: auto;
     overflow-y: auto;
+}
+
+.fltrt {
+    float: right;
 }
