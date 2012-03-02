@@ -370,11 +370,6 @@ sub fix_media_name {
 # @return the glossary tag to insert.
 sub fix_glossary {
     my $term = shift;
-    my $wikih     = shift;
-    my $themedir  = shift;
-    my $moddir    = shift;
-    my $steptitle = shift;
-    my $media     = shift;
 
     # Is the term defined, and not yet been included?
     if($course_glosshash -> {$term} &&
@@ -382,8 +377,8 @@ sub fix_glossary {
        !$course_glosshash -> {$term} -> {"included"}) {
         $course_glosshash -> {$term} -> {"included"} = 1;
 
-        # Convert the content of the definition - it may contain media of various forms.
-        return "[glossary term=\"$term\"]".convert_content($wikih, $course_glosshash -> {$term} -> {"definition"}, $steptitle, $themedir, $moddir, $media)."[/glossary]";
+        # No need to convert the content here - it will be done later in convert_content
+        return "[glossary term=\"$term\"]".$course_glosshash -> {$term} -> {"definition"}."[/glossary]";
     }
 
     # Otherwise, return a basic tag
