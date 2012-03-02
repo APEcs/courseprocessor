@@ -269,6 +269,8 @@ sub load_legacy_glossary {
     my $glosshash = shift;
     my $count = 0;
 
+    $logger -> print($logger -> DEBUG, "Loading glosary data from '$gfile'\n");
+
     my $root = eval { HTML::TreeBuilder -> new_from_content($gfile) };
     die "FATAL: Unable to load and parse glossary file '$gfile': $@" if($@);
     $root = $root -> elementify();
@@ -465,7 +467,7 @@ sub fix_link {
 
     # Is the link a glossar entry?
     } elsif($link =~ m|(?:../)+glossary/\w+\.html#(?:.*)$|) {
-        $logger -> print($logger -> DEBUG, "Detected glossary link to term $1, converting.");
+        $logger -> print($logger -> DEBUG, "Detected glossary link to term $text, converting.");
 
         $result = fix_glossary($text);
 
