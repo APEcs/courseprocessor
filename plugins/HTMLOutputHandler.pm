@@ -807,7 +807,10 @@ sub write_glossary_file {
 
             # Fix media links in definitions
             my $def = $self -> {"terms"} -> {$term} -> {"definition"};
-            $def =~ s|../../$mediadir|../$mediadir|gs if($def);
+            $def =~ s|\.\./\.\./$mediadir|../$mediadir|gs if($def);
+
+            # Fix links as much as possible
+            $def =~ s|href="\.\./\.\./|href="../|g;
 
             $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Use of glossary term '$term' with no definition")
                 if(!$def);;
