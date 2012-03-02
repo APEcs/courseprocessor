@@ -127,8 +127,8 @@ sub find_bins {
 # @param wikih A reference to the wiki API handle object.
 # @param type  The media type (should be one of "math" or "thumb")
 # @param path  The path to the image excluding everything before and including the
-#              type directory (so for /devwiki/images/math/E/Ec/abcdef0912384.png,
-#              this will be /E/Ec/abcdef0912384.png)
+#              type directory - so for /devwiki/images/math/E/Ec/abcdef0912384.png,
+#              this will be /E/Ec/abcdef0912384.png
 # @param mediahash A reference to a hash of media files in the media directory.
 # @return A replacement string containing the source relative to the exported
 #         html files.
@@ -361,8 +361,14 @@ sub process_entities_html {
 
     $text = $targ.$text;
 
+    $logger -> print($logger -> DEBUG, "Content for $module/$title before processing:\n$text\n");
+
     my $content = wiki_parsetext($wikih, $page, $text);
-    return fix_wikitext($wikih, $page, $content, $mediahash);
+    my $result =  fix_wikitext($wikih, $page, $content, $mediahash);
+
+    $logger -> print($logger -> DEBUG, "Content for $module/$title after processing:\n$result\n");
+
+    return $result;
 }
 
 
