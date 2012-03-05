@@ -798,7 +798,7 @@ sub load_step_version2 {
 
     # Many version 2 steps used a centered table for layout (Azathoth knows why I did it that way...)
     # Remove the horror, and for Hastur's sake do it case insensitive, as some of the html is in bloody allcaps.
-    $realcontent =~ s|^\s*<center>\s*<table width="98%">\s*<tr><td>\s*(.*)\s*</td></tr>\s*</table>\s*</center>\s*(?:&nbsp;)?\s*|$1|si;
+    $realcontent =~ s|^\s*<center>\s*<table width="\d+%">\s*<tr><td>\s*(.*)\s*</td></tr>\s*</table>\s*(?:&nbsp;)?\s*</center>\s*(?:&nbsp;)?\s*|$1|si;
 
     # And has some odd <div><ul>...</ul></div> setups..
     $realcontent =~ s|<div>\s*(<ul>.*?</ul>)\s*(?:</div>)?|$1|gis;
