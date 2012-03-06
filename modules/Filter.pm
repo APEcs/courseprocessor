@@ -166,15 +166,16 @@ sub exclude_resource {
 }
 
 
-## @method $ maps_filter($resource)
+## @method $ inline_filter($resource)
 # A special filtering function needed to support filtering of maps in theme
-# include blocks. This performs the same include/exclude calculation as filter(),
-# except that it assumes the filters will be specified as comma separated values
+# include blocks and other elements with filtering specified in attributes.
+# This performs the same include/exclude calculation as filter(), except
+# that it assumes the filters will be specified as comma separated values
 # stored in 'include' and 'exclude' keys in the provided resource hash.
 #
 # @param resource A reference to the hash containing the map metadata.
 # @return true if the resource should be included, false otherwise.
-sub maps_filter {
+sub inline_filter {
     my $self     = shift;
     my $resource = shift;
 
