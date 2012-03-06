@@ -484,6 +484,18 @@ sub get_extrahead {
 }
 
 
+## @method $ get_course_title()
+# Obtain the course title from the metadata. This will attempt to determine what
+# title to use for the course based on the filters set and the available title
+# elements in the course metadata.
+#
+# @return The title to use for the course
+sub get_course_title {
+    my $self = shift;
+
+
+}
+
 # ============================================================================
 #  Interlink handling
 #
@@ -1133,7 +1145,7 @@ sub write_theme_index {
 
         foreach my $map (@{$self -> {"mdata"} -> {"themes"} -> {$theme} -> {"theme"} -> {"maps"} -> {"map"}}) {
             # Skip maps that should not be included
-            if(!$self -> {"filter"} -> maps_filter($map)) {
+            if(!$self -> {"filter"} -> inline_filter($map)) {
                 my $resdata = substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 24);
 
                 # Remove newlines from the map data
@@ -1239,7 +1251,7 @@ sub write_course_index {
 
         foreach my $map (@{$self -> {"mdata"} -> {"course"} -> {"maps"} -> {"map"}}) {
             # Skip maps that should not be included
-            if(!$self -> {"filter"} -> maps_filter($map)) {
+            if(!$self -> {"filter"} -> inline_filter($map)) {
                 my $mapdata = substr((ref($map) eq "HASH" ? $map -> {"content"} : $map), 0, 24);
 
                 # Trim any newlines from the map data, as we don't want them to end up in the output
