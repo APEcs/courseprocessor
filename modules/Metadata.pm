@@ -292,7 +292,7 @@ sub load_metadata {
     if(-e "$srcdir/metadata.xml") {
         eval { $data = XMLin("$srcdir/metadata.xml",
                              KeepRoot => 1,
-                             ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
+                             ForceArray => [ 'courseinfo', 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
                              KeyAttr => {step => 'title', module => 'name', theme => 'name'}); };
 
         die "FATAL: Unable to parse $name metadata.xml file. Errors were:\n$@\n" if($@);
@@ -334,7 +334,7 @@ sub parse_metadata {
 
     eval { $data = XMLin($content,
                          KeepRoot => 1,
-                         ForceArray => [ 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
+                         ForceArray => [ 'courseinfo', 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
                          KeyAttr => {step => 'title', module => 'name', theme => 'name'}); };
 
     die "FATAL: Unable to parse $name metadata. Errors were:\n$@\n" if($@);
