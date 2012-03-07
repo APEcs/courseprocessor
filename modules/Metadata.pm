@@ -60,22 +60,31 @@ sub validate_metadata_course {
 
     # Note that all errors in course metadata are fatal, and can not be recovered from. Sections that
     # must be provided can't be worked around, and I don't trust plugins to halt properly.
+    die "FATAL: course metadata is missing course version.\n" unless($xml -> {"course"} -> {"version"});
 
-    # Absolute minimum requirements: the course version, splash, and type must be specified.
-    die "FATAL: course metadata.xml is missing course version."     if(!$xml -> {"course"} -> {"version"});
-    die "FATAL: course metadata.xml is missing course splash."      if(!$xml -> {"course"} -> {"splash"});
-    die "FATAL: course metadata.xml is missing course splash type." if(!$xml -> {"course"} -> {"type"});
-    die "FATAL: course metadata.xml is missing course title."       if(!$xml -> {"course"} -> {"title"});
+    # Check that at least one courseinfo has been specified, and all are valid
+    die "FATAL: course metadata has no courseinfo element.\n" unless($xml -> {"course"} -> {"courseinfo"});
 
-    # The type must be valid.
-    die "FATAL: illegal splash type specified in course metadata."  if(!($xml -> {"course"} -> {"type"} eq "image" ||
-                                                                         $xml -> {"course"} -> {"type"} eq "anim"));
-    # And a message must be provided.
-    die "FATAL: No front page message specified in course metadata" if(!$xml -> {"course"} -> {"message"});
+    my $cicount = 0;
+    foreach my $info (@{$xml -> {"course"} -> {"courseinfo"}}) {
+        die "FATAL: courseinfo element has no 'title' attribute set.\n"  unless($info -> {"title"});
+        die "FATAL: courseinfo element has no 'splash' attribute set.\n" unless($info -> {"splash"});
+        die "FATAL: courseinfo element has no 'width' attribute set.\n"  unless($info -> {"width"});
+        die "FATAL: courseinfo element has no 'height' attribute set.\n" unless($info -> {"height"});
+        die "FATAL: courseinfo element has no 'type' attribute set.\n"   unless($info -> {"type"});
 
-    # And width and height provided.
-    die "FATAL: No splash image width specified in course metadata" if(!$xml -> {"course"} -> {"width"});
-    die "FATAL: No splash image height specified in course metadata" if(!$xml -> {"course"} -> {"height"});
+        # The type must be valid.
+        die "FATAL: illegal splash type specified in courseinfo element.\n" unless(($info -> {"type"} eq "image" ||
+                                                                                  $info -> {"type"} eq "anim"));
+
+        # And a message must be provided.
+        die "FATAL: No front page message specified in courseinfo" unless($info -> {"content"});
+
+        ++$cicount;
+    }
+
+    # this should never happen - the check before the loop should catch it, really - but check anyway.
+    die "FATAL: No valid courseinfo elements found in course metadata.\n" unless($cicount);
 
     return 1;
 }
@@ -101,18 +110,18 @@ sub validate_metadata_theme {
     my $themedir  = shift;
 
     # check the theme name and title have been specified.
-    die "FATAL: metadata for theme $shortname missing theme title." if(!$xml -> {"theme"} -> {"title"});
-    die "FATAL: metadata for theme $shortname missing theme name."  if(!$xml -> {"theme"} -> {"name"});
-    die "FATAL: metadata for theme $shortname missing theme index order."  if(!$xml -> {"theme"} -> {"indexorder"});
+    die "FATAL: metadata for theme $shortname missing theme title.\n" unless($xml -> {"theme"} -> {"title"});
+    die "FATAL: metadata for theme $shortname missing theme name.\n"  unless($xml -> {"theme"} -> {"name"});
+    die "FATAL: metadata for theme $shortname missing theme index order.\n"  unless($xml -> {"theme"} -> {"indexorder"});
 
     # Check modules
     foreach my $module (keys(%{$xml -> {"theme"} -> {"module"}})) {
         next if($module eq "dummy"); # don't bother validating the dummy module
 
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "checking $module");
-        die "FATAL: metadata for theme $shortname missing module title for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"title"});
-        die "FATAL: metadata for theme $shortname missing module level for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"level"});
-        die "FATAL: metadata for theme $shortname missing module index order for '$module'." if(!$xml -> {"theme"} -> {"module"} -> {$module} -> {"indexorder"});
+        die "FATAL: metadata for theme $shortname missing module title for '$module'.\n" unless($xml -> {"theme"} -> {"module"} -> {$module} -> {"title"});
+        die "FATAL: metadata for theme $shortname missing module level for '$module'.\n" unless($xml -> {"theme"} -> {"module"} -> {$module} -> {"level"});
+        die "FATAL: metadata for theme $shortname missing module index order for '$module'.\n" unless($xml -> {"theme"} -> {"module"} -> {$module} -> {"indexorder"});
 
         # check that any prereqs are valid.
         if($xml -> {"theme"} -> {"module"} -> {$module} -> {"prerequisites"}) {
@@ -261,7 +270,7 @@ sub validate_metadata {
 
     # Fallback case, assume invalid metadata as it doesn't have a recognised root type
     } else {
-        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unknown metadata root '$type' in metadata.xml loaded form $srcdir");
+        $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Unknown metadata root '$type' in metadata loaded form $srcdir");
     }
 
     return 0;
@@ -289,13 +298,13 @@ sub load_metadata {
     my $data;
 
     # If the xml file exists, attempt to load it
-    if(-e "$srcdir/metadata.xml") {
-        eval { $data = XMLin("$srcdir/metadata.xml",
+    if(-e "$srcdir/metadata") {
+        eval { $data = XMLin("$srcdir/metadata",
                              KeepRoot => 1,
                              ForceArray => [ 'courseinfo', 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
                              KeyAttr => {step => 'title', module => 'name', theme => 'name'}); };
 
-        die "FATAL: Unable to parse $name metadata.xml file. Errors were:\n$@\n" if($@);
+        die "FATAL: Unable to parse $name metadata file. Errors were:\n$@\n" if($@);
 
         # If we need to validate the metadata, go ahead and do so.
         if($validate) {
