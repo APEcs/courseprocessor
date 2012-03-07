@@ -484,6 +484,29 @@ sub get_extrahead {
 }
 
 
+## @method $ get_active_courseinfo()
+# Obtain a reference to the first usable courseinfo element in the course metadata.
+# This will return a reference into the course metadata for the first courseinfo
+# element that passes filtering checks.
+sub get_active_courseinfo {
+    my $self = shift;
+
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Obtaining active courseinfo...");
+
+    foreach my $info (@{$self -> {"mdata"} -> {"course"} -> {"courseinfo"}}) {
+        if(!$self -> {"filter"} -> inline_filter($info)) {
+            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Courseinfo '".$info -> {"title"}."' excluded by filter rule");
+            next;
+        }
+
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Located active courseinfo with title '".$info -> {"title"}."'");
+        return $info;
+    }
+
+    return undef;
+}
+
+
 ## @method $ get_course_title()
 # Obtain the course title from the metadata. This will attempt to determine what
 # title to use for the course based on the filters set and the available title
@@ -493,8 +516,29 @@ sub get_extrahead {
 sub get_course_title {
     my $self = shift;
 
+    my $courseinfo = $self -> get_active_courseinfo();
+    die "FATAL: Unable to obtain any active courseinfo data from course metadata. Check your filtering setup!\n" unless($courseinfo);
 
+    return $courseinfo -> {"title"};
 }
+
+
+## @method @ get_course_splash()
+# Obtain the course splash info from the metadata. This will attempt to determine what
+# splash data to use for the course based on the filters set and the available
+# elements in the course metadata.
+#
+# @return And array containing the course splash image/animation name, width, height,
+#         type, and message.
+sub get_course_splash {
+    my $self = shift;
+
+    my $courseinfo = $self -> get_active_courseinfo();
+    die "FATAL: Unable to obtain any active courseinfo data from course metadata. Check your filtering setup!\n" unless($courseinfo);
+
+    return ($courseinfo -> {"splash"}, $courseinfo -> {"width"}, $courseinfo -> {"height"}, $courseinfo -> {"type"}, $courseinfo -> {"content"});
+}
+
 
 # ============================================================================
 #  Interlink handling
@@ -1225,7 +1269,7 @@ sub write_course_textindex {
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "courseindex.html"),
               $self -> {"template"} -> load_template("courseindex.tem",
                                                      {"***body***"         => $body,
-                                                      "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
+                                                      "***title***"        => $self -> get_course_title()." course index",
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("course"),
@@ -1357,7 +1401,7 @@ sub write_course_index {
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "coursemap.html"),
               $self -> {"template"} -> load_template("coursemap.tem",
                                                      {"***body***"         => $body,
-                                                      "***title***"        => $self -> {"mdata"} -> {"course"} -> {"title"}." course index",
+                                                      "***title***"        => $self -> get_course_title()." course index",
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("course"),
@@ -1375,33 +1419,25 @@ sub write_course_index {
 sub write_course_frontpage {
     my $self = shift;
 
+    my ($splash, $width, $height, $type, $message) = $self -> get_course_splash();
+
     # create the graphic element(s)
-    my $graphic = $self -> {"template"} -> load_template("frontpage-".$self -> {"mdata"} -> {"course"} -> {"type"}.".tem",
+    my $graphic = $self -> {"template"} -> load_template("frontpage-".$type.".tem",
                                                          {"***mediadir***" => $self -> {"config"} -> {"Processor"} -> {"mediadir"},
-                                                          "***filename***" => $self -> {"mdata"} -> {"course"} -> {"splash"},
-                                                          "***width***"    => $self -> {"mdata"} -> {"course"} -> {"width"},
-                                                          "***height***"   => $self -> {"mdata"} -> {"course"} -> {"height"},
-                                                          "***title***"    => $self -> {"mdata"} -> {"course"} -> {"title"}});
+                                                          "***filename***" => $splash,
+                                                          "***width***"    => $width,
+                                                          "***height***"   => $height,
+                                                          "***title***"    => $self -> get_course_title()});
 
     # store the filename so it doesn't get cleaned up
-    $self -> {"used_media"} -> {lc($self -> {"mdata"} -> {"course"} -> {"splash"})} = $self -> {"mdata"} -> {"course"} -> {"splash"};
-
-    # Work out the message...
-    my $message = $self -> {"mdata"} -> {"course"} -> {"message"};
-    if(ref($message) eq "HASH") {
-        if($message -> {"content"}) { # Fix hash ref issues
-            $message = $message -> {"content"};
-        } else {
-            $message = '<span class="error">No course message provided.</span>';
-        }
-    }
+    $self -> {"used_media"} -> {lc($splash)} = $splash;
 
     # dump the page.
     save_file(path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "frontpage.html"),
               $self -> {"template"} -> load_template("frontpage.tem",
                                                      {"***bodytext***"      => $message,
                                                       "***graphic***"       => $graphic,
-                                                      "***title***"         => $self -> {"mdata"} -> {"course"} -> {"title"},
+                                                      "***title***"         => $self -> get_course_title(),
 
                                                       # Standard stuff
                                                       "***glosrefblock***"  => $self -> build_glossary_references("course"),
