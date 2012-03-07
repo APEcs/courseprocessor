@@ -424,7 +424,7 @@ sub get_fixedlabel_size {
         --$fontsize;
 
     # Keep trying until we either need a smaller font than we're allowed or run out of lines
-    } while($fontsize >= $minsize  && $lines <= $self -> {"line_limit"});
+    } while($fontsize >= $minsize);
 
     # Bomb if we have hit the split limit
     return ("Unable to wrap text into the available space. Line limit exceeded.", undef, undef)
