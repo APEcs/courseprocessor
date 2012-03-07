@@ -299,7 +299,8 @@ sub load_metadata {
 
     # If the xml file exists, attempt to load it
     if(-e "$srcdir/metadata") {
-        eval { $data = XMLin("$srcdir/metadata",
+        $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Loading metadata from $srcdir/metadata.xml");
+        eval { $data = XMLin("$srcdir/metadata.xml",
                              KeepRoot => 1,
                              ForceArray => [ 'courseinfo', 'target', 'include', 'exclude', 'resource', 'file', 'module', 'map', 'outcome', 'objective', 'step' ],
                              KeyAttr => {step => 'title', module => 'name', theme => 'name'}); };
