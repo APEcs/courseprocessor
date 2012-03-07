@@ -208,6 +208,8 @@ sub process {
     # Attempt to load the latex header from the course metadata. Fall back on the predefined
     # latex header if the header is not specified in the metadata.
     my $course = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "course", 1);
+    die "FATAL: Unable to load course metadata.\n" unless($course);
+
     if(ref($course) && $course -> {"course"} -> {"latexintro"}) {
         $self -> {"latexintro"} = $course -> {"course"} -> {"latexintro"};
     } else {
@@ -251,10 +253,10 @@ sub process {
             foreach my $module (@modentries) {
                 $module = path_join($theme, $module); # prepend the module directory...
 
-                $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing module '$module'.");
-
                 # If this is a module directory, we want to scan it for steps
                 if(-d $module) {
+                    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Processing directory '$module'.");
+
                     opendir(STEPS, $module)
                         or die "FATAL: Unable to open module directory $module for reading: $!";
 

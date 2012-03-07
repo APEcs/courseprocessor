@@ -1865,7 +1865,7 @@ sub preprocess {
     # Load the course metadata here. We don't need it, but it'll be useful later.
     $self -> {"mdata"} = $self -> {"metadata"} -> load_metadata($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "course", 1);
     die "FATAL: Unable to load course metadata.\n"
-        if(!defined($self -> {"mdata"} -> {"course"}) || ref($self -> {"mdata"} -> {"course"}) ne "HASH");
+        if(!$self -> {"mdata"} || !defined($self -> {"mdata"} -> {"course"}) || ref($self -> {"mdata"} -> {"course"}) ne "HASH");
 
     # We no longer need the course metadata
     unlink path_join($self -> {"config"} -> {"Processor"} -> {"outputdir"}, "metadata.xml")
@@ -1886,7 +1886,7 @@ sub preprocess {
             my $metadata = $self -> {"metadata"} -> load_metadata($fulltheme, "theme '$theme'", 1);
 
             # skip directories without metadata, or non-theme metadata
-            next if($metadata == 1 || !$metadata -> {"theme"});
+            next if(!$metadata || !$metadata -> {"theme"});
 
             $self -> {"mdata"} -> {"themes"} -> {$theme} = $metadata; # otherwise, store it.
 
