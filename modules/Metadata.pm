@@ -298,7 +298,7 @@ sub load_metadata {
     my $data;
 
     # If the xml file exists, attempt to load it
-    if(-e "$srcdir/metadata") {
+    if(-e "$srcdir/metadata.xml") {
         $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "Loading metadata from $srcdir/metadata.xml");
         eval { $data = XMLin("$srcdir/metadata.xml",
                              KeepRoot => 1,
@@ -313,7 +313,7 @@ sub load_metadata {
             return 0 if(!$self -> validate_metadata($data, $name, $srcdir));
         }
     } else {
-        return 1;
+        return undef;
     }
 
     # Get here and the metadata exists and is valid, so return it
