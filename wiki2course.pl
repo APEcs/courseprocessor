@@ -317,6 +317,7 @@ sub fix_wikitext {
 
     # Now check that the media link is actually valid.
     $content =~ s{"../../$mediadir/([^"]+?)"}{check_media_file($wikih, $1, $mediahash)}ges;
+    $content =~ s{'../../$mediadir/([^"]+?)'}{check_media_file($wikih, $1, $mediahash)}ges;
 
     # Finally, we want to check for and fix completely broken file links
     $content =~ s{<a href=".*?\?title=Special:Upload&amp;wpDestFile=.*?" class="new" title="(File:[^"]+)">File:.*?</a>}{broken_media_link($1, $page)}ges;
