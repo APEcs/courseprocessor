@@ -275,32 +275,64 @@ sub make_anchor_name {
 #
 # @param wikih   The wiki API handle to issue requests through if needed.
 # @param page      The page on which this content appears.
+# @param module    The name of the module to export, without namespace
+# @param title     The current step title.
 # @param b64body The base64-encoded popup body.
 # @return A new popup inner block with fixed links and media.
 sub fix_popup_wikitext {
     my $wikih     = shift;
     my $page      = shift;
+    my $module    = shift;
+    my $title     = shift;
     my $b64body   = shift;
     my $mediahash = shift;
 
     my $decoded = decode_base64($b64body);
     $logger -> print($logger -> DEBUG, "Processing popup.\nData: $b64body\nDeocded: $decoded\n") unless($quiet);
 
-    return '<span class="twpopup-inner">'.encode_base64(fix_wikitext($wikih, $page, $decoded, $mediahash)).'</span>';
+    return '<span class="twpopup-inner">'.encode_base64(fix_wikitext($wikih, $page, $module, $title, $decoded, $mediahash)).'</span>';
 }
 
 
-## @fn $ fix_wikitext($wikih, $page, $content, $mediahash)
+## @fn $ fix_header($level, $id, $text, $module, $title)
+# Generate a header of the specified type, with a target anchor added.
+#
+# @param level  The header level (1, 2, etc)
+# @param id     The id of the header
+# @param text   The header text
+# @param module The name of the module this occurs in.
+# @param title  The current step title.
+# @return A string containing the header
+sub fix_header {
+    my $level  = shift;
+    my $id     = shift;
+    my $text   = shift;
+    my $module = shift;
+    my $title  = shift;
+
+    my $targ = '[target name="AUTO-'.make_anchor_name($module, $id)."\"]";
+
+    $logger -> print($logger -> DEBUG, "Adding auto-target to $module/$title: $targ");
+
+    return "<h$level><span id=\"$id\">$text</span></h$level>$targ";
+}
+
+
+## @fn $ fix_wikitext($wikih, $page, $module, $title, $content, $mediahash)
 # Fix media and other links inside step content.
 #
 # @param wikih     The wiki API handle to issue requests through if needed.
 # @param page      The page on which this content appears.
+# @param module    The name of the module to export, without namespace
+# @param title     The current step title.
 # @param content   The content to fix.
 # @param mediahash A reference to a hash of media files in the media directory.
 # @return The text with links and media files corrected.
 sub fix_wikitext {
     my $wikih     = shift;
     my $page      = shift;
+    my $module    = shift;
+    my $title     = shift;
     my $content   = shift;
     my $mediahash = shift;
 
@@ -323,7 +355,10 @@ sub fix_wikitext {
     $content =~ s{<a href=".*?\?title=Special:Upload&amp;wpDestFile=.*?" class="new" title="(File:[^"]+)">File:.*?</a>}{broken_media_link($1, $page)}ges;
 
     # Fix popups
-    $content =~ s{<span class="twpopup-inner">(.*?)</span>}{fix_popup_wikitext($wikih, $page, $1, $mediahash)}ges;
+    $content =~ s{<span class="twpopup-inner">(.*?)</span>}{fix_popup_wikitext($wikih, $page, $module, $title, $1, $mediahash)}ges;
+
+    # Fix headers
+    $content =~ s{<h(\d)><span class="editsection">\[<a.*?>edit</a>]</span> <span class="mw-headline" id="([^"]+)">(.*?)</span></h\d>}{fix_header($1, $2, $3, $module, $title)}ges;
 
     return $content;
 }
@@ -363,7 +398,8 @@ sub process_entities_html {
     $text = $targ.$text;
 
     my $content = wiki_parsetext($wikih, $page, $text);
-    my $result =  fix_wikitext($wikih, $page, $content, $mediahash);
+    my $result =  fix_wikitext($wikih, $page, $module, $title, $content, $mediahash);
+
     return $result;
 }
 
