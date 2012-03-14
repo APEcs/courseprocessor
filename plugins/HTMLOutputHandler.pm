@@ -710,12 +710,16 @@ sub set_glossary_point {
     if($definition) {
         my $args = $self -> {"terms"} -> {$key} -> {"defsource"};
 
-        die "FATAL: Redefinition of term $term in $theme/$module/$step, last set in @$args[0]/@$args[1]/@$args[2]"
-            if($args);
+        if($args) {
+            die "FATAL: Redefinition of term $term in $theme/$module/$step, originally set in @$args[0]/@$args[1]/@$args[2]"
+                if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"redefines_fatal"});
 
-        $self -> {"terms"} -> {$key} -> {"term"}       = $term;
-        $self -> {"terms"} -> {$key} -> {"definition"} = $definition;
-        $self -> {"terms"} -> {$key} -> {"defsource"}  = [$theme, $module, $step, $title];
+            $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Ignoring redefinition of term $term in $theme/$module/$step, originally set in @$args[0]/@$args[1]/@$args[2]");
+        } else {
+            $self -> {"terms"} -> {$key} -> {"term"}       = $term;
+            $self -> {"terms"} -> {$key} -> {"definition"} = $definition;
+            $self -> {"terms"} -> {$key} -> {"defsource"}  = [$theme, $module, $step, $title];
+        }
     }
 
     $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Setting glossary entry $term in $theme/$module/$step");
