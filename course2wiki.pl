@@ -1179,10 +1179,11 @@ sub make_coursedata {
             wiki_link($namespace.":".$config -> {"wiki2course"} -> {"media_page"}, "Media")."\n".
             "\n== ".$config -> {"wiki2course"} -> {"metadata"}." ==\n".
             "<source lang=\"xml\" style=\"emacs\">\n".
-            "<course version=\"\" title=\"\" splash=\"\" type=\"\" width=\"\" height=\"\">\n".
-            "<message><![CDATA[ ]]></message>\n".
+            "<course version=\"\">\n".
+            "    <courseinfo title=\"\" splash=\"\" type=\"\" width=\"\" height=\"\"><![CDATA[\n".
+            "    ]]></courseinfo>\n".
             ($coursemap ? "<maps><map><![CDATA[$coursemap]]></map></maps>\n" : "").
-                 "</course>\n</source>\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
+            "</course>\n</source>\n\n<noinclude>{{$namespace:CourseNav}}</noinclude>\n";
 
         # and do the page edit.
         wiki_edit_page($wikih, $namespace, ucfirst($config -> {"wiki2course"} -> {"data_page"}), \$cdpage, $dryrun);
