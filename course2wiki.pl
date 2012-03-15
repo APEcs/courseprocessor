@@ -135,6 +135,7 @@ sub doomsayer {
     print "\nStarting course to wiki conversion.\n";
 }
 
+
 ## @fn $ extract_coursemap($wikih, $media)
 # Retrieve the contents of the course map for the imported course.
 #
@@ -652,6 +653,8 @@ sub fix_image {
 
 ## @fn $ convert_content($wikih, $content, $titletext, $themedir, $moddir, $media)
 # Convert the provided content from HTML to MediaWiki markup.
+#
+# @todo Need to add support for applet import here.
 #
 # @param wikih     A reference to the MediaWiki::API wiki handle.
 # @param content   The html content to convert to MediaWiki markup.
