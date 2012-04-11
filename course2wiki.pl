@@ -53,7 +53,7 @@ use lib ("/var/www/webperl"); # and to webperl
 use Logger;
 use Metadata;
 use ProcessorVersion;
-use Utils qw(load_file path_join find_bin write_pid)
+use Utils qw(load_file path_join find_bin write_pid);
 use MCPUtils qw(get_password makedir load_config);
 use MediaWiki::Wrap;
 
