@@ -23,6 +23,7 @@ use Exporter;
 use ConfigMicro;
 use File::Spec;
 use File::Path;
+use Utils qw(path_join);
 use strict;
 
 our @ISA       = qw(Exporter);
