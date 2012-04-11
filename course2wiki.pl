@@ -669,14 +669,14 @@ sub fix_applet {
     my $steptitle = shift;
 
     # parse out the tag arguments...
-    my (%args) = $tagargs =~ /(\w+)=["'](.*?)["']/g;
+    my (%appletargs) = $tagargs =~ /(\w+)=["'](.*?)["']/g;
 
     $logger -> print($logger -> WARNING,
                      "'".$course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
                      $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}."' -> '".
-                     "$steptitle': detected applet tag showing '".($args -> {"code"} || "Unknown")."'");
+                     "$steptitle': detected applet tag showing '".($appletargs -> {"code"} || "Unknown")."'");
 
-    return "<span class=\"error\">APPLET SHOULD GO HERE: code='".($args -> {"code"} || "Unknown")."' width='".($args -> {"width"} || "not set")."' height='".($args -> {"height"} || "not set")."'</span>";
+    return "<span class=\"error\">APPLET SHOULD GO HERE: code='".($appletargs -> {"code"} || "Unknown")."' width='".($appletargs -> {"width"} || "not set")."' height='".($appletargs -> {"height"} || "not set")."'</span>";
 }
 
 
