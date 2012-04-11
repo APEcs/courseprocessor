@@ -49,10 +49,12 @@ use XML::Simple;
 
 # Local modules
 use lib ("$path/modules"); # Add the script path for module loading
+use lib ("/var/www/webperl"); # and to webperl
 use Logger;
 use Metadata;
 use ProcessorVersion;
-use Utils qw(load_file path_join find_bin write_pid get_password makedir load_config);
+use Utils qw(load_file path_join find_bin write_pid)
+use MCPUtils qw(get_password makedir load_config);
 use MediaWiki::Wrap;
 
 # How long should the user have to abort the process?

@@ -28,6 +28,7 @@ use strict;
 # Add the paths to custom modules to the include list
 use lib qw(../modules);
 use lib qw(modules);
+use lib qw(/var/www/webperl); # and to webperl
 
 # System modules
 use CGI qw/:standard -utf8/;                   # Ensure that both CGI and the compressed version are loaded with utf8 enabled.

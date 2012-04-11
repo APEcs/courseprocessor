@@ -2,9 +2,9 @@
 
 ## @file
 # APEcs course processor web frontend, filter enumerator. This script
-# fetches the list of filters for the course specified in the query 
+# fetches the list of filters for the course specified in the query
 # string.
-# 
+#
 # @version 1.0.0 (11 March 2011)
 # @copy 2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -28,6 +28,7 @@ use strict;
 # Add the paths to custom modules to the include list
 use lib qw(../modules);
 use lib qw(modules);
+use lib qw(/var/www/webperl); # and to webperl
 
 # System modules
 use CGI;
@@ -50,7 +51,7 @@ my $contact = 'webmaster@starforge.co.uk'; # global contact address, for error m
 # install more useful error handling
 BEGIN {
     $ENV{"PATH"} = ""; # Force no path.
-    
+
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
     sub handle_errors {
         my $msg = shift;
@@ -98,21 +99,21 @@ if($settings -> {"config"} -> {"compress_output"}) {
 
 # Create something to help out with wiki interaction
 my $wiki = WikiSupport -> new(logger   => $logger,
-                              cgi      => $out, 
+                              cgi      => $out,
                               dbh      => $dbh,
                               settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create wiki support object: ".$WikiSupport::errstr);
 
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
-                                    cgi      => $out, 
+                                    cgi      => $out,
                                     dbh      => $dbh,
                                     settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # And the support object to provide webui specific functions
 my $sess_support = SessionSupport -> new(logger   => $logger,
-                                         cgi      => $out, 
+                                         cgi      => $out,
                                          dbh      => $dbh,
                                          settings => $settings,
                                          session  => $session)

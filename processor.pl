@@ -41,6 +41,7 @@ use Getopt::Long;
 
 # Local modules
 use lib ("$path/modules"); # Add the script path for module loading
+use lib ("/var/www/webperl"); # and to webperl
 use ConfigMicro;
 use Filter;
 use Logger;

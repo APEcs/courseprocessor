@@ -25,6 +25,7 @@
 
 use strict;
 use lib qw(../modules);
+use lib qw(/var/www/webperl); # and to webperl
 #use utf8;
 
 # System modules
