@@ -34,6 +34,7 @@ BEGIN {
     }
 }
 use lib ("$path/../../modules");
+use lib qw(/var/www/webperl);
 
 # System modules
 use DBI;
@@ -49,7 +50,7 @@ my $logger;                                # global logger handle, so that loggi
 
 BEGIN {
     $ENV{"PATH"} = ""; # Force no path.
-    
+
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
 }
 END {
@@ -63,7 +64,7 @@ END {
 
 # The session id should have been provided as the first argument to the script, and the course
 # name as the second
-die "Usage: zipcourse.pl <sessionid> <course>\n" 
+die "Usage: zipcourse.pl <sessionid> <course>\n"
     unless($ARGV[0] && $ARGV[0] =~ /^[a-fA-F0-9]{32}$/ &&
            $ARGV[1] && $ARGV[1] =~ /^\w+$/);
 

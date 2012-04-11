@@ -34,6 +34,7 @@ BEGIN {
     }
 }
 use lib ("$path/../../modules");
+use lib qw(/var/www/webperl);
 
 # System modules
 use DBI;
@@ -48,7 +49,7 @@ my $logger;                                # global logger handle, so that loggi
 
 BEGIN {
     $ENV{"PATH"} = ""; # Force no path.
-    
+
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
 }
 END {
@@ -76,7 +77,7 @@ sub prune_old_dirs {
     # Prepare a query to use when checking directories
     my $sess_check = $sysvars -> {"dbh"} -> prepare("SELECT id FROM ".$sysvars -> {"settings"} -> {"database"} -> {"sessions"}.
                                                     " WHERE session_id = ?");
-    
+
     opendir(PATH, $path)
         or $sysvars -> {"logger"} -> die_log("internal", "FATAL: Unable to open directory for reading: $!");
 
@@ -104,7 +105,7 @@ sub prune_old_dirs {
 
 
 ## @fn void garbage_collect($sysvars)
-# Clean out any old session directories from the temporary directory and output 
+# Clean out any old session directories from the temporary directory and output
 # directory. This will entirely remove any directories that do not have a current
 # session associated with them.
 #
