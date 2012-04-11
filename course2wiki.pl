@@ -669,7 +669,7 @@ sub fix_applet {
     my $steptitle = shift;
 
     # parse out the tag arguments...
-    my (%appletargs) = $tagargs =~ /(\w+)=["'](.*?)["']/g;
+    my %appletargs = $tagargs =~ /(\w+)=["'](.*?)["']/g;
 
     $logger -> print($logger -> WARNING,
                      "'".$course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
