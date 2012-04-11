@@ -429,7 +429,7 @@ sub fix_local {
 }
 
 
-## @fn $ fix_link($linkargs, $text, $wikih, $themedir, $moddir, $media)
+## @fn $ fix_link($linkargs, $text, $wikih, $themedir, $moddir, $steptitle, $media)
 # Attempt to convert the specified link and text to [link] tag suitable for
 # passing through to output handlers. This will only convert links that appear
 # to be relative links to anchors in the course - any links to external
@@ -653,6 +653,33 @@ sub fix_image {
 }
 
 
+## @fn $ fix_applet($tagargs, $themedir, $moddir, $steptitle)
+# Display a warning that an applet has been encounteredm and generate a placeholder
+# marker for it.
+#
+# @param tagargs   The arguments set for the applet tag.
+# @param themedir  The name of the current theme directory.
+# @param moddir    The name of the current module directory.
+# @param steptitle The title of the current step.
+# @return A string to replace the applet tag with.
+sub fix_applet {
+    my $tagargs   = shift;
+    my $themedir  = shift;
+    my $moddir    = shift;
+    my $steptitle = shift;
+
+    # parse out the tag arguments...
+    my (%args) = $tagargs =~ /(\w+)=["'](.*?)["']/g;
+
+    $logger -> print($logger -> WARNING,
+                     "'".$course_xmltree -> {$themedir} -> {"theme"} -> {"title"}."' -> '".
+                     $course_xmltree -> {$themedir} -> {"theme"} -> {"module"} -> {$moddir} -> {"title"}."' -> '".
+                     "$steptitle': detected applet tag showing '".($args -> {"code"} || "Unknown")."'");
+
+    return "<span class=\"error\">APPLET SHOULD GO HERE: code='".($args -> {"code"} || "Unknown")."' width='".($args -> {"width"} || "not set")."' height='".($args -> {"height"} || "not set")."'</span>";
+}
+
+
 ## @fn $ convert_content($wikih, $content, $titletext, $themedir, $moddir, $media)
 # Convert the provided content from HTML to MediaWiki markup.
 #
@@ -675,7 +702,10 @@ sub convert_content {
 
     # Convert links with anchors to [target] and [link] as needed...
     $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|g;
-    $content =~ s|<a\s*(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $themedir, $moddir, $titletext, $media)|ges;
+    $content =~ s|<a\s+(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $themedir, $moddir, $titletext, $media)|ges;
+
+    # Detect and warn about applets
+    $content =~ s|<applet\s+(.*?)>.*?</applet>|fix_applet($1, $themedir, $moddir, $titletext)|ges;
 
     # Fix flash, stage 1
     $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
