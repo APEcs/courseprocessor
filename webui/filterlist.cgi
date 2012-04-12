@@ -38,6 +38,8 @@ use DBI;
 use File::Path qw(make_path);
 
 # Custom modules
+use Auth;
+use AppUser;
 use ConfigMicro;
 use Logger;
 use SessionHandler;
@@ -104,11 +106,21 @@ my $wiki = WikiSupport -> new(logger   => $logger,
                               settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create wiki support object: ".$WikiSupport::errstr);
 
+# Need auth and application setup...
+my $app = AppUser -> new(logger   => $logger,
+                         cgi      => $out,
+                         dbh      => $dbh,
+                         settings => $settings);
+my $auth = Auth -> new();
+
+$auth -> init($out, $dbh, $app, $settings, $logger);
+
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
                                     cgi      => $out,
                                     dbh      => $dbh,
-                                    settings => $settings)
+                                    settings => $settings,
+                                    auth     => $auth)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # And the support object to provide webui specific functions
