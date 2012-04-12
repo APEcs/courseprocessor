@@ -1056,7 +1056,7 @@ my $session = SessionHandler -> new(logger   => $logger,
                                     cgi      => $out,
                                     dbh      => $dbh,
                                     settings => $settings,
-                                    auth     => $auth))
+                                    auth     => $auth)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # And the support object to provide webui specific functions
