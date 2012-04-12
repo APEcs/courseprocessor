@@ -701,14 +701,14 @@ sub convert_content {
     my $media     = shift;
 
     # Convert links with anchors to [target] and [link] as needed...
-    $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|g;
-    $content =~ s|<a\s+(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $themedir, $moddir, $titletext, $media)|ges;
+    $content =~ s|<a\s+name="(.*?)">\s*</a>|[target name="$1"]|gi;
+    $content =~ s|<a\s+(.*?)\s*>(.*?)</a>|fix_link($1, $2, $wikih, $themedir, $moddir, $titletext, $media)|gies;
 
     # Detect and warn about applets
-    $content =~ s|<applet\s+(.*?)>.*?</applet>|fix_applet($1, $themedir, $moddir, $titletext)|ges;
+    $content =~ s|<applet\s+(.*?)>.*?</applet>|fix_applet($1, $themedir, $moddir, $titletext)|gies;
 
     # Fix flash, stage 1
-    $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|ges;
+    $content =~ s|<div>(<object.*?</object>)</div>|fix_flash($wikih, $1, $media)|gies;
     $content =~ s|<center>\s*(<object.*?</object>)\s*</center>|fix_flash($wikih, $1, $media)|geis;
     $content =~ s|(<object.*?</object>)|fix_flash($wikih, $1, $media)|geis;
 
