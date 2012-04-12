@@ -435,7 +435,7 @@ my $session = SessionHandler -> new(logger   => $logger,
                                                         cgi      => $out,
                                                         dbh      => $dbh,
                                                         settings => $settings,
-                                                        appuser  => AppUser -> new(logger   => $logger,
+                                                        app      => AppUser -> new(logger   => $logger,
                                                                                    cgi      => $out,
                                                                                    dbh      => $dbh,
                                                                                    settings => $settings)))
