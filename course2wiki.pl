@@ -75,7 +75,7 @@ my $man = 0;
 my $help = 0;
 
 # Global logger. Yes, I know, horrible, but it'd be being passed around /everywhere/ anyway
-my $logger = new Logger();
+my $logger = Logger -> new();
 
 # Likewise with the configuration object.
 my $config;

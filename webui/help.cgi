@@ -428,7 +428,15 @@ my $wiki = WikiSupport -> new(logger   => $logger,
 my $session = SessionHandler -> new(logger   => $logger,
                                     cgi      => $out,
                                     dbh      => $dbh,
-                                    settings => $settings)
+                                    settings => $settings,
+                                    auth => Auth -> new(logger   => $logger,
+                                                        cgi      => $out,
+                                                        dbh      => $dbh,
+                                                        settings => $settings,
+                                                        appuser  => AppUser -> new(logger   => $logger,
+                                                                                   cgi      => $out,
+                                                                                   dbh      => $dbh,
+                                                                                   settings => $settings)))
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # And the support object to provide webui specific functions
