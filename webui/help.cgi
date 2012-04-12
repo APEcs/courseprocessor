@@ -412,7 +412,8 @@ if($settings -> {"config"} -> {"compress_output"}) {
 }
 
 # Create the template handler object
-my $template = Template -> new(basedir => path_join($settings -> {"config"} -> {"base"}, "templates"),
+my $template = Template -> new(logger => $logger,
+                               basedir => path_join($settings -> {"config"} -> {"base"}, "templates"),
                                mailcmd => "/usr/sbin/sendmail -t -f ".$settings -> {"config"} -> {"system_email"})
     or $logger -> die_log($out -> remote_host(), "Unable to create template handling object: ".$Template::errstr);
 
