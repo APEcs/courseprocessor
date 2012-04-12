@@ -1049,7 +1049,7 @@ my $app = AppUser -> new(logger   => $logger,
                          settings => $settings);
 my $auth = Auth -> new();
 
-$auth -> init($cgi, $dbh, $app, $settings, $logger);
+$auth -> init($out, $dbh, $app, $settings, $logger);
 
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
