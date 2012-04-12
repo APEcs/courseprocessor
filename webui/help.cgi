@@ -47,6 +47,8 @@ use MIME::Base64;
 use Time::HiRes qw(time);
 
 # Custom modules
+use Auth;
+use AppUser;
 use ConfigMicro;
 use FormValidators;
 use Logger;
