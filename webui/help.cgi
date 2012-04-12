@@ -426,19 +426,21 @@ my $wiki = WikiSupport -> new(logger   => $logger,
                               settings => $settings)
     or $logger -> die_log($out -> remote_host(), "Unable to create wiki support object: ".$WikiSupport::errstr);
 
+# Need auth and application setup...
+my $app = AppUser -> new(logger   => $logger,
+                         cgi      => $out,
+                         dbh      => $dbh,
+                         settings => $settings);
+my $auth = Auth -> new();
+
+$auth -> init($cgi, $dbh, $app, $settings, $logger);
+
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
                                     cgi      => $out,
                                     dbh      => $dbh,
                                     settings => $settings,
-                                    auth => Auth -> new(logger   => $logger,
-                                                        cgi      => $out,
-                                                        dbh      => $dbh,
-                                                        settings => $settings,
-                                                        app      => AppUser -> new(logger   => $logger,
-                                                                                   cgi      => $out,
-                                                                                   dbh      => $dbh,
-                                                                                   settings => $settings)))
+                                    auth     => $auth))
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # And the support object to provide webui specific functions
