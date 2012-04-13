@@ -360,7 +360,9 @@ my $metadata = Metadata -> new("logger" => $log)
 # (which we don't need here, really), and this will have no module handle specified,
 # so all the template engine will do is simple translates, {L_..} and {B_[...]} will
 # be passed through unaltered.
-my $template = Template -> new("lang" => '', "theme" => '')
+my $template = Template -> new("lang"    => '',
+                               "theme"   => '',
+                               "basedir" => path_join($path, "templates"))
     or die "FATAL: Unable to initialise template engine.\n";
 
 # Create a filter engine for use within the plugins
