@@ -568,7 +568,7 @@ sub render_basicimage {
     # If we have a base image, load and blit it
     if($render -> {"basicimage"} -> {"base"}) {
         # Unless the base appears absolute, we need to prepend the template base directory
-        $render -> {"basicimage"} -> {"base"} = path_join($self -> {"template"} -> {"templatedir"}, $render -> {"basicimage"} -> {"base"})
+        $render -> {"basicimage"} -> {"base"} = path_join($self -> {"template"} -> {"basedir"}, $self -> {"template"} -> {"theme"}, $render -> {"basicimage"} -> {"base"})
             unless($render -> {"basicimage"} -> {"base"} =~ m|^/|);
 
         # does the file exist?
@@ -664,7 +664,7 @@ sub render_elasicbutton {
 
     # If we have a backimg, process it
     if($render -> {"elasticbutton"} -> {"backimg"}) {
-        $render -> {"elasticbutton"} -> {"backimg"} -> {"name"} = path_join($self -> {"template"} -> {"templatedir"}, $render -> {"elasticbutton"} -> {"backimg"} -> {"name"})
+        $render -> {"elasticbutton"} -> {"backimg"} -> {"name"} = path_join($self -> {"template"} -> {"basedir"}, $self -> {"template"} -> {"theme"}, $render -> {"elasticbutton"} -> {"backimg"} -> {"name"})
             unless($render -> {"elasticbutton"} -> {"backimg"} -> {"name"} =~ m|^/|);
 
         my $backimg = GD::Image -> new($render -> {"elasticbutton"} -> {"backimg"} -> {"name"})
