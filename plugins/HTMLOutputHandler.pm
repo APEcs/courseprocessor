@@ -147,6 +147,7 @@ sub process {
 
     # Update the template engine to use the handler's templates. This is needed to allow different
     # handlers to use different templates (as input handlers may need to use templates too!)
+    $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler setting templates to ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
     $self -> {"template"} -> set_template_dir($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     # preprocess to get the anchors and terms recorded
