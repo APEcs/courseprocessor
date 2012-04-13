@@ -1788,7 +1788,7 @@ sub framework_merge {
     my $self = shift;
 
     # The framework is inside the template directory
-    my $framedir = path_join($self -> {"template"} -> {"templatedir"}, "framework");
+    my $framedir = path_join($self -> {"template"} -> {"basedir"}, $self -> {"template"} -> {"theme"}, "framework");
 
     # Open the framework directory so that we can go through the list of files therein
     opendir(FRAME, $framedir)
