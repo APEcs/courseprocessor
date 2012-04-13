@@ -114,17 +114,18 @@ sub use_plugin {
 
     die "FATAL: HTMLOutputHandler has no template selected.\n" if(!$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
+    # FIXME: DISABLED TO ALLOW LOCAL TEMPLATE HANDLING TO WORK PROPERLY.
     # prepend the processor template directory if the template is not absolute
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = path_join($self -> {"path"},"templates",$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"})
-        if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
+    #$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = path_join($self -> {"path"},"templates",$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"})
+    #    if($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} !~ /^\//);
 
     # Force the path to be absolute in all situations
-    $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = resolve_path($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
+    # $self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"} = resolve_path($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     $self -> {"logger"} -> print($self -> {"logger"} -> DEBUG, "HTMLOutputHandler using template directory : ".$self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"});
 
     # Make sure the directory actually exists
-    check_directory($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}, "HTMLOutputHandler template directory");
+    # check_directory($self -> {"config"} -> {"HTMLOutputHandler"} -> {"templates"}, "HTMLOutputHandler template directory");
 
     # if we get here, we can guarantee to be able to use the plugin.
     return 1;
