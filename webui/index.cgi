@@ -630,7 +630,8 @@ sub build_stage2_course {
         or return build_stage1_login($sysvars, $sysvars -> {"template"} -> replace_langvar("LOGIN_ERR_FAILWIKI"));
 
     # Obtain the wiki's configuration
-    my $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name);
+    my $wiki = $sysvars -> {"wiki"} -> get_wiki_config($config_name)
+        or $sysvars -> {"logger"} -> die_log($sysvars -> {"cgi"} -> remote_host(), "Unable to load wiki configuration '$config_name'");
 
     # Get the list of courses
     my $courses = $sysvars -> {"wiki"} -> get_wiki_courses($wiki);
