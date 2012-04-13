@@ -136,11 +136,21 @@ if($settings -> {"config"} -> {"compress_output"}) {
     $out = CGI -> new();
 }
 
+# Need auth and application setup...
+my $app = AppUser -> new(logger   => $logger,
+                         cgi      => $out,
+                         dbh      => $dbh,
+                         settings => $settings);
+my $auth = Auth -> new();
+
+$auth -> init($out, $dbh, $app, $settings, $logger);
+
 # Create or continue a session
 my $session = SessionHandler -> new(logger   => $logger,
                                     cgi      => $out,
                                     dbh      => $dbh,
-                                    settings => $settings)
+                                    settings => $settings,
+                                    auth     => $auth)
     or $logger -> die_log($out -> remote_host(), "Unable to create session object: ".$SessionHandler::errstr);
 
 # What mode are we in?
