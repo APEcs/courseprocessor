@@ -36,6 +36,8 @@ use DBI;
 use File::Path qw(make_path);
 
 # Custom modules
+use Auth;
+use AppUser;
 use ConfigMicro;
 use Logger;
 use SessionHandler;
