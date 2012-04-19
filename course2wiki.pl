@@ -394,7 +394,7 @@ sub fix_glossary {
     }
 
     # Otherwise, return a basic tag
-    return "[glossary term=\"$term\"]";
+    return "[glossary term=\"$term\" /]";
 }
 
 
