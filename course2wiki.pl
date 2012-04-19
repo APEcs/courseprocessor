@@ -303,6 +303,15 @@ sub load_legacy_glossary {
                             $data =~ s/^<dd>//;
                             $data =~ s|</dd>$||;
 
+                            # Fix up 'smart' stuff from windows...
+                            $data =~ s/\205/.../go;
+                            $data =~ s/\221|\222/'/go;
+                            $data =~ s/\223|\224/"/go;
+                            $data =~ s/\225/*/go;
+                            $data =~ s/\226/-/go;
+                            $data =~ s/\227/--/go;
+                            $data =~ s/\240/ /go;
+
                             # Store the glossary term
                             $glosshash -> {$name} = {"definition" => $data};
                             ++$count;
