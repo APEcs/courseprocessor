@@ -299,3 +299,108 @@ table.ambox-protection {
 .fltrt {
     float: right;
 }
+
+table.markbox {
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    background: #b0d9ff;
+    padding: 3px 3px 3px 0px;
+}
+
+table.markbox-warning {
+    background: #fee;
+}
+
+table.markbox-theorem {
+    background: #f4e1a6;
+}
+
+table.markbox-example {
+    background: #bfffae;
+}
+
+table.markbox.shadowed th {
+    color: #fff;
+}
+
+table.markbox td.markbox-img {
+    width: 44px;
+    text-align: center;
+    vertical-align: top;
+}
+
+table.markbox td.markbox-img img {
+    padding: 5px;
+    width: 32px;
+    height: 32px;
+}
+
+table.markbox td.markbox-text {
+    text-align: left;
+    vertical-align: top;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    background: #fbfbfb;
+    padding: 3px;
+}
+
+div.shadowbox {
+    border-radius: 5px;
+    -moz-box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    -webkit-box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    margin: 0px 0px 10px;
+    overflow: hidden;
+    padding: 8px 10px 0px;
+    background-color: #fff;
+}
+
+div.shadowbox.shadowbox-info {
+    background-color: #252187;
+}
+div.shadowbox.shadowbox-warning {
+    background-color: #c10000;
+}
+div.shadowbox.shadowbox-theorem {
+    background-color: #f49c00;
+}
+div.shadowbox.shadowbox-example {
+    background-color: #006000;
+}
+div.shadowbox .shadowbox-title {
+    font-size: 14px;
+    margin: 0px;
+    white-space: nowrap;
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+}
+div.shadowbox.shadowbox-info .shadowbox-title, div.shadowbox.shadowbox-warning .shadowbox-title, div.shadowbox.shadowbox-theorem .shadowbox-title, div.shadowbox.shadowbox-example .shadowbox-title {
+    color: #fff;
+}
+
+div.shadowbox .shadowbox-content {
+    border: 1px solid #aaa;
+    color: #000;
+    background: #f4f4f4;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top: none;
+    margin-left: -10px;
+    margin-top: 8px;
+    padding: 5px 10px;
+    width: 100%;
+    clear: both;
+}
+div.shadowbox.shadowbox-info .shadowbox-content {
+    background-color: #b0d9ff;
+}
+div.shadowbox.shadowbox-warning .shadowbox-content {
+    background-color: #fee;
+}
+div.shadowbox.shadowbox-theorem .shadowbox-content {
+    background-color: #f4e1a6;
+}
+div.shadowbox.shadowbox-example .shadowbox-content {
+    background-color: #bfffae;
+}
