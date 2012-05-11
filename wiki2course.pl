@@ -360,7 +360,7 @@ sub fix_wikitext {
     $content =~ s{<span class="twpopup-inner">(.*?)</span>}{fix_popup_wikitext($wikih, $page, $module, $title, $1, $mediahash)}ges;
 
     # Fix headers
-    $content =~ s{<h(\d)><span class="editsection">\[<a.*?>edit</a>]</span> <span class="mw-headline" id="([^"]+)">(.*?)</span></h\d>}{fix_header($1, $2, $3, $module, $title)}ges;
+    $content =~ s{<h(\d)>(?:<span class="editsection">\[<a.*?>edit</a>]</span>)? <span class="mw-headline" id="([^"]+)">(.*?)</span></h\d>}{fix_header($1, $2, $3, $module, $title)}ges;
 
     return $content;
 }
