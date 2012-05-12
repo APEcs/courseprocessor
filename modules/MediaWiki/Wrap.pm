@@ -190,7 +190,7 @@ sub wiki_course_exists {
     die "FATAL: $nspace:$config->{wiki2course}->{course_page} page is missing!\n" if(!$course -> {"*"});
 
     # Do we have a coursedata link in the page?
-    my ($cdlink) = $course -> {"*"} =~ /\[\[($nspace:$config->{wiki2course}->{data_page})\|.*?\]\]/i;
+    my ($cdlink) = $course -> {"*"} =~ /\[\[($nspace:$config->{wiki2course}->{data_page})(?:\|.*?)?\]\]/i;
 
     # Bomb if we have no coursedata link
     die "FATAL: $nspace:$config->{wiki2course}->{course_page} page does not contain a $config->{wiki2course}->{data_page} link.\n"
