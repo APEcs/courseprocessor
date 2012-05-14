@@ -886,6 +886,8 @@ sub write_glossary_file {
         }
     } # foreach my $term (@{$charmap -> {$letter}})
 
+    $self -> scan_step_media($body);
+
     # Save the page out.
     save_file($filename,
               $self -> {"template"} -> load_template("glossary/entrypage.tem",
