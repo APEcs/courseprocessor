@@ -886,7 +886,7 @@ sub write_glossary_file {
         }
     } # foreach my $term (@{$charmap -> {$letter}})
 
-    $self -> scan_step_media($body);
+    $self -> scan_step_media($entries);
 
     # Save the page out.
     save_file($filename,
