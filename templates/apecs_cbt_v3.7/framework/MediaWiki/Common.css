@@ -367,6 +367,9 @@ div.shadowbox.shadowbox-theorem {
 div.shadowbox.shadowbox-example {
     background-color: #006000;
 }
+div.shadowbox.shadowbox-lemma {
+    background-color: #fff58c;
+}
 div.shadowbox .shadowbox-title {
     font-size: 14px;
     margin: 0px;
@@ -378,7 +381,9 @@ div.shadowbox .shadowbox-title {
 div.shadowbox.shadowbox-info .shadowbox-title, div.shadowbox.shadowbox-warning .shadowbox-title, div.shadowbox.shadowbox-theorem .shadowbox-title, div.shadowbox.shadowbox-example .shadowbox-title {
     color: #fff;
 }
-
+div.shadowbox.shadowbox-lemma .shadowbox-title {
+    color: #000;
+}
 div.shadowbox .shadowbox-content {
     border: 1px solid #aaa;
     color: #000;
@@ -403,4 +408,7 @@ div.shadowbox.shadowbox-theorem .shadowbox-content {
 }
 div.shadowbox.shadowbox-example .shadowbox-content {
     background-color: #bfffae;
+}
+div.shadowbox.shadowbox-lemma .shadowbox-content {
+    background-color: #f8f7d7;
 }
