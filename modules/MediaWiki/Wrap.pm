@@ -29,7 +29,7 @@ our @EXPORT    = qw(wiki_login wiki_parsetext wiki_transclude wiki_fetch wiki_co
 our @EXPORT_OK = qw();
 our $VERSION   = 1.0;
 
-#use Data::Dumper;
+use Data::Dumper;
 use Utils qw(path_join);
 
 ## @fn $ wiki_login($wikih, $username, $password)
@@ -298,6 +298,10 @@ sub wiki_media_url {
 
     # if the page is missing then return an empty string
     return '' if(defined($pageref -> {"missing"}));
+
+    die "FATAL: Unable to obtain a URL for image $title: No imageinfo available" if(!$pageref -> {"imageinfo"});
+    die "FATAL: Unable to obtain a URL for image $title: imageinfo is empty" if(!scalar(@{$pageref -> {"imageinfo"}}));
+    die "FATAL: Unable to obtain a URL for image $title: imageinfo missing URL - ".Dumper($pageref) if(!@{$pageref -> {"imageinfo"}}[0] -> {"url"});
 
     my $url = @{$pageref -> {"imageinfo"}}[0] -> {"url"};
 
