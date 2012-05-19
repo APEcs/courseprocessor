@@ -303,8 +303,12 @@ table.ambox-protection {
 table.markbox {
     border: 1px solid #aaa;
     border-radius: 5px;
+    -moz-box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    -webkit-box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
     background: #b0d9ff;
     padding: 3px 3px 3px 0px;
+    margin: 0px 0px 10px;
 }
 
 table.markbox-warning {
