@@ -320,6 +320,28 @@ sub fix_header {
 }
 
 
+## @fn $ fix_autoanchor($id, $text, $module, $title)
+# Generate an autoanchor, with a target anchor added.
+#
+# @param id     The id of the anchor
+# @param text   The anchor text
+# @param module The name of the module this occurs in.
+# @param title  The current step title.
+# @return A string containing the header
+sub fix_autoanchor {
+    my $id     = shift;
+    my $text   = shift;
+    my $module = shift;
+    my $title  = shift;
+
+    my $targ = '[target name="AUTO-'.make_anchor_name($module, $id)."\"]";
+
+    $logger -> print($logger -> DEBUG, "Adding auto-target to $module/$title: $targ");
+
+    return "<span id=\"$id\" class=\"autoanchor\">$text</span>$targ";
+}
+
+
 ## @fn $ fix_wikitext($wikih, $page, $module, $title, $content, $mediahash)
 # Fix media and other links inside step content.
 #
@@ -361,6 +383,9 @@ sub fix_wikitext {
 
     # Fix headers
     $content =~ s{<h(\d)>(?:<span class="editsection">\[<a.*?>edit</a>]</span>)? <span class="mw-headline" id="([^"]+)">(.*?)</span></h\d>}{fix_header($1, $2, $3, $module, $title)}ges;
+
+    # Fix autoanchor
+    $content =~ s{<span id="(.*?)" class="autoanchor">(.*?)</span>}{fix_autoanchor($1, $2, $module, $title)}ges;
 
     return $content;
 }
