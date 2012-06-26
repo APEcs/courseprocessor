@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of a form field validation 
+# This file contains the implementation of a form field validation
 # support class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
@@ -27,6 +27,8 @@ package FormValidators;
 
 require 5.005;
 use strict;
+use Encode;
+use HTML::Entities;
 
 # Globals...
 use vars qw{$VERSION $errstr};
@@ -75,7 +77,7 @@ sub new {
 # unless noted otherwise:
 #
 # required   - If true, the string must have been given a value in the form.
-# default    - The default string to use if the form field is empty. This is not 
+# default    - The default string to use if the form field is empty. This is not
 #              used if required is set!
 # nicename   - The required 'human readable' name of the field to show in errors.
 # minlen     - The minimum length of the string.
@@ -91,7 +93,7 @@ sub new {
 #
 # @param sysvars  A reference to a hash containing template, cgi, settings, session, and database objects.
 # @param param    The name of the cgi parameter to check/
-# @param settings A reference to a hash of settings to control the validation 
+# @param settings A reference to a hash of settings to control the validation
 #                 done to the string.
 # @return An array of two values: the first contains the text in the parameter, or
 #         as much of it as can be salvaged, while the second contains an error message
@@ -114,7 +116,7 @@ sub validate_string {
             $text = $settings -> {"default"} || "";
         }
     }
-    
+
     # If there's a test regexp provided, apply it
     my $chartest = $settings -> {"chartest"};
     return ($text, $self -> {"template"} -> replace_langvar("VALIDATE_BADCHARS", "", {"***field***" => $settings -> {"nicename"},
@@ -153,12 +155,12 @@ sub validate_string {
 
 ## @method @ validate_options($param, $settings)
 # Determine whether the value provided for the specified parameter is valid. This will
-# either look for the value specified in an array, or in a database table, depending 
+# either look for the value specified in an array, or in a database table, depending
 # on the value provided for source in the settings hash. Valid contents for settings are:
 #
 # required  - If true, the option can not be "".
 # default   - A default value to return if the option is '' or not present, and not required.
-# source    - The source of the options. If this is a reference to an array, the 
+# source    - The source of the options. If this is a reference to an array, the
 #             value specified for the parameter is checked agains the array. If this
 #             if a string, the option is checked against the table named in the string.
 # where     - The 'WHERE' clause to add to database queries. Required when source is a
@@ -166,7 +168,7 @@ sub validate_string {
 # nicename  - Required, human-readable version of the parameter name.
 #
 # @param param    The name of the cgi parameter to check.
-# @param settings A reference to a hash of settings to control the validation 
+# @param settings A reference to a hash of settings to control the validation
 #                 done to the parameter.
 # @return An array of two values: the first contains the value in the parameter, or
 #         as much of it as can be salvaged, while the second contains an error message
@@ -193,11 +195,11 @@ sub validate_options {
 
     # If the source is not a reference, we assue it is the table name to check
     } elsif(not ref($settings -> {"source"})) {
-        my $checkh = $self -> {"dbh"} -> prepare("SELECT * 
+        my $checkh = $self -> {"dbh"} -> prepare("SELECT *
                                                   FROM ".$settings -> {"source"}."
                                                        ".$settings -> {"where"});
         # Check for the value in the table...
-        $checkh -> execute($value) 
+        $checkh -> execute($value)
             or return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_DBERR", "", {"***field***" => $settings -> {"nicename"},
                                                                                                     "***dberr***" => $self -> {"dbh"} -> errstr}));
         my $checkr = $checkh -> fetchrow_arrayref();
