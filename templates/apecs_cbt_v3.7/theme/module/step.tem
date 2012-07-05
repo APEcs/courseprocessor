@@ -140,7 +140,7 @@
     </div><!--footer-->
 
     <!-- activate flowplayer links -->
-    <script type="text/javascript">flowplayer("a.streamplayer", "../../flowplayer/flowplayer-3.2.7.swf");</script>
+    <script type="text/javascript">flowplayer("a.streamplayer",  { src: "../..//flowplayer/flowplayer-3.2.7.swf", wmode: "opaque" });</script>
 </div><!-- id="page" -->
 </body>
 </html>
