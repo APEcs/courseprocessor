@@ -1,3 +1,15 @@
+/* CSS placed here will be applied to all skins */
+
+body.page-Main_Page h1.firstHeading { display:none; }
+
+.fltrt {
+    float: right;
+}
+
+table.centered {
+    margin: 0px auto;
+}
+
 #mainpage_topbox {
 background: #f9f9f9;
 padding: 0px;
@@ -43,16 +55,17 @@ margin-bottom: 0;
 code, tt {
     font-face: fixed;
     color: #a96300;
+    background: inherit !important;
 }
 
 /* CSS placed here will be applied to all skins */
-.alt1, .alt1Active {
+.alt1 {
     background: #f7f7ff;
     color: #000000;
     vertical-align: middle;
 }
 
-.alt2, .alt2Active {
+.alt2 {
     color: #000000;
     background-color: #ffffff;
     vertical-align: middle;
@@ -60,7 +73,7 @@ code, tt {
 
 .alth {
     color: #000000;
-    background-color: #eeeeff;
+    background-color:  #d4d4ff;
     vertical-align: middle;
 }
 
@@ -72,12 +85,13 @@ code, tt {
 
 td.zebra {
     border: 1pt solid #ADB9CC;
-    padding:0.25em 0.5em;
+    padding: 0.25em 0.5em;
 }
 
 th.zebra {
-    border:1pt solid #ADB9CC;
-    padding:0.25em 0.5em;
+    border: 1pt solid #ADB9CC;
+    padding: 0.25em 0.5em;
+    vertical-align: middle;
 }
 
 table.zebra {
@@ -86,47 +100,113 @@ table.zebra {
 
 table.wikitable,
 table.prettytable {
-	margin: 1em 1em 1em 0;
-	background: #f9f9f9;
-	border: 1px #aaaaaa solid;
-	border-collapse: collapse;
-	empty-cells: show;
+    margin: 1em 1em 1em 0;
+    background: #f9f9f9;
+    border: 1px #aaaaaa solid;
+    border-collapse: collapse;
+    empty-cells: show;
 }
 table.wikitable th, table.wikitable td,
 table.prettytable th, table.prettytable td {
-	border: 1px #aaaaaa solid;
-	padding: 0.2em 0.4em;
+    border: 1px #aaaaaa solid;
+    padding: 0.2em 0.4em;
 }
 table.wikitable th, table.wikitable td.hl3, table.wikitable th.hl3,
 table.prettytable th, table.prettytable td.hl3, table.wikitable th.hl3 {
-	background: #8da7d6;
-	text-align: center;
+    background: #8da7d6 !important;
+    text-align: center;
 }
 table.wikitable td.hl1, table.wikitable th.hl1,
 table.prettytable td.hl1, table.wikitable th.hl1 {
-	background: #c5d8fc;
-	text-align: center;
+    background: #c5d8fc !important;
+    text-align: center;
 }
 table.wikitable td.hl2, table.wikitable th.hl2,
 table.prettytable td.hl2, table.wikitable th.hl2 {
-	background: #a7c1f2;
-	text-align: center;
+    background: #a7c1f2 !important;
+    text-align: center;
 }
 table.wikitable caption,
 table.prettytable caption {
-	margin-left: inherit;
-	margin-right: inherit;
-	font-weight: bold;
+    margin-left: inherit;
+    margin-right: inherit;
+    font-weight: bold;
 }
 
 li.author {
 display: inline;
 padding-left: 20px;
-background-image: url('/skins/monobook/user.gif');
+background-image: url('/devwiki/skins/monobook/user.gif');
 background-repeat: no-repeat;
 background-position: 4px 2px;
 }
 
+
+
+/* Default skin for navigation boxes */
+table.navbox {            /* Navbox container style */
+  border: 1px solid #aaa;
+  width: 100%;
+  margin: auto;
+  clear: both;
+  font-size: 88%;
+  text-align: center;
+  padding: 1px;
+}
+table.navbox + table.navbox {  /* Single pixel border between adjacent navboxes */
+  margin-top: -1px;            /* (doesn't work for IE6, but that's okay)       */
+}
+.navbox-title,
+.navbox-abovebelow,
+table.navbox th {
+  text-align: center;      /* Title and above/below styles */
+  padding-left: 1em;
+  padding-right: 1em;
+}
+.navbox-group {            /* Group style */
+  white-space: nowrap;
+  text-align: right;
+  font-weight: bold;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+.navbox, .navbox-subgroup {
+  background: #fdfdfd;     /* Background color */
+}
+.navbox-list {
+  border-color: #fdfdfd;   /* Must match background color */
+}
+.navbox-title,
+table.navbox th {
+  background: #ccccff;     /* Level 1 color */
+}
+.navbox-abovebelow,
+.navbox-group,
+.navbox-subgroup .navbox-title {
+  background: #ddddff;     /* Level 2 color */
+}
+.navbox-subgroup .navbox-group, .navbox-subgroup .navbox-abovebelow {
+  background: #e6e6ff;     /* Level 3 color */
+}
+.navbox-even {
+  background: #f7f7f7;     /* Even row striping */
+}
+.navbox-odd {
+  background: transparent; /* Odd row striping */
+}
+.navbox-subgroup {
+  margin-left: -0.25em;
+}
+
+.collapseButton {          /* 'show'/'hide' buttons created dynamically */
+    float: right;          /* by the CollapsibleTables javascript in    */
+    font-weight: normal;   /* [[MediaWiki:Common.js]]are styled here    */
+    text-align: right;     /* so they can be customised.                */
+    width: auto;
+}
+.navbox .collapseButton {  /* In navboxes, the show/hide button balances */
+    width: 6em;            /* the vde links from [[Template:Tnavbar]],   */
+}                          /* so they need to be the same width.         */
 /* Cell sizes for ambox/tmbox/imbox/cmbox/ombox/fmbox/dmbox message boxes */
 th.mbox-text, td.mbox-text {     /* The message body cell(s) */
     border: none;
@@ -150,6 +230,12 @@ td.mbox-empty-cell {         /* An empty narrow cell */
 }
 
 /* Article message box styles */
+table.coursenav {
+    margin: 3px auto;   /* 10% = Will not overlap with other elements */
+    border: 1px solid #aaa;
+    border-left: 10px solid #1e90ff;    /* Default "notice" blue */
+    background: #fbfbfb;
+}
 table.ambox {
     margin: 0px 10%;   /* 10% = Will not overlap with other elements */
     border: 1px solid #aaa;
@@ -296,10 +382,6 @@ table.ambox-protection {
     overflow-y: auto;
 }
 
-.fltrt {
-    float: right;
-}
-
 table.markbox {
     border: 1px solid #aaa;
     border-radius: 5px;
@@ -388,6 +470,7 @@ div.shadowbox.shadowbox-info .shadowbox-title, div.shadowbox.shadowbox-warning .
 div.shadowbox.shadowbox-lemma .shadowbox-title {
     color: #000;
 }
+
 div.shadowbox .shadowbox-content {
     border: 1px solid #aaa;
     color: #000;
@@ -415,4 +498,98 @@ div.shadowbox.shadowbox-example .shadowbox-content {
 }
 div.shadowbox.shadowbox-lemma .shadowbox-content {
     background-color: #f8f7d7;
+}
+
+div.transcript-toggle {
+    float: right;
+    width: 6em;
+}
+
+div.floatbox {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    -moz-box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    -webkit-box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    box-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+    margin: 0px 0px 10px;
+    overflow: hidden;
+    padding: 8px 10px 0px;
+    background-color: #fff;
+}
+
+div.floatbox.noshadow {
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    margin: 0px;
+}
+
+div.floatbox.fb-left {
+    float: left;
+    margin-right: 10px;
+}
+
+div.floatbox.fb-right {
+    float: right;
+    margin-left: 10px;
+}
+
+div.floatbox.fb-none {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div.floatbox div.fb-title > span {
+    font-weight: bold;
+    font-size: 14px;
+    padding: 0px 5px;
+}
+
+<!-- floatbox colour definitions -->
+div.floatbox.fb-grey {
+    background-color: #eee;
+}
+
+div.floatbox.fb-grey div.fb-title {
+    border-bottom: 1px dotted #aaa;
+}
+
+
+div.floatbox div.fb-subtitle {
+font-family: Tahoma, Geneva, sans-serif;
+color: #999;
+font-size: 0.85em;
+line-height:0.85em;
+}
+
+<!-- fb.news definitions -->
+div.floatbox.fb-news {
+ background-color: #fff;
+}
+
+div.floatbox.fb-news div.fb-title {
+border-bottom: 1px dotted #ccc;
+padding-bottom: 5px;
+margin-bottom: 5px;
+}
+
+div.floatbox.fb-news div.fb-title span {
+font-family:Tahoma, Geneva, sans-serif;
+color: #666;
+font-size: 1.2em;
+line-height:1.2em;
+}
+
+div.floatbox.fb-news div.fb-body {
+font-family:'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+text-align: center;
+}
+div.floatbox.fb-news div.fb-body {
+margin: 10px 0;
+}
+div.floatbox.fb-news div.fb-body,
+div.floatbox.fb-news div.fb-body a {
+color: #666;
+font-size: 1.2em;
+line-height: 1.4em;
 }

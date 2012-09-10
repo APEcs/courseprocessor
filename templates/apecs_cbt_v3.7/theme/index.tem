@@ -36,6 +36,7 @@
     <link href="../TWPopup/popup.css" rel="stylesheet" type="text/css" />
     <link href="../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
     <link href="../MediaWiki/MediaWiki.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="../../MediaWiki/Common.js"></script>
 
 </head>
 <body id="thememap" onload="initializeThemeIndexPage();">
