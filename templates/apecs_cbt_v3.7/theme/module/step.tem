@@ -32,6 +32,7 @@
 
     <!-- new wiki-based features -->
     <script type="text/javascript" src="../../TWPopup/mootools-core.js"></script>
+    <script type="text/javascript" src="../../TWPopup/mootools-more.js"></script>
     <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
     <script type="text/javascript" src="../../TWPopup/popup.js"></script>
     <script type="text/javascript" src="../../twtools/zebra.js"></script>
