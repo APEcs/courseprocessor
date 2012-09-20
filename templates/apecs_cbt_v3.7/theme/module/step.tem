@@ -36,6 +36,7 @@
     <script type="text/javascript" src="../../TWPopup/webtoolkit.base64.js"></script>
     <script type="text/javascript" src="../../TWPopup/popup.js"></script>
     <script type="text/javascript" src="../../twtools/zebra.js"></script>
+    <script type="text/javascript" src="../../twtools/togglebox.js"></script>
     <script type="text/javascript" src="../../flowplayer/flowplayer-3.2.6.min.js"></script>
     <link href="../../TWPopup/popup.css" rel="stylesheet" type="text/css" />
     <link href="../../MediaWiki/Common.css" rel="stylesheet" type="text/css" />
