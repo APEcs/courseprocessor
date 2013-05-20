@@ -45,7 +45,7 @@
                         </div>
 
                         <div class="center">
-***glosrefblock*** 
+***glosrefblock***
 
                             <div id="nav"></div>
                         </div><!-- class="center" -->
@@ -79,9 +79,9 @@
 
                             <h1 class="main">Disclaimer</h1>
                             <div id="content">
-  <p>The PEVE Unit (School of Computer Science, University of Manchester)
+  <p>The APEcs Unit (School of Computer Science, University of Manchester)
   makes every effort to ensure that all information is accurate at the
-  time the CBT material is compiled. However, PEVE cannot accept
+  time the CBT material is compiled. However, APEcs cannot accept
   responsibility for errors with the text or other media provided as part
   of this CBT package. </p>
   <p>&nbsp;</p>
@@ -90,33 +90,33 @@
   <p><font face="Times New Roman, Times, serif"><strong>1. Software.</strong> This
       CBT package, all associated documents, scripts and programs (henceforth
       the &quot;Software&quot;) are &copy; Copyright
- 2006 PEVE<em><sub>IT</sub></em> Unit, The University of Manchester. All rights
- reserved. 
+ 2006 APEcs Unit, The University of Manchester. All rights
+ reserved.
 Unauthorised alteration, distribution or reverse engineering of the Software
   is strictly prohibited.</font></p>
   <p><font face="Times New Roman, Times, serif"><strong>2. Usage. </strong>You may not use the Software, or any part of the same, for any
-    other 
-  purpose other than that given in this documentation without the express 
+    other
+  purpose other than that given in this documentation without the express
   written permission of the University of Manchester.</font></p>
   <p><font face="Times New Roman, Times, serif"><strong>3. Restrictions.</strong> You may
-      not reduce the Software to human readable form, 
+      not reduce the Software to human readable form,
       reverse engineer, de-compile, or disassemble the Software, except and only
     to the extent that such activity is expressly permitted by applicable law
-    notwithstanding this limitation. You may not rent, lease, or lend the 
+    notwithstanding this limitation. You may not rent, lease, or lend the
       Software. </font></p>
   <p><font face="Times New Roman, Times, serif"><strong>4. Termination.</strong> This license terminates if you fail to comply with its terms
     and conditions. If your license terminates, you must destroy all copies of
-    the Software. The termination of this license does not limit the 
+    the Software. The termination of this license does not limit the
   University of Manchester's other rights it may have by law.</font></p>
   <p><font face="Times New Roman, Times, serif"><strong>5. Copyright.</strong> You acknowledge that you have only the limited, non-exclusive
     right to use and copy the Software as expressly stated in this license and
     that the University of Manchester retains all other rights. You agree not
     to remove or modify any copyright, trademark or other proprietary notices
-    which appear in the Software. The Software is protected by UK copyright 
+    which appear in the Software. The Software is protected by UK copyright
   law and international treaty provision.</font></p>
   <p><font face="Times New Roman, Times, serif"><strong>6. Export Restrictions.</strong> You agree that you will not export or re-export
-    the 
-  Software to any country, person, entity, or end user subject to UK export 
+    the
+  Software to any country, person, entity, or end user subject to UK export
   restrictions.</font></p>
   <p><font face="Times New Roman, Times, serif"><strong>7. Third-party websites.</strong> Some
       CBT packages may also feature links to third-party websites. These links
@@ -127,14 +127,14 @@ Unauthorised alteration, distribution or reverse engineering of the Software
       the linked websites. </font></p>
   <p><font face="Times New Roman, Times, serif"><strong>8. NO WARRANTIES.</strong> The
       Software is provided &quot;as is&quot; without warranty
-    of any 
-  kind, either express or implied, including, without limitation, the 
-  implied warranties of merchantability, fitness for a particular purpose, 
-  or non-infringement. The Software is provided with all faults and the 
-  entire risk as to satisfactory quality, performance, accuracy and effort 
+    of any
+  kind, either express or implied, including, without limitation, the
+  implied warranties of merchantability, fitness for a particular purpose,
+  or non-infringement. The Software is provided with all faults and the
+  entire risk as to satisfactory quality, performance, accuracy and effort
   is with you.</font></p>
   <p><font face="Times New Roman, Times, serif"><strong>9. LIMITATION OF LIABILITY.</strong> The University of Manchester is not liable to
-    you 
+    you
   for any consequential, special, incidental, or indirect damages of any kind
     arising out of the delivery, performance, or use of the Software, even if
     the University of Manchester has been advised of the possibility of such
@@ -147,7 +147,7 @@ Unauthorised alteration, distribution or reverse engineering of the Software
   registered trademarks or copyrights. This notice, and references in the
   Software, does not imply that they are free or that the owners of the
   trademarks, registered trademarks or copyrights approve or endorse the
-  Software. All copyrights and trademarks, including but not limited to 
+  Software. All copyrights and trademarks, including but not limited to
   those listed below, are acknowledged.</font></p>
   <blockquote>
     <p><font face="Times New Roman, Times, serif"> Windows is a trademark or
