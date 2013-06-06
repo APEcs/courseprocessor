@@ -1998,13 +1998,13 @@ sub preprocess {
                             # reset so we can scan for glossary terms
                             pos($content) = 0;
                             # first look for definitions...
-                            while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\](.*?)\[\/glossary\]}isg) {
+                            while($content =~ m{\[glossary\s+term\s*=\s*\"([^"]+?)\"\s*\](.*?)\[/glossary\]}isg) {
                                 $self -> set_glossary_point($1, $2, $theme, $module, $step, $title, !$exclude_step);
                             }
 
                             # Now look for references to the terms...
                             pos($content) = 0;
-                            while($content =~ m{\[glossary\s+term\s*=\s*\"([^\"]+?)\"\s*\/\s*\]}isg) {
+                            while($content =~ m{\[glossary\s+term\s*=\s*"([^"]+?)"\s*/\s*\]}isg) {
                                 $self -> set_glossary_point($1, undef, $theme, $module, $step, $title, !$exclude_step);
                             }
 
@@ -2612,8 +2612,8 @@ sub convert_step_tags {
     my $stepid  = shift;
 
     # Glossary conversion
-    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\/\s*\]}{$self->convert_glossary_term($1)}ige;              # [glossary term="" /]
-    $content =~ s{\[glossary\s+term\s*=\s*"(.*?)"\s*\].*?\[/glossary\]}{$self->convert_glossary_term($1)}igse;  # [glossary term=""]...[/glossary]
+    $content =~ s{\[glossary\s+term\s*=\s*"([^"]+?)"\s*/\s*\]}{$self->convert_glossary_term($1)}ige;              # [glossary term="" /]
+    $content =~ s{\[glossary\s+term\s*=\s*"([^"]+?)"\s*\].*?\[/glossary\]}{$self->convert_glossary_term($1)}igse;  # [glossary term=""]...[/glossary]
 
     # Image conversion
     $content =~ s{\[img\s+(.*?)\/?\s*\]}{$self -> convert_image($1)}ige;  # [img name="" width="" height="" alt="" title="" align="left|right|center" /]
