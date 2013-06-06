@@ -160,3 +160,8 @@ div.twpopup-controls
 {
     padding-top: 5px;
 }
+
+div.twpopup-core tt, div.twpopup-core code {
+    color: #ff9705;
+}
+
