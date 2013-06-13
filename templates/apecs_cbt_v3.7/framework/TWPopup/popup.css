@@ -17,7 +17,7 @@ span.twpopup-sys
 
 div.twpopup
 {
-    visibility: hidden; 
+    visibility: hidden;
     opacity: 0;
     display: block;
     position: absolute;
@@ -32,13 +32,13 @@ div.twpopup div.twpopup-body
     color: #ccc;
 }
 
-table.twpopup 
+table.twpopup
 {
     background-color: #333;
     color: #ccc;
 }
 
-div.twpopup div.twpopup-body div.twpopup-core 
+div.twpopup div.twpopup-body div.twpopup-core
 {
     background-color: #333;
     padding: 5px 5px 5px 11px;
@@ -163,5 +163,5 @@ div.twpopup-controls
 
 div.twpopup-core tt, div.twpopup-core code {
     color: #ff9705;
+    font-size: 100%;
 }
-
