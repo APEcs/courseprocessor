@@ -68,7 +68,8 @@
 	font-weight: bold;
 }
 #navmenus li a:visited,
-#navmenus li a:link {
+#navmenus li a:link,
+#navmenus li div.menu {
 	font-weight: bold;
 	font-size: 1.2em;
 }
@@ -149,4 +150,3 @@
 #navmenus li#menu-modules span.red-leadsto {
 	background: url(../framework-images/module/bullet-red-leadsto.gif) no-repeat 0 50%;
 }
-

@@ -10,12 +10,12 @@
 /**
  ** Header
  **/
- 
- 
+
+
 /**
  ** Header colors and backgrounds
  **/
- 
+
 #header #resources,
 #header #resources a:visited,
 #header #resources a:link {
@@ -26,7 +26,8 @@
 }
 
 #navmenus li a:visited,
-#navmenus li a:link {
+#navmenus li a:link,
+#navmenus li div.menu {
 	color: #ffafaf;
 }
 #navmenus li.menu:hover,
@@ -54,7 +55,7 @@
 #breadcrumb a:link {
 	color: #FFF;
 }
-#breadcrumb .sep, 
+#breadcrumb .sep,
 #breadcrumb .current {
 	color: #CCC;
 }
@@ -66,7 +67,7 @@
 	background-color: #B71C1C;
 	background-image: url(../framework-images/header/red/breadcrumb-middle-center.gif);
 	border-top-color: #b23434;
-	
+
 }
 #breadcrumb .bottom-left {
 	background-image: url(../framework-images/header/red/breadcrumb-bottom-left.gif);

@@ -7,13 +7,13 @@
 /**
  ** Header colors and backgrounds
  **/
- 
- 
- 
+
+
+
 /**
  ** Main section
  **/
- 
+
 #header #resources,
 #header #resources a:visited,
 #header #resources a:link {
@@ -24,7 +24,8 @@
 }
 
 #navmenus li a:visited,
-#navmenus li a:link {
+#navmenus li a:link,
+#navmenus li div.menu {
 	color: #e5b054;
 }
 #navmenus li.menu:hover,
@@ -52,7 +53,7 @@
 #breadcrumb a:link {
 	color: #fff;
 }
-#breadcrumb .sep, 
+#breadcrumb .sep,
 #breadcrumb .current {
 	color: #ddd;
 }
@@ -64,7 +65,7 @@
 	background-color: #e5a330;
 	background-image: url(../framework-images/header/orange/breadcrumb-middle-center.gif);
 	border-color: #d8a142;
-	
+
 }
 #breadcrumb .bottom-left {
 	background-image: url(../framework-images/header/orange/breadcrumb-bottom-left.gif);

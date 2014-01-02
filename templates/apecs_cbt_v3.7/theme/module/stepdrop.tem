@@ -1,5 +1,5 @@
 <!-- start stepdrop.tem -->
-    <li id="menu-steps" class="menu">Steps<a href="#breadcrumb"><img src="../../framework-images/accessibility/1px.gif" alt="Skip to breadcrumb trail" border="0" /></a>
+    <li id="menu-steps" class="menu"><div class="menu">Steps</div><a href="#breadcrumb"><img src="../../framework-images/accessibility/1px.gif" alt="Skip to breadcrumb trail" border="0" /></a>
         <ul>
 ***entries***
         </ul>
