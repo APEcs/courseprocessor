@@ -15,7 +15,8 @@
 #navmenus a {
 	display: block;
 }
-#navmenus li a.menu {
+#navmenus li a.menu,
+#navmenus li div.menu {
 	padding: 15px;
 }
 #navmenus li {
