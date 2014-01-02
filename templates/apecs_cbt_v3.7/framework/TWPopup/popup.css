@@ -166,3 +166,7 @@ div.twpopup-core tt, div.twpopup-core code {
     font-family: "Courier New", monospace, serif;
     font-size: 100%;
 }
+
+div.twpopup-core a {
+    color: #00ffff;
+}
