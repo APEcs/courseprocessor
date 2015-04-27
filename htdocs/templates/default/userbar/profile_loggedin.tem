@@ -1,0 +1,17 @@
+            <li id="user-profile" class="menu">
+                <a onclick="view_profile('');" class="item">***realname***
+                    <img alt="" src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" class="avatar avatar-16" height="16" width="16" />
+                </a>
+                <div class="menu-wrapper">
+                    <ul id="profile-actions" class="menu-submenu">
+                        <li id="profile-display"><a onclick="view_profile('');">
+                                <img alt="" src="https://gravatar.com/avatar/***gravhash***?s=64&amp;d=mm&amp;r=g" class="avatar avatar-64" height="64" width="64" />
+                                <span class="display-name">***realname***</span>
+                                <span class="username">***username***</span>
+                            </a>
+                        </li>
+                        <!-- li><a class="item" onclick="edit_profile();">{L_USERBAR_PROFILE_EDIT}</a></li -->
+                        <li><a class="item" href="***url-logout***">{L_USERBAR_PROFILE_LOGOUT}</a></li>
+                    </ul>
+                </div>
+            </li>

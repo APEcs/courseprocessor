@@ -1,0 +1,13 @@
+<div class="shadowbox messagebox ***boxclass***">
+    <img src="{V_[templatepath]}images/messages/***icon***22.png" width="22" height="22" alt="***icon***"/>
+    <h2>***title***</h2>
+    <div class="sbcontent">
+        <div class="mcore">
+            <div class="msummary">***summary***</div>
+            <div class="mtext">***longdesc***</div>
+        </div>
+        ***additional***
+        ***buttons***
+    </div>
+</div>
+

@@ -1,0 +1,58 @@
+EMAIL_SIG  = The {V_[sitename]} Team
+
+SITE_CONTINUE = Continue
+
+# Times for Template::fancy_time
+TIMES_JUSTNOW = just now
+TIMES_SECONDS = %t seconds ago
+TIMES_MINUTE  = a minute ago
+TIMES_MINUTES = %t minutes ago
+TIMES_HOUR    = an hour ago
+TIMES_HOURS   = %t hours ago
+TIMES_DAY     = a day ago
+TIMES_DAYS    = %t days ago
+TIMES_WEEK    = a week ago
+TIMES_WEEKS   = %t weeks ago
+TIMES_MONTH   = a month ago
+TIMES_MONTHS  = %t months ago
+TIMES_YEAR    = a year ago
+TIMES_YEARS   = %t years ago
+
+FUTURE_JUSTNOW = shortly
+FUTURE_SECONDS = in %t seconds
+FUTURE_MINUTE  = in a minute
+FUTURE_MINUTES = in %t minutes
+FUTURE_HOUR    = in an hour
+FUTURE_HOURS   = in %t hours
+FUTURE_DAY     = in a day
+FUTURE_DAYS    = in %t days
+FUTURE_WEEK    = in a week
+FUTURE_WEEKS   = in %t weeks
+FUTURE_MONTH   = in a month
+FUTURE_MONTHS  = in %t months
+FUTURE_YEAR    = in a year
+FUTURE_YEARS   = in %t years
+
+BLOCK_BLOCK_DISPLAY   = Direct call to unimplemented block_display()
+BLOCK_SECTION_DISPLAY = Direct call to unimplemented section_display()
+
+PAGE_ERROR    = Error
+PAGE_ERROROK  = Okay
+PAGE_POPUP    = Information
+PAGE_CONTINUE = Continue
+
+FATAL_ERROR         = Fatal Error
+FATAL_ERROR_SUMMARY = The system has encountered a fatal error and can not continue. The error is shown below.
+
+MONTH_LONG1   = January
+MONTH_LONG2   = February
+MONTH_LONG3   = March
+MONTH_LONG4   = April
+MONTH_LONG5   = May
+MONTH_LONG6   = June
+MONTH_LONG7   = July
+MONTH_LONG8   = August
+MONTH_LONG9   = September
+MONTH_LONG10  = October
+MONTH_LONG11  = November
+MONTH_LONG12  = December

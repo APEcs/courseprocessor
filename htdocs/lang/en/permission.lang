@@ -1,0 +1,2 @@
+PERMISSION_FAILED_TITLE     = Access denied
+PERMISSION_FAILED_SUMMARY   = You do not have permission to perform this operation.

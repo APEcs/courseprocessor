@@ -1,0 +1,61 @@
+dl.input {
+    margin: 5px 0px 0px 0px;
+}
+
+dl.float {
+    float: left;
+    margin-right: 1em;
+}
+
+dl.iblock {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 1em;
+}
+
+dl.input > dt {
+    margin: 0px 0px 6px;
+}
+
+dl.input > dd {
+    margin: 0px;
+    padding: 0px;
+    white-space: nowrap;
+}
+
+dl.input > dd > select {
+    min-width: 10em;
+    margin: 0px;
+    padding: 0px;
+}
+
+dl.input > dd > input[type="radio"] {
+    width: 16px;
+}
+
+#leftcol dl.input > dd > input[type="text"],
+#leftcol dl.input > dd > textarea.fillwide {
+    width: 100%;
+}
+
+#leftcol dl.input > dd > input[type="text"].twocol,
+dl.input > dd > input[type="file"] {
+    width: 274px;
+}
+
+select.fillwide {
+    width: 300px;
+}
+
+input.fillwide.datepick,
+input.fillwide.rss {
+    width: 267px;
+}
+
+label.disabled {
+    color: #777;
+}
+
+dl.input > dt > span.option {
+    font-size: 9px;
+}

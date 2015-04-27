@@ -1,0 +1,3 @@
+API_BAD_OP   = Unknown API operation requested.
+API_BAD_CALL = Incorrect invocation of an API-only module.
+API_ERROR    = An internal API error has occurred: ***error***

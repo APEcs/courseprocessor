@@ -1,0 +1,43 @@
+table.notebox {
+    margin: 0px 10%;   /* 10% = Will not overlap with other elements */
+    border: 1px solid #aaa;
+    border-left: 10px solid #1e90ff;    /* Default "notice" blue */
+    background: #fbfbfb;
+    display: block;
+    text-align: left;
+    border-radius: 1px;
+    -moz-box-shadow: 3px 3px 4px rgba(0,0,0,0.1);
+    -webkit-box-shadow: 3px 3px 4px rgba(0,0,0,0.1);
+    box-shadow: 3px 3px 4px rgba(0,0,0,0.1);
+    margin-bottom: 4px;
+}
+table.ienotebox {
+    margin: 0px 10%;   /* 10% = Will not overlap with other elements */
+    border: 1px solid #aaa;
+    border-left: 10px solid #1e90ff;    /* Default "notice" blue */
+    background: #fbfbfb;
+}
+
+table.notebox + table.notebox {   /* Single border between stacked boxes. */
+    margin-top: -5px;
+}
+th.nbox-text,
+td.nbox-text {            /* The message body cell(s) */
+    padding: 0.25em 0.5em;       /* 0.5em left/right */
+}
+td.nbox-image {           /* The left image cell */
+    padding: 2px 0 2px 0.5em;    /* 0.5em left, 0px right */
+}
+td.nbox-imageright {      /* The right image cell */
+    padding: 2px 0.5em 2px 0;    /* 0px left, 0.5em right */
+}
+
+table.notebox-notice {
+    border-left: 10px solid #1e90ff;    /* Blue */
+}
+table.notebox-warning {
+    border-left: 10px solid #e1b416;    /* Orange */
+}
+table.notebox-error {
+    border-left: 10px solid #b22222;    /* Red */
+}

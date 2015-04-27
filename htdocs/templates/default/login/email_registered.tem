@@ -1,0 +1,19 @@
+{L_LOGIN_REG_GREETING},
+
+{L_LOGIN_REG_CREATED}
+
+{L_LOGIN_USERNAME}: ***username***
+{L_LOGIN_PASSWORD}: ***password***
+
+{L_LOGIN_REG_ACTNEEDED}
+
+***act_url***
+
+{L_LOGIN_REG_ALTACT}
+
+***act_form***
+***act_code***
+
+{L_LOGIN_REG_ENJOY}
+--
+{L_EMAIL_SIG}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>{V_[sitename]}: ***title***</title>
+
+    <link rel="stylesheet" type="text/css" href="{V_[csspath]}core.css" />
+
+    <!-- mootools for effects and javascript sanity -->
+    <script type='text/javascript' src="{V_[jspath]}mootools-core.js"></script>
+    <script type='text/javascript' src="{V_[jspath]}mootools-more.js"></script>
+
+    <!-- Date fixes -->
+    <script type='text/javascript' src="{V_[jspath]}date-adjust.js"></script>
+
+    <!-- lightface for popup window -->
+    <script type='text/javascript' src="{V_[jspath]}lightface/LightFaceMod.js"></script>
+    <link href="{V_[jspath]}lightface/LightFace.css" rel="stylesheet" type="text/css" />
+
+    <!-- userbar support -->
+    <script type='text/javascript' src="{V_[jspath]}userbar.js"></script>
+    <link rel="stylesheet" type="text/css" href="{V_[csspath]}userbar.css" />
+
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="{V_[templatepath]}images/favicon.png" />
+
+    <!--[if IE]>
+    <style type="text/css">
+    </style>
+    <![endif]-->
+    <script type="text/javascript">
+// <![CDATA[
+        spinner_url = "{V_[templatepath]}images/spinner.gif";
+        basepath = "{V_[scriptpath]}";
+        tempath  = "{V_[templatepath]}";
+        utcoffset = ***utcoffset***;
+
+window.addEvent('domready', function() {
+    $$('a.rel').each(function(element) {
+                         element.addEvent('click',
+                                          function (e) {
+                                              e.stop();
+                                              window.open(element.href);
+                                          });
+                     });
+
+    errbox = new LightFace({title: '{L_PAGE_ERROR}',
+                            draggable: false,
+                            overlayAll: true,
+                            pad: 200,
+                            width: '800px',
+                            buttons: [
+                                      { title: '{L_PAGE_ERROROK}', event: function() { errbox.close(); }, color: 'blue' },
+                            ],
+                            content: '<table><tr><td class="nbox-image"><img src="{V_[scriptpath]}templates/default/images/error.png" width="48" height="48" alt="error" /></td><td class="nbox-text" id="errboxmsg"></td></tr></table>'
+    });
+    popbox = new LightFace({title: '<div id="poptitle">{L_PAGE_POPUP}</div>',
+                            draggable: false,
+                            overlayAll: true,
+                            content: '<div id="popbody"></div>',
+                            zIndex: 8001,
+                            pad: 200,
+                            width: '800px',
+    });
+});
+// ]]>
+    </script>
+    ***extrahead***
+</head>
+<body id="webui" class="webui">
+<div id="content" class="content clear">
+***content***
+<div id="footer">***footer***</div>
+            </div>
+***userbar***
+</body>
+</html>

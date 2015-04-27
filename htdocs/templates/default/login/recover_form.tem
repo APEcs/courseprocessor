@@ -1,0 +1,18 @@
+***error***
+<div class="shadowbox logincore">
+    <h2>{L_LOGIN_RECFORM}</h2>
+    <div class="sbcontent">
+        <div class="loginform">
+            <p class="alignleft">{L_LOGIN_RECINTRO}</p>
+            <form id="loginform" method="post" action="***target***">
+                <div class="entry">
+                    <label for="actcode">{L_LOGIN_RECEMAIL}:<br />
+                    <input type="text" id="email" name="email" class="highlight" size="24" maxlength="255" /></label>
+                </div>
+                <div class="submit">
+                    <input type="submit" class="button blue" id="dorecover" name="dorecover" value="{L_LOGIN_DORECOVER}" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
