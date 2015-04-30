@@ -306,7 +306,7 @@ INSERT INTO `settings` (`name`, `value`) VALUES
 ('logfile', ''),
 ('scriptpath', '/webui'),
 ('site_name', 'Courseprocessor Web UI'),
-('timefmt', '%d %b %Y %H:%M:%S %Z'),
+('timefmt', '%d %b %Y %H:%M:%S %Z');
 
 -- --------------------------------------------------------
 

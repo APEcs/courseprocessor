@@ -1,0 +1,141 @@
+Pulled 6 June 2012, modified to overlay whole page:
+
+diff -Naur orig/LightFace.css mod/LightFace.css
+--- orig/LightFace.css	2012-06-06 12:08:46.000000000 +0100
++++ mod/LightFace.css	2012-06-06 12:08:28.000000000 +0100
+@@ -20,7 +20,7 @@
+ .lightface .centerLeft, .lightface .centerRight {
+ 	width: 10px;
+ 	height: auto;
+-	background-image: url(b.png);
++	background-image: url(images/b.png);
+ 	background-repeat: repeat-y;
+ }
+ 
+@@ -31,29 +31,29 @@
+ }
+ 
+ .lightface .topLeft {
+-	background-image: url(tl.png);
++	background-image: url(images/tl.png);
+ 	background-position: top left;
+ }
+ 
+ .lightface .topRight {
+-	background-image: url(tr.png);
++	background-image: url(images/tr.png);
+ 	background-position: top right;
+ }
+ 
+ .lightface .bottomLeft {
+-	background-image: url(bl.png);
++	background-image: url(images/bl.png);
+ 	background-position: bottom left;
+ }
+ 
+ .lightface .bottomRight {
+-	background-image: url(br.png);
++	background-image: url(images/br.png);
+ 	background-position: bottom right;
+ }
+ 
+ .lightface .topCenter, .lightface .bottomCenter {
+ 	width: auto;
+ 	height: 10px;
+-	background-image: url(b.png);
++	background-image: url(images/b.png);
+ 	background-repeat: repeat-x;
+ }
+ 
+@@ -137,7 +137,7 @@
+ .lightface .lightfaceFooter label {
+ 	font-size: 13px;
+ 	border-style: solid;
+-	background-image:url(button.png);
++	background-image:url(images/button.png);
+ 	cursor:pointer;
+ 	font-weight:bold;
+ 	padding:2px 6px 2px 6px;
+@@ -196,22 +196,23 @@
+ 	visibility: hidden;
+ }
+ 
+-.lightface .lightfaceOverlay {
+-	position: absolute;
++.lightfaceOverlay {
++	position: fixed;
+ 	left: 0;
+ 	top: 0;
+ 	bottom: 0;
+ 	right: 0;
+ 	/*
+-	background-image: url(fbloader.gif);
++	background-image: url(images/fbloader.gif);
+ 	background-position: center center;
+ 	background-repeat: no-repeat;
+ 	background-color: #fff;
+ 	*/
+-	background:url(fbloader.gif) center center no-repeat #fff;
++	background: #444;
++    opacity: 0.5;
+ }
+ 
+-.lightface .lightfaceMessageBox	{ 
++.lightface .lightfaceMessageBox	{
+ 	overflow: auto;
+ 	padding: 10px 10px;
+ 	min-height: 20px;
+@@ -221,7 +222,7 @@
+ .lightface .lightFaceMessageBoxImage {
+ 	overflow: hidden;
+ 	padding: 0;
+-	background:url(fbloader.gif) center center no-repeat #fff;
++	background:url(images/fbloader.gif) center center no-repeat #fff;
+ }
+ 
+ .lightface .lightFaceMessageBoxImage img {
+diff -Naur orig/LightFace.js mod/LightFace.js
+--- orig/LightFace.js	2012-06-06 12:07:58.000000000 +0100
++++ mod/LightFace.js	2012-06-06 12:49:18.000000000 +0100
+@@ -135,17 +135,20 @@
+ 			html: "&nbsp;",
+ 			styles: {
+ 				opacity: 0,
+-				visibility: "hidden"
++				visibility: "hidden",
++				"z-index": this.options.zIndex - 1, // force the overlay under the box
+ 			},
+ 			"class": "lightfaceOverlay",
+ 			tween: {
+-				link: "chain",
+ 				duration: this.options.fadeDuration,
+ 				onComplete: function() {
+-					if(this.overlay.getStyle("opacity") == 0) this.box.focus();
++					if(this.overlay.getStyle("opacity") == 0) {
++                        // Rehide the overlay when it is transparent
++                        this.overlay.setStyle('visibility', 'hidden');
++                    }
+ 				}.bind(this)
+ 			}
+-		}).inject(this.contentBox);
++		}).inject(document.body, 'bottom');
+ 		if(!this.options.overlayAll) {
+ 			this.overlay.setStyle("top", (this.title ? this.title.getSize().y - 1: 0));
+ 		}
+@@ -206,6 +209,7 @@
+ 	close: function(fast) {
+ 		if(this.isOpen) {
+ 			this.box[fast ? "setStyles" : "tween"]("opacity", 0);
++			this.overlay[fast ? "setStyles" : "tween"]("opacity", 0);
+ 			this.fireEvent("close");
+ 			this._detachEvents();
+ 			this.isOpen = false;
+@@ -215,6 +219,8 @@
+ 	
+ 	open: function(fast) {
+ 		if(!this.isOpen) {
++			this.overlay[fast ? "setStyles" : "tween"]("opacity", 0.4);
++			this.overlay.setStyle("visibility", 'visible');
+ 			this.box[fast ? "setStyles" : "tween"]("opacity", 1);
+ 			if(this.resizeOnOpen) this._resize();
+ 			this.fireEvent("open");

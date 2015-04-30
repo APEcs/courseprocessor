@@ -11,9 +11,9 @@ RewriteEngine On
 
 # If the installation is in a subdirectory, add a rewritebase rule for the subdir
 # RewriteBase /subdir/
-RewriteBase /irclogs/
+RewriteBase /processor/
 
-RewriteCond %{REQUEST_URI} !^/irclogs/(templates|media|docs|ckeditor|images|testing|index.cgi)
+RewriteCond %{REQUEST_URI} !^/processor/(templates|media|docs|ckeditor|images|testing|index.cgi)
 RewriteRule (.*) index.cgi/$1 [PT,L]
 
 # Compress text, html, javascript, css, xml:
