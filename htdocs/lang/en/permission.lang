@@ -1,4 +1,5 @@
 PERMISSION_FAILED_TITLE     = Access denied
 PERMISSION_FAILED_SUMMARY   = You do not have permission to perform this operation.
 
+PERMISSION_USER_DESC        = You do not have permission to use the processor web interface.
 PERMISSION_PROCESSOR_DESC   = You do not have access to invoke the course processor.

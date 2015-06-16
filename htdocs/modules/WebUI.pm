@@ -224,14 +224,14 @@ sub check_login {
         exit;
 
     # Otherwise, permissions need to be checked
-    } elsif(!$self -> check_permission("view")) {
-        $self -> log("error:permission", "User does not have perission 'view'");
+    } elsif(!$self -> check_permission("user")) {
+        $self -> log("error:permission", "User does not have perission 'user'");
 
         # Logged in, but permission failed
         my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
                                                            "error",
                                                            "{L_PERMISSION_FAILED_SUMMARY}",
-                                                           "{L_PERMISSION_VIEW_DESC}",
+                                                           "{L_PERMISSION_USER_DESC}",
                                                            undef,
                                                            "errorcore",
                                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),

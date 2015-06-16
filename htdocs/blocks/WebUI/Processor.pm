@@ -30,11 +30,10 @@ use v5.12;
 
 # IDs of the stages
 use constant STAGE_WELCOME => 0;
-use constant STAGE_LOGIN   => 1;
-use constant STAGE_COURSE  => 2;
-use constant STAGE_EXPORT  => 3;
-use constant STAGE_PROCESS => 4;
-use constant STAGE_FINISH  => 5;
+use constant STAGE_COURSE  => 1;
+use constant STAGE_EXPORT  => 2;
+use constant STAGE_PROCESS => 3;
+use constant STAGE_FINISH  => 4;
 
 ## @cmethod $ new(%args)
 # Overloaded constructor for the Processor, loads the other classes
@@ -49,56 +48,72 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    $self -> {"stages"} = [ { "active"   => "templates/default/images/stages/welcome_active.png",
+    $self -> {"stages"} = [ # STAGE_WELCOME
+                            { "active"   => "templates/default/images/stages/welcome_active.png",
                               "inactive" => "templates/default/images/stages/welcome_inactive.png",
                               "passed"   => "templates/default/images/stages/welcome_passed.png",
                               "width"    => 80,
                               "height"   => 40,
-                              "alt"      => "{L_WELCOME_STAGETITLE}",
+                              "alt"      => "{L_STAGE_WELCOME_STAGETITLE}",
                               "icon"     => "welcome",
-                              "func"     => \&_build_stage0_welcome },
+                              "func"     => \&_build_stage0_welcome
+                            },
+
+                            # STAGE_COURSE
                             { "active"   => "templates/default/images/stages/course_active.png",
                               "inactive" => "templates/default/images/stages/course_inactive.png",
                               "passed"   => "templates/default/images/stages/course_passed.png",
                               "width"    => 80,
                               "height"   => 40,
-                              "alt"      => "{L_COURSE_STAGETITLE}",
+                              "alt"      => "{L_STAGE_COURSE_STAGETITLE}",
                               "icon"     => "course",
                               "hasback"  => 1,
-                              "func"     => \&_build_stage2_course },
+                              "func"     => \&_build_stage1_course
+                            },
+
+                            # STAGE_EXPORT
                             { "active"   => "templates/default/images/stages/export_active.png",
                               "inactive" => "templates/default/images/stages/export_inactive.png",
                               "passed"   => "templates/default/images/stages/export_passed.png",
                               "width"    => 80,
                               "height"   => 40,
-                              "alt"      => "{L_EXPORT_STAGETITLE}",
+                              "alt"      => "{L_STAGE_EXPORT_STAGETITLE}",
                               "icon"     => "export",
                               "hasback"  => 1,
-                              "func"     => \&_build_stage3_export },
+                              "func"     => \&_build_stage2_export
+                            },
+
+                            # STAGE_PROCESS
                             { "active"   => "templates/default/images/stages/process_active.png",
                               "inactive" => "templates/default/images/stages/process_inactive.png",
                               "passed"   => "templates/default/images/stages/process_passed.png",
                               "width"    => 80,
                               "height"   => 40,
-                              "alt"      => "{L_PROCESS_STAGETITLE}",
+                              "alt"      => "{L_STAGE_PROCESS_STAGETITLE}",
                               "icon"     => "process",
                               "hasback"  => 1,
-                              "func"     => \&_build_stage4_process },
+                              "func"     => \&_build_stage3_process
+                            },
+
+                            # STAGE_FINISH
                             { "active"   => "templates/default/images/stages/finish_active.png",
                               "inactive" => "templates/default/images/stages/finish_inactive.png",
                               "passed"   => "templates/default/images/stages/finish_passed.png",
                               "width"    => 80,
                               "height"   => 40,
-                              "alt"      => "{L_FINISH_STAGETITLE}",
+                              "alt"      => "{L_STAGE_FINISH_STAGETITLE}",
                               "icon"     => "finish",
                               "hasback"  => 1,
-                              "func"     => \&_build_stage5_finish } ];
+                              "func"     => \&_build_stage4_finish
+                            }
+        ];
+
     return $self;
 }
 
+
 # ============================================================================
 #  Wizard interface functions
-
 
 ## @method @ _build_stage0_welcome()
 # Generate the first stage of the wizard - a simple page describing the application
@@ -106,15 +121,37 @@ sub new {
 #
 # @return An array of two values: the title of the page, and the messagebox to show on the page.
 sub _build_stage0_welcome {
-    my $sysvars = shift;
+    my $self = shift;
 
     # All we need to do here is generate the title and message...
-    my $title    = $sysvars -> {"template"} -> replace_langvar("WELCOME_TITLE");
-    my $message  = $sysvars -> {"template"} -> wizard_box($sysvars -> {"template"} -> replace_langvar("WELCOME_TITLE"),
-                                                          $stages -> [STAGE_WELCOME] -> {"icon"},
-                                                          $stages, STAGE_WELCOME,
-                                                          $sysvars -> {"template"} -> replace_langvar("WELCOME_LONGDESC"),
-                                                          $sysvars -> {"template"} -> load_template("webui/stage0form.tem"));
+    my $title    = $self -> {"template"} -> replace_langvar("STAGE_WELCOME_TITLE");
+    my $message  = $self -> {"template"} -> wizard_box($self -> {"template"} -> replace_langvar("STAGE_WELCOME_TITLE"),
+                                                       $self -> {"stages"} -> [STAGE_WELCOME] -> {"icon"},
+                                                       $self -> {"stages"},
+                                                       STAGE_WELCOME,
+                                                       $self -> {"template"} -> replace_langvar("STAGE_WELCOME_LONGDESC"),
+                                                       $self -> {"template"} -> load_template("stages/stage0form.tem"));
+    return ($title, $message);
+}
+
+
+## @method @ _build_stage1_course()
+# Generate the second stage of the wizard, from which the user can select a
+# wiki and a course to process.
+#
+# @return An array of two values: the title of the page, and the messagebox to show on the page.
+sub _build_stage1_course {
+    my $self = shift;
+
+    my $additional = $self -> {"template"} -> load_template("stages/stage1form.tem");
+
+    my $title    = $self -> {"template"} -> replace_langvar("STAGE_COURSE_TITLE");
+    my $message  = $self -> {"template"} -> wizard_box($self -> {"template"} -> replace_langvar("STAGE_COURSE_TITLE"),
+                                                       $self -> {"stages"} -> [STAGE_COURSE] -> {"icon"},
+                                                       $self -> {"stages"},
+                                                       STAGE_COURSE,
+                                                       $self -> {"template"} -> replace_langvar("STAGE_COURSE_LONGDESC"),
+                                                       $additional);
     return ($title, $message);
 }
 
@@ -126,7 +163,7 @@ sub _wizard_display {
     my $self  = shift;
     my $stage = shift || 0;
 
-    # Ensure the stage is within range.
+    # Ensure the stage is numeric and within range.
     $stage = 0
         unless($stage =~ /^\d+$/ && $stage >= 0 && $stage <= scalar(@{$self -> {"stages"}}));
 
@@ -191,15 +228,15 @@ sub page_display {
             ($title, $content, $extrahead) = $self -> _wizard_display();
         } else {
             given($pathinfo[0]) {
-                when('stage') { ($title, $content, $extrahead) = $self -> _wizard_display($pathinfo[1]);
+                when('stage') { ($title, $content, $extrahead) = $self -> _wizard_display($pathinfo[1]); }
                 default {
                      ($title, $content, $extrahead) = $self -> _wizard_display();
                 }
             }
         }
 
-        $extrahead .= $self -> {"template"} -> load_template("tellus/compose/extrahead.tem");
-        return $self -> generate_newsagent_page($title, $content, $extrahead, "compose");
+        $extrahead .= $self -> {"template"} -> load_template("stages/extrahead.tem");
+        return $self -> generate_webui_page($title, $content, $extrahead, "compose");
     }
 }
 
