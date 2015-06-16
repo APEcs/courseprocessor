@@ -1,4 +1,4 @@
-#!/usr/bin/perl -W
+#!/usr/bin/perl
 
 ## @file
 # Script to export the contents of a course namespace in the APEcs
@@ -23,6 +23,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use strict;
+use experimental qw(smartmatch);
 use utf8;
 
 use FindBin;             # Work out where we are
@@ -35,7 +36,6 @@ BEGIN {
 }
 
 # System modules
-#use Data::Dumper;
 use Digest;
 use Encode qw(encode encode_utf8);
 use File::HomeDir;
@@ -45,14 +45,17 @@ use MIME::Base64;
 use Pod::Usage;
 use XML::Simple;
 
-# Local modules
-use lib ("$path/modules"); # Add the script path for module loading
+# Webperl modules
 use lib ("/var/www/webperl"); # and to webperl
-use Logger;
+use Webperl::Logger;
+use Webperl::Utils qw(save_file path_join find_bin write_pid);
+
+# Courseprocessor modules
+use lib ("$path/modules"); # Add the script path for module loading
 use ProcessorVersion;
-use Utils qw(save_file path_join find_bin write_pid);
-use MCPUtils qw(get_password makedir load_config);
 use MediaWiki::Wrap;
+use MCPUtils qw(get_password makedir load_config);
+
 
 # Constants used in various places in the code
 # The maximum number of levels of page transclusion that may be processed
@@ -73,7 +76,7 @@ my $man = 0;
 my $help = 0;
 
 # Global logger. Yes, I know, horrible, but it'd be being passed around /everywhere/ anyway
-my $logger = new Logger();
+my $logger = new Webperl::Logger();
 
 # Likewise with the configuration object.
 my $config;
@@ -1166,4 +1169,3 @@ description of this program.
 =back
 
 =cut
-

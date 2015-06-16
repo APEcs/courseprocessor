@@ -20,10 +20,10 @@
 package MCPUtils;
 
 use Exporter;
-use ConfigMicro;
 use File::Spec;
 use File::Path;
-use Utils qw(path_join);
+use Webperl::ConfigMicro;
+use Webperl::Utils qw(path_join);
 use strict;
 
 our @ISA       = qw(Exporter);
@@ -128,7 +128,7 @@ sub load_config {
     }
 
     # Get configmicro to load the configuration
-    $data = ConfigMicro -> new($configfile)
+    $data = Webperl::ConfigMicro -> new($configfile)
         if(-f $configfile);
 
     # we /need/ a data object here...

@@ -30,7 +30,7 @@ our @EXPORT_OK = qw();
 our $VERSION   = 1.0;
 
 use Data::Dumper;
-use Utils qw(path_join);
+use Webperl::Utils qw(path_join);
 
 ## @fn $ wiki_login($wikih, $username, $password)
 # Attempt to log into the wiki identified by the provided wiki API handle.
@@ -113,7 +113,6 @@ sub wiki_transclude {
 
     my $response = $wikih -> api({ action => 'expandtemplates',
                                    title  => $pagename,
-                                   prop   => 'revisions',
                                    text   => $templatestr} )
         or die "FATAL: Unable to process transclusion in page $pagename. Error from the API was:".$wikih->{"error"}->{"code"}.': '.$wikih->{"error"}->{"details"}."\n";
 
