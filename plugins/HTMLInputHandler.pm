@@ -49,7 +49,7 @@ use Cwd qw(getcwd chdir);
 use Digest::MD5 qw(md5_hex);
 use File::Path qw(make_path);
 use ProgressBar;
-use Utils qw(path_join load_file find_bin);
+use Webperl::Utils qw(path_join load_file find_bin);
 
 
 # The location of the latex processor, must be absolute, as the path may have been nuked.

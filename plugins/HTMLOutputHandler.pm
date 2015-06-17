@@ -36,11 +36,11 @@ use HTML::Entities;
 use ImageTools;
 use MIME::Base64;
 use URI::Encode qw(uri_encode);
-use Utils qw(check_directory resolve_path load_file save_file lead_zero path_join);
+use Webperl::Utils qw(check_directory resolve_path load_file save_file lead_zero path_join);
 use MediaWiki::Wrap;
 
 # The location of htmltidy, this must be absolute as we can not rely on path being set.
-use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidy";
+use constant DEFAULT_TIDY_COMMAND => "/usr/bin/tidyp";
 
 # The commandline arguments to pass to htmltidy when cleaning up output.
 use constant DEFAULT_TIDY_ARGS    => "-i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no --merge-spans no";

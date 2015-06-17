@@ -2,7 +2,7 @@ package Metadata;
 
 use XML::Simple;
 use Data::Dumper;
-use Utils qw(string_in_array);
+use Webperl::Utils qw(string_in_array);
 use strict;
 
 my $VERSION;

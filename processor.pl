@@ -39,16 +39,18 @@ use File::HomeDir;
 use Pod::Usage;
 use Getopt::Long;
 
-# Local modules
-use lib ("$path/modules"); # Add the script path for module loading
+# Webperl modules
 use lib ("/var/www/webperl"); # and to webperl
-use ConfigMicro;
+use Webperl::ConfigMicro;
+use Webperl::Logger;
+use Webperl::Template;
+use Webperl::Utils qw(check_directory resolve_path path_join find_bin write_pid);
+
+# Processor modules
+use lib ("$path/modules"); # Add the script path for module loading
 use Filter;
-use Logger;
 use Metadata;
 use ProcessorVersion;
-use Template;
-use Utils qw(check_directory resolve_path path_join find_bin write_pid);
 
 # In the absence of a user-defined verbosity level, what should we run at?
 use constant DEFAULT_VERBOSITY => 0;
@@ -300,7 +302,7 @@ sub load_config {
     }
 
     # Get configmicro to load the configuration
-    return ConfigMicro -> new($configfile)
+    return Webperl::ConfigMicro -> new($configfile)
         if(-f $configfile);
 
     return undef;
@@ -325,7 +327,7 @@ sub setting_error {
 print "APEcs Course Processor version ",get_version("processor")," started.\n";
 
 # Get logging started
-my $log = new Logger();
+my $log = new Webperl::Logger();
 
 # ------------------------------------------------------------------------------
 #  Confiuration and command linehandling
@@ -360,9 +362,9 @@ my $metadata = Metadata -> new("logger" => $log)
 # (which we don't need here, really), and this will have no module handle specified,
 # so all the template engine will do is simple translates, {L_..} and {B_[...]} will
 # be passed through unaltered.
-my $template = Template -> new("lang"    => '',
-                               "theme"   => '',
-                               "basedir" => path_join($path, "templates"))
+my $template = Webperl::Template -> new("lang"    => '',
+                                        "theme"   => '',
+                                        "basedir" => path_join($path, "templates"))
     or die "FATAL: Unable to initialise template engine.\n";
 
 # Create a filter engine for use within the plugins
