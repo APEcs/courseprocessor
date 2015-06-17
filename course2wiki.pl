@@ -1,4 +1,4 @@
-#!/usr/bin/perl -W
+#!/usr/bin/perl
 
 ## @file
 # Script to convert an APEcs/PEVEit course generated using previous
@@ -47,13 +47,14 @@ use Pod::Usage;
 use Term::ANSIColor;
 use XML::Simple;
 
-# Local modules
-use lib ("$path/modules"); # Add the script path for module loading
+# Webperl modules
 use lib ("/var/www/webperl"); # and to webperl
-use Logger;
+use Webperl::Logger;
+use Webperl::Utils qw(load_file path_join find_bin write_pid);
+
+use lib ("$path/modules"); # Add the script path for module loading
 use Metadata;
 use ProcessorVersion;
-use Utils qw(load_file path_join find_bin write_pid);
 use MCPUtils qw(get_password makedir load_config);
 use MediaWiki::Wrap;
 
@@ -75,7 +76,7 @@ my $man = 0;
 my $help = 0;
 
 # Global logger. Yes, I know, horrible, but it'd be being passed around /everywhere/ anyway
-my $logger = Logger -> new();
+my $logger = Webperl::Logger -> new();
 
 # Likewise with the configuration object.
 my $config;
