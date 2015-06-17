@@ -24,7 +24,7 @@ package ImageTools;
 use strict;
 use GD;
 use Text::Wrap; # FIXME: This will break on languages like japanese/chinese!
-use Utils qw(path_join);
+use Webperl::Utils qw(path_join);
 use XML::Simple;
 
 use Data::Dumper;
@@ -402,7 +402,7 @@ sub get_fixedlabel_size {
                                                   \@strings,
                                                   $fontsize,
                                                   $linespacing)
-                or die "Unable to calculate size for $workstring!\n";
+                or die "Unable to calculate size for '$workstring' during label size calculation.\nFont name: $fontname, font size: $fontsize";
 
             # If the string fits into the preferred size, we're good to go
             if($sdata -> {"_"} -> {"maxwide"} <= $maxwidth && $sdata -> {"_"} -> {"sumhigh"} < $maxheight) {
