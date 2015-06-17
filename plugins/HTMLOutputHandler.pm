@@ -2122,7 +2122,7 @@ sub cleanup_media {
         # Otherwise, if the file is not in the used media, remove it
         if(!$self -> {"used_media"} -> {lc($filename)}) {
 
-            $self -> {"logger"} -> print($self -> {"logger"} -> WARNING, "Removing unused media file $filename.");
+            $self -> {"logger"} -> print($self -> {"logger"} -> NOTICE, "Removing unused media file $filename.");
 
             unlink path_join($mediadir, $filename)
                 or die "FATAL: Unable to delete unused media file $filename: $!\n";
