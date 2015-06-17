@@ -26,11 +26,10 @@
                 <div class="main-right">
                     <div id="main">
 
-                        <div class="left">
-                            <img src="framework-images/header/blue/logo-active.gif" alt="PEVE IT logo" name="logo" width="125" height="75" border="0" id="logo" /></div>
+                        <div class="left"><img src="framework-images/header/blue/logo-active.gif" name="logo" width="125" height="75" border="0" usemap="#logoMap" id="logo" alt="APE Logo" /></div>
 
                         <div class="center">
-***glosrefblock*** 
+***glosrefblock***
                             <div id="nav"></div>
                         </div><!-- class="center" -->
                     </div><!-- id="main" -->

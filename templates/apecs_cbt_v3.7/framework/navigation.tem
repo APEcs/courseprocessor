@@ -30,12 +30,7 @@
                 <div class="main-right">
                     <div id="main">
 
-                        <div class="left">
-                            <img src="framework-images/header/blue/logo-active.gif" name="logo" width="125" height="75" border="0" usemap="#logoMap" id="logo" alt="Link to front page" />
-                            <map name="logoMap" id="logoMap">
-                                <area shape="poly" coords="10,37,14,26,26,17,43,11,64,9,84,11,101,17,113,26,117,37,113,48,101,57,84,63,64,65,43,63,26,57,14,48,10,37,10,37" tabindex="4" href="frontpage.html" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('logo','','framework-images/header/blue/logo-hover.gif',1)" alt="Link to front page" />
-                            </map>
-                        </div>
+                        <div class="left"><a tabindex="4" href="frontpage.html" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('logo','','framework-images/header/blue/logo-hover.gif',1)" alt="Link to front page"><img src="framework-images/header/blue/logo-active.gif" name="logo" width="125" height="75" border="0" usemap="#logoMap" id="logo" alt="Link to front page" /></a></div>
 
                         <div class="right">
                             <img src="framework-images/header/blue/nav-button-coursemap-selected.gif" name="nav_coursemap" width="56" height="60" border="0" id="nav_coursemap" alt="Course map view" />
@@ -78,10 +73,10 @@
                     <h1 class="main">Navigation Help</h1>
                     <div id="content">
                         <h2>Basic navigation</h2>
-                        <p><img src="framework-images/docs/basic_nav.png" width="300" height="111" style="float: right; padding-left: 0.5em;" />All the pages in our CBT packages have a common 
+                        <p><img src="framework-images/docs/basic_nav.png" width="300" height="111" style="float: right; padding-left: 0.5em;" />All the pages in our CBT packages have a common
 basic design. On all pages the top-left of the screen will display our logo, and a link to the Home page (the first page you see when you open the CBT package).</p>
                         <div style="clear:both">&nbsp;</div>
-                        <p><img src="framework-images/docs/glossary_entries.png" alt="Glossary Entries" width="300" height="153" style="float: left; padding-right: 0.5em;">Next to 
+                        <p><img src="framework-images/docs/glossary_entries.png" alt="Glossary Entries" width="300" height="153" style="float: left; padding-right: 0.5em;">Next to
 the Home page link there may be a link to the Glossary page for definitions of important terms used in the CBT package teaching material, and a link to a page
 of references cited in the material. The glossary link will not be present if there are no glossary terms defined.</p>
   <p>Entries listed in the glossary

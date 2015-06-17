@@ -35,8 +35,7 @@
                 <div class="main-right">
                     <div id="main">
 
-                        <div class="left">
-                            <img src="framework-images/header/blue/logo-active.gif" alt="APEcs logo" name="logo" width="125" height="75" border="0" id="logo" /></div>
+                        <div class="left"><img src="framework-images/header/blue/logo-active.gif" alt="APEcs logo" name="logo" width="125" height="75" border="0" id="logo" /></div>
 
                         <div class="center">
                             <div id="resources">
