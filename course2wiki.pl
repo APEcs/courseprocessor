@@ -52,6 +52,7 @@ use lib ("/var/www/webperl"); # and to webperl
 use Webperl::Logger;
 use Webperl::Utils qw(load_file path_join find_bin write_pid);
 
+# Processor modules
 use lib ("$path/modules"); # Add the script path for module loading
 use Metadata;
 use ProcessorVersion;
