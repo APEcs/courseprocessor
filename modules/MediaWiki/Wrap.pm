@@ -305,7 +305,7 @@ sub wiki_media_url {
     my $url = @{$pageref -> {"imageinfo"}}[0] -> {"url"};
 
     # Handle relative paths 'properly'...
-    unless($url =~ /^http\:\/\//) {
+    unless($url =~ /^https?\:\/\//) {
         if(!$wikih -> {"config"} -> {"files_url"}) {
             die "FATAL: The API returned a relative path for the URL for '$title'. You must provide a value for the fileurl argument and try again.\n";
         }
