@@ -1,0 +1,29 @@
+[Processor]
+output_handler = HTMLOutputHandler
+verbosity      = 0
+debug          = 0
+
+[HTMLInputHandler]
+latexcmd       = /usr/bin/latex2html
+latexargs      = -nonavigation -noaddress -white -noinfo -antialias_text -html_version "4.1"
+latexintro     = \documentclass[12pt]{article}\n\usepackage{html}\n\usepackage[dvips]{color}\n\pagecolor{white}
+cleanup        = 1
+
+[HTMLOutputHandler]
+tidy           = 0
+tidybackup     = 0
+tidybin        = /usr/bin/tidy
+tidyopts       = -i -w 0 -b -q -c -asxhtml --join-classes no --join-styles no --merge-divs no --merge-spans no
+templates      = apecs_cbt_v3.7
+#refhandler = IEEEReferenceHandler
+
+[wiki2course]
+wiki_url       = https://wiki.cs.manchester.ac.uk/devwiki/
+api_url        = https://wiki.cs.manchester.ac.uk/devwiki/api.php
+upload_url     = https://wiki.cs.manchester.ac.uk/devwiki/index.php/Special:Upload
+course_page    = Course
+data_page      = coursedata
+themes_title   = Themes
+modules_title  = Modules
+metadata       = Metadata
+media_page     = Media
