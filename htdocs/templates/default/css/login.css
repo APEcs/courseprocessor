@@ -1,0 +1,91 @@
+@charset "utf-8";
+@import url('body.css');       /* global base body styles              */
+@import url('notebox.css');    /* pull in warning/important box styles */
+@import url('shadowbox.css');  /* and support for shadowed divs        */
+@import url('messagebox.css'); /* support for message boxes            */
+@import url('button.css');     /* button rules (okay?)                 */
+@import url('inputglow.css');  /* make input boxes glow when active    */
+
+#logincore {
+    margin: 0px auto;
+    padding: 100px 0px 0px;
+}
+
+#logincore h1#logo a {
+    display: block;
+    width: 150px;
+    height: 124px;
+    background: url('../images/logo.png') 50% top no-repeat;
+    padding-bottom: 10px;
+    margin: 0px auto;
+}
+
+div.logincore {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    width: 440px;
+}
+
+div.persist {
+    float: left;
+    text-align: left;
+}
+
+.loginform {
+    width: 400px;
+    padding: 0px 20px;
+}
+.regform {
+    width: 400px;
+    padding: 0px 20px;
+    border-left: 1px solid #333;
+    margin-bottom: 8px;
+}
+.sbcontent { clear: both; }
+
+div.entry {
+    text-align: left;
+    margin: 0px auto;
+}
+
+div.entry label {
+    color: #222;
+}
+
+div.entry label input {
+    width: 100%;
+}
+
+div.submit {
+    text-align: right;
+}
+
+div.submit .contextlink {
+    float: left;
+    text-align: left;
+    font-size: 10px;
+}
+
+div.persist .contextlink {
+    text-align: left;
+    font-size: 10px;
+}
+
+div.loginform {
+    display: inline-block;
+    /*float: left;*/
+}
+div.regform {
+    display: inline-block;
+    /*float: left;*/
+}
+div.regform.policy {
+    float: right;
+}
+
+input[type=text], input[type=password] {
+    font-size: 20px;
+    margin-bottom: 10px;
+    margin-top: 2px;
+}

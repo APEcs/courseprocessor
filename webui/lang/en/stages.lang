@@ -9,18 +9,6 @@ WELCOME_TITLE        = Welcome
 WELCOME_LONGDESC     = <p>This website allows you to export and process content from a supported wiki, avoiding the need to use the APEcs course processor tools directly.</p>
 WELCOME_MESSAGE      = <p>Before you continue, you will need to make sure that you have the following pieces of information:</p><ul><li>The name and URL of the wiki you want to export and process material from.</li><li>Your login details for the wiki.</li><li>The name of the material you want to export and process (the course name, or book name, for example).</li></ul><p><b>Important:</b> before you can successfully export material from a wiki, you must ensure that:</p><ul><li>It conforms to the <a class="ext" href="http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:DevWiki_Course_Structuring">structuring specification</a>.</li><li>It has all the <a class="ext" href="http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Metadata">metadata</a> required, and the metadata is correctly structured.</li></ul><p>If the material is not structured correctly, or is missing metadata, the export step will fail!</p><p>Each stage of the process will explain any actions you need to take. Once you have followed any instructions for a stage, click the 'Next' button to go to the next stage. Some stages will give you a 'Back' button to return to a previous stage if you want to make changes to the options you have set. Complete step-by-step documentation for this web application may be found in the Development Wiki's '<a href="http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:WebUI">Docs:WebUI'</a> page.</p>
 
-LOGIN_TITLE          = Log in.
-LOGIN_LONGDESC       = Please select the wiki you want to export material from below, and enter your login for that wiki. If you do not have a login for the wiki you want to export material from, use the "Contact support" button at the bottom left of this page to request a login from the support team.
-LOGIN_WIKI           = Wiki
-LOGIN_NAME           = Username
-LOGIN_PASS           = Password
-LOGIN_SET_WIKI       = - Select a wiki to export from -
-LOGIN_ERR_BADLOGIN   = Unable to log into the selected wiki with the provided username and password. Please check that you selected the correct wiki, and you entered your username and password correctly, remembering that both username and password are case sensitive.
-LOGIN_ERR_NOLOGIN    = You did not enter a value for either the username or password. Please enter your login details in full.
-LOGIN_ERR_BADWIKI    = The selected wiki does not appear to be supported by this webapp.
-LOGIN_ERR_NOWIKI     = You have not selected a wiki to use. Please ensure that you select the wiki you want to export a course from in the dropdown below.
-LOGIN_ERR_FAILWIKI   = Unable to obtain wiki selection information. This probably means that your session has timed out, and you will need to log in again.
-
 COURSE_TITLE         = Select the ***lccourse*** to process.
 COURSE_LONGDESC      = <p>You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process.</p><p>Please select the ***lccourse*** to export and process from the list below, and then click Next. If you have accidentally logged into the wrong wiki, press Prev to return to the login form to log into a different wiki.</p>
 COURSE_COURSE        = Select ***course***
@@ -66,4 +54,3 @@ FINISH_PREVIEW       = You can preview a version of your ***lccourse*** online b
 FINISH_DOWNLOAD      = You can download a copy of your processed ***lccourse*** by <a href="***downloadurl***">clicking here</a>. The ***lccourse*** is zipped up, so you will need to unzip it once you have downloaded it.
 FINISH_ZIPPING       = Zipping up your ***lccourse***. Please wait for your download.
 FINISH_PROCESSING    = The processor is still working; you can not proceed to the final stage until the processor has finished working!
-

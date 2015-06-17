@@ -1,0 +1,1 @@
+            <li id="site-admin" title="{L_USERBAR_SITE_SETTINGS}" ><a href="***url-admin***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/settings.png" alt="admin" /></a></li>

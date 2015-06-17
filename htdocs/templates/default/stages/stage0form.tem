@@ -1,0 +1,4 @@
+<div class="left" style="margin: auto">
+    <div class="addmsg">{L_STAGE_WELCOME_MESSAGE}</div>
+    <div class="inputbox"><input type="button" onclick="set_stage(1);" name="onwards" accesskey="n" value="{L_STAGE_NEXT}" /></div>
+</div>

@@ -1,0 +1,14 @@
+<div id="userbar">
+    <div class="bar-container">
+        <ul class="site-options top-menu">
+            <li id="site-menu" class="menu">
+                <div class="menu-title item" id="site-front" title="{L_USERBAR_FRONT}"><a href="***front_url***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/site-logo.png" alt="logo" /></a></div>
+            </li>
+            <li id="site-name" title="***pagename***"><a href="***mainurl***" class="item">{V_[sitename]}: ***pagename***</a></li>
+***site-admin***
+        </ul>
+        <ul class="user-options top-menu">
+***profile***
+        </ul>
+    </div>
+</div>

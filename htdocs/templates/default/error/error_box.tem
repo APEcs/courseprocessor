@@ -1,0 +1,6 @@
+<table class="notebox notebox-error">
+    <tr>
+        <td class="nbox-image"><img src="{V_[scriptpath]}templates/default/images/error.png" width="48" height="48" alt="error" /></td>
+        <td class="nbox-text">***message***</td>
+    </tr>
+</table>

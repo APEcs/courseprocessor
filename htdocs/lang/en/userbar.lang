@@ -1,0 +1,15 @@
+USERBAR_PROFILE_EDIT    = Edit Profile
+USERBAR_PROFILE_PREFS   = Change Settings
+USERBAR_PROFILE_LOGOUT  = Log out
+USERBAR_PROFILE_LOGIN   = Log in
+USERBAR_SITE_SETTINGS   = Administer site
+
+USERBAR_LOGIN_USER      = Username
+USERBAR_LOGIN_PASS      = Password
+USERBAR_LOGIN           = Log in
+
+USERBAR_TEMPLATES       = Templates
+
+USERBAR_DOCLINK         = Documentation (opens in new window)
+
+USERBAR_FRONT           = WebUI Front Page

@@ -1,0 +1,19 @@
+***error***
+<div class="shadowbox logincore">
+    <h2>{L_LOGIN_ACTFORM}</h2>
+    <div class="sbcontent">
+        <div class="loginform">
+            <p>{L_LOGIN_ACTINTRO}</p>
+            <form id="loginform" method="post" action="***target***">
+                <div class="entry">
+                    <label for="actcode">{L_LOGIN_ACTCODE}:<br />
+                    <input type="text" id="actcode" name="actcode" class="highlight" size="24" maxlength="64" /></label>
+                </div>
+                <div class="submit">
+                    <div class="contextlink">(<a href="***url-resend***">{L_LOGIN_SENDACT}</a>)</div>
+                    <input type="submit" class="button blue" id="doactivate" name="doactivate" value="{L_LOGIN_ACTIVATE}" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,12 @@
+<div id="loginform" title="{L_LOGIN_LOGIN}">
+    <p>{L_LOGIN_EXPIRED}</p>
+    <div id="apiloginerr" class="error"></div>
+    <div class="entry">
+        <label for="apiuser">{L_LOGIN_USERNAME}:<br />
+        <input type="text" id="apiuser" name="apiuser" class="highlight" size="24" maxlength="32" /></label>
+    </div>
+    <div class="entry">
+        <label for="apipass">{L_LOGIN_PASSWORD}:<br />
+        <input type="password" id="apipass" name="apipass" class="highlight" size="24" maxlength="255" /></label>
+    </div>
+</div>

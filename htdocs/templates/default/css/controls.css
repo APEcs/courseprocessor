@@ -1,0 +1,31 @@
+div.controls {
+    text-align: right;
+}
+
+ul.controls {
+    padding: 0px;
+    margin: 0px;
+}
+
+ul.controls > li {
+    list-style-type: none;
+    padding-left: 5px;
+    display: inline;
+}
+
+.control {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    background-image: url('../images/control_sprites.png');
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+    display: inline-block;
+}
+
+.control > img {
+    padding: 0px;
+    margin: 0px;
+    border: none;
+    opacity: 0;
+}

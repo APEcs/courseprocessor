@@ -1,0 +1,13 @@
+{L_LOGIN_RESET_GREET},
+
+{L_LOGIN_RESET_INTRO}
+
+{L_LOGIN_USERNAME}: ***username***
+{L_LOGIN_PASSWORD}: ***password***
+
+{L_LOGIN_RESET_LOGIN}
+
+***login_url***
+
+--
+{L_EMAIL_SIG}

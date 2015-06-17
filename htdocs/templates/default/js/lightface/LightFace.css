@@ -1,0 +1,90 @@
+
+.lightfaceContent {
+	top: -9000px;
+	left: -9000px;
+    border-radius: 4px;
+	background-color: #fff;
+	border: 1px solid #ddd;
+    -moz-box-shadow: 3px 3px 4px rgba(0,0,0,0.6);
+    -webkit-box-shadow: 3px 3px 4px rgba(0,0,0,0.6);
+    box-shadow: 3px 3px 4px rgba(0,0,0,0.6);
+	position: absolute;
+}
+
+.loading {
+	display: block;
+	margin: 10px auto;
+}
+
+.lightfaceContent .lightfaceTitle {
+	font-size: 14px;
+	color: #555;
+	font-weight: bold;
+	margin: -1px;
+	margin-bottom: 0;
+	padding: 5px 10px;
+}
+
+.lightfaceContent .lightfaceDraggable {
+	cursor:move;
+}
+
+.lightfaceContent .lightfaceMessage {
+	overflow: auto;
+	margin: 0;
+	position: relative;
+	padding: 5px 10px;
+}
+
+.lightfaceContent .lightfaceMessage h3,
+.lightfaceContent .lightfaceMessage h4,
+.lightfaceContent .lightfaceMessage h5,
+.lightfaceContent .lightfaceMessage h6 {
+	margin-top: 6px;
+}
+
+.lightfaceContent .lightfaceFooter {
+	padding: 6px 10px;
+	text-align: right;
+    background: #f4f4f4;
+}
+
+.hiddenButton {
+	visibility: hidden;
+}
+
+.lightfaceOverlay {
+	position: fixed;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	/*
+	background-image: url(images/fbloader.gif);
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-color: #fff;
+	*/
+	background: #444;
+    opacity: 0.5;
+}
+
+.lightfaceMessageBox	{
+	overflow: auto;
+	padding: 5px 10px;
+	min-height: 20px;
+	position:relative;
+    border-top: 1px solid #eee;
+    color: #000;
+    background: #f4f4f4;
+}
+
+.lightFaceMessageBoxImage {
+	overflow: hidden;
+	padding: 0;
+	background:url(images/fbloader.gif) center center no-repeat #fff;
+}
+
+.lightFaceMessageBoxImage img {
+	display: block;
+}

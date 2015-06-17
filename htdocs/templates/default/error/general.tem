@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>***title***</title>
+
+    <link href="{V_[csspath]}error.css" rel="stylesheet" type="text/css" />
+
+    <!-- mootools for effects and javascript sanity -->
+    <script type='text/javascript' src="{V_[jspath]}mootools-core.js"></script>
+    <script type='text/javascript' src="{V_[jspath]}mootools-more.js"></script>
+
+    <!-- lightface for popup window -->
+    <script type='text/javascript' src="{V_[templatepath]}lightface/LightFaceMod.js"></script>
+    <link href="{V_[templatepath]}lightface/LightFace.css" rel="stylesheet" type="text/css" />
+
+    <!-- userbar support -->
+    <script type='text/javascript' src="{V_[jspath]}userbar.js"></script>
+    <link rel="stylesheet" type="text/css" href="{V_[csspath]}userbar.css" />
+
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="{V_[templatepath]}images/favicon.png" />
+
+    ***extrahead***
+</head>
+<body class="error">
+    <div id="errorcore">
+        <h1 id="logo"><a href="{V_[scriptpath]}" title="{V_[sitename]}"></a></h1>
+        ***message***
+    </div>
+    ***userbar***
+</body>
+</html>

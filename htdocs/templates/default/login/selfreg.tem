@@ -1,0 +1,34 @@
+        <div class="regform">
+            <script type="text/javascript" src="{V_[scriptpath]}templates/default/login/selfreg.js"></script>
+            <script type="text/javascript">
+window.addEvent('domready', function() {
+    regbox = new LightFace({title: '{L_LOGIN_SECURITY}',
+                            draggable: false,
+                            overlayAll: true,
+                            buttons: [
+                                      { title: '{L_LOGIN_SEC_SUBMIT}', event: function() { submit_regform(); }, color: 'blue' },
+                            ],
+                            content: '<p class="left">{L_LOGIN_SEC_INTRO}</p><div class="entry"><label for="secquest">***question***:<br /><input type="text" id="secquest" name="secquest" class="highlight" size="24" maxlength="255" /></label></div>'
+    });
+    $('showq').addEvent('click', function() { regbox.open(); });
+    $('coreform').setStyle('width', '900px');
+});
+            </script>
+            <p>{L_LOGIN_REG_INTRO}</p>
+            <form id="regform" method="post" action="***target***">
+                <div class="entry">
+                    <label for="regname">{L_LOGIN_USERNAME}:<br />
+                    <input type="text" id="regname" name="regname" class="highlight" size="24" maxlength="32" value="***regname***"/></label>
+                </div>
+                <div class="entry">
+                    <label for="email">{L_LOGIN_EMAIL}:<br />
+                    <input type="text" id="email" name="email" class="highlight" size="24" maxlength="255" value="***email***"/></label>
+                </div>
+                <div class="submit">
+                    <div class="contextlink">(<a href="***url-actform***">{L_LOGIN_ACTFORM}</a>)</div>
+                    <input type="button" class="button blue" id="showq" name="showq" value="{L_LOGIN_REGISTER}" />
+                    <input type="hidden" id="answer" name="answer" />
+                    <input type="hidden" id="register" name="register" value="register" />
+                </div>
+            </form>
+        </div>

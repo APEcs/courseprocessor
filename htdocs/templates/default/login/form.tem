@@ -1,0 +1,44 @@
+***error***
+<div id="coreform" class="shadowbox logincore">
+    <h2>{L_LOGIN_LOGINFORM}</h2>
+    <div class="sbcontent">
+        <div class="loginform">
+            <p>{L_LOGIN_INTRO}</p>
+            <form id="loginform" method="post" action="***target***">
+                <div class="entry">
+                    <label for="username">{L_LOGIN_USERNAME}:<br />
+                    <input type="text" id="username" name="username" class="highlight" size="24" maxlength="32" value="***username***"/></label>
+                </div>
+                <div class="entry">
+                    <label for="password">{L_LOGIN_PASSWORD}:<br />
+                    <input type="password" id="password" name="password" class="highlight" size="24" maxlength="255" /></label>
+                </div>
+                <div class="persist">
+                    <label for="persist"><input onchange="persistWarning()" type="checkbox" id="persist" name="persist" class="highlight" />&nbsp;{L_LOGIN_PERSIST}</label>
+                    <div class="contextlink">(<a href="***url-recform***">{L_LOGIN_RECOVER}</a>)</div>
+                </div>
+                <div class="submit">
+                    <input type="submit" class="button blue" id="login" name="login" value="{L_LOGIN_LOGIN}" />
+                </div>
+            </form>
+        </div>
+        ***selfreg***
+    </div>
+</div>
+<script type="text/javascript">
+function persistWarning() {
+    var persist = $('persist').checked;
+
+    if(persist) {
+        $('persistwarn').reveal();
+    } else {
+        $('persistwarn').dissolve();
+    }
+}
+</script>
+<table class="notebox notebox-warning hide" id="persistwarn" style="display: none;">
+    <tr>
+        <td class="nbox-image"><img src="{V_[scriptpath]}templates/default/images/important.png" width="48" height="48" alt="important" /></td>
+        <td class="nbox-text">{L_PERSIST_WARNING}</td>
+    </tr>
+</table>

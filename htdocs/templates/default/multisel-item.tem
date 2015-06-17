@@ -1,0 +1,1 @@
+<input type="checkbox" class="***class*** ***name***" id="***idbase***-***id***" name="***selname***" value="***id***" ***checked*** /> <label for="***idbase***-***id***">***desc***</label>

@@ -1,0 +1,19 @@
+{L_LOGIN_RESEND_GREET},
+
+{L_LOGIN_RESEND_INTRO}
+
+{L_LOGIN_USERNAME}: ***username***
+{L_LOGIN_PASSWORD}: ***password***
+
+{L_LOGIN_REG_ACTNEEDED}
+
+***act_url***
+
+{L_LOGIN_REG_ALTACT}
+
+***act_form***
+***act_code***
+
+{L_LOGIN_RESEND_ENJOY}
+--
+{L_EMAIL_SIG}

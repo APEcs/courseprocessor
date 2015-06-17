@@ -1,0 +1,70 @@
+STAGE_NEXT                 = Next &gt;
+STAGE_BACK                 = &lt; Prev
+STAGE_HELP                 = Contact support.
+
+STAGE_WELCOME_STAGETITLE   = Welcome
+STAGE_WELCOME_TITLE        = Welcome
+STAGE_WELCOME_LONGDESC     = <p>This website allows you to export and process content from a supported wiki, avoiding the need to use the APEcs course processor tools directly.</p>
+STAGE_WELCOME_MESSAGE      = <p><b>Important:</b> before you can successfully export material from a wiki, you must ensure that:</p><ul><li>It conforms to the <a class="ext" href="http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:DevWiki_Course_Structuring">structuring specification</a>.</li><li>It has all the <a class="ext" href="http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:Metadata">metadata</a> required, and the metadata is correctly structured.</li></ul><p>If the material is not structured correctly, or is missing metadata, the export step will fail!</p><p>Each stage of the process will explain any actions you need to take. Once you have followed any instructions for a stage, click the 'Next' button to go to the next stage. Some stages will give you a 'Back' button to return to a previous stage if you want to make changes to the options you have set. Complete step-by-step documentation for this web application may be found in the Development Wiki's '<a href="http://elearn.cs.man.ac.uk/devwiki/index.php/Docs:WebUI">Docs:WebUI'</a> page.</p>
+
+STAGE_LOGIN_TITLE          = Log in.
+STAGE_LOGIN_LONGDESC       = Please select the wiki you want to export material from below, and enter your login for that wiki. If you do not have a login for the wiki you want to export material from, use the "Contact support" button at the bottom left of this page to request a login from the support team.
+STAGE_LOGIN_WIKI           = Wiki
+STAGE_LOGIN_NAME           = Username
+STAGE_LOGIN_PASS           = Password
+STAGE_LOGIN_SET_WIKI       = - Select a wiki to export from -
+STAGE_LOGIN_ERR_BADLOGIN   = Unable to log into the selected wiki with the provided username and password. Please check that you selected the correct wiki, and you entered your username and password correctly, remembering that both username and password are case sensitive.
+STAGE_LOGIN_ERR_NOLOGIN    = You did not enter a value for either the username or password. Please enter your login details in full.
+STAGE_LOGIN_ERR_BADWIKI    = The selected wiki does not appear to be supported by this webapp.
+STAGE_LOGIN_ERR_NOWIKI     = You have not selected a wiki to use. Please ensure that you select the wiki you want to export a course from in the dropdown below.
+STAGE_LOGIN_ERR_FAILWIKI   = Unable to obtain wiki selection information. This probably means that your session has timed out, and you will need to log in again.
+
+STAGE_COURSE_STAGETITLE    = Select Course
+STAGE_COURSE_TITLE         = Select the ***lccourse*** to process.
+STAGE_COURSE_LONGDESC      = <p>You have successfully logged into the wiki, now you need to select the ***lccourse*** in the wiki that you want to export and process.</p><p>Please select the ***lccourse*** to export and process from the list below, and then click Next. If you have accidentally logged into the wrong wiki, press Prev to return to the login form to log into a different wiki.</p>
+STAGE_COURSE_COURSE        = Select ***course***
+STAGE_COURSE_CTITLE        = ***course*** selection.
+STAGE_COURSE_COURSEPAGE    = <span class="small">The entries in the list shown here is taken from the <a class="ext" href="***cpurl***">***cpname***</a> page in the wiki. If you can not find the ***lccourse*** you want to export and process in the list, make sure that it has an entry on the <a class="ext" href="***cpurl***">***cpname***</a> page.</span>
+STAGE_COURSE_FTITLE        = Filter selection.
+STAGE_COURSE_FILTERLIST    = <span class="small">Filters allow you to include or exclude content from a ***lccourse*** during processing. Filters that can be applied to the selected ***lccourse*** can be chosen from the list below, and you may select multiple filters from the list. If the course contains no filters, this list will be disabled.
+STAGE_COURSE_FILTERS       = Select filters
+STAGE_COURSE_FETCHING      = Fetching filter keyword list.
+STAGE_COURSE_NOFILTERS     = No filters available
+STAGE_COURSE_TEMPLATES     = Processor template theme.
+STAGE_COURSE_TEMPLATE      = Template theme
+STAGE_COURSE_TEMPLATENOTE  = <span class="small">This is the template theme used by the processor when processing your ***lccourse*** into the finished package. If you require a template theme other than the default theme, you need to select it here.</span>
+STAGE_COURSE_OTITLE        = Advanced options.
+STAGE_COURSE_EXPVERB       = Verbose exporting
+STAGE_COURSE_PROCVERB      = Verbose processing
+STAGE_COURSE_VERBWARN      = <span class="small">(Warning: turning on verbose exporting or processing will generate <em>very large</em> progress logs. Only turn these options on if you <b>need</b> the extra information to locate a problem in your material, otherwise leave them unticked!)</span>
+STAGE_COURSE_ERR_NOCOURSE  = You did not select a ***course***. Please select a ***course*** from the list before you click on Next.
+STAGE_COURSE_ERR_BADCOURSE = The selected ***course*** does not exist in the wiki. Please ensure that you only select a ***course*** from the list below.
+
+STAGE_EXPORT_STAGETITLE    = Export
+STAGE_EXPORT_TITLE         = Exporting from wiki
+STAGE_EXPORT_LONGDESC      = The selected ***lccourse*** is now being exported from the wiki. This process can take quite some time, especially when there are lots of pages and media to export, so please be patient. Once the export has finished, the Next button will become active and you can proceed to processing.
+STAGE_EXPORT_STATUS        = Export progress
+STAGE_EXPORT_SUCCESS       = ***course*** exported successfully! You can proceed to the next stage now to process your ***lccourse***.
+STAGE_EXPORT_WARNINGS      = <span class="warn">Your ***lccourse*** has been exported, but one or more warnings were encountered during export. Some warnings are harmless and can be ignored, but some can cause problems during processing, so be sure to check through the status messages to see what caused the warnings before going onto processing.</span>
+STAGE_EXPORT_FATALS        = <span class="error">A fatal error was encountered while exporting your ***lccourse***. Exporting failed, and you must fix the fatal error shown below before you can try again.</span>
+STAGE_EXPORT_WORKING       = Exporting...
+STAGE_EXPORT_WARNTITLE     = Warnings
+
+STAGE_PROCESS_STAGETITLE   = Process
+STAGE_PROCESS_TITLE        = Processing material
+STAGE_PROCESS_LONGDESC     = Your ***lccourse*** has been exported successfully, and is now being processed. This can take some time, so please be patient while the system works. Once the processor has finished, you can either click Next go onto the final stage to preview your ***lccourse*** and download a copy of it, or you can click Prev to return to the Options step.
+STAGE_PROCESS_STATUS       = Processing progress
+STAGE_PROCESS_SUCCESS      = ***course*** processed successfully! You can proceed to the next stage now to preview and download your ***lccourse***.
+STAGE_PROCESS_WARNINGS     = <span class="warn">Your ***lccourse*** has been processed, but one or more warnings were encountered during process. Some warnings are harmless and can be ignored, but some can indicate problems in the ***lccourse*** output, so be sure to check through the status messages to see what caused the warnings before proceeding.</span>
+STAGE_PROCESS_FATALS       = <span class="error">A fatal error was encountered while processing your ***lccourse***. Processing failed, and you must fix the fatal error shown below before you can try again.</span>
+STAGE_PROCESS_WORKING      = Processing...
+STAGE_PROCESS_EXPORTING    = The exporter is still working; you can not proceed to processing until the exporter has finished working!
+
+STAGE_FINISH_STAGETITLE    = Finish
+STAGE_FINISH_TITLE         = Preview and download
+STAGE_FINISH_LONGDESC      = Your ***lccourse*** has been processed, and is now ready for you to check through and download.
+STAGE_FINISH_WARNMSG       = Note that the links given below are only valid for at most ***timeout***, so if you need to spend a lot of time checking your material, be sure to download the zip file and check through that rather than previewing it online.
+STAGE_FINISH_PREVIEW       = You can preview a version of your ***lccourse*** online by <a class="ext" href="***previewurl***">clicking here</a>. If you discover and fix any problems with it, you can click Prev to return to the course selection (note that, if you take too long, your session may time out, in which case you will need to <a href="index.cgi">start from the beginning again</a>.)
+STAGE_FINISH_DOWNLOAD      = You can download a copy of your processed ***lccourse*** by <a href="***downloadurl***">clicking here</a>. The ***lccourse*** is zipped up, so you will need to unzip it once you have downloaded it.
+STAGE_FINISH_ZIPPING       = Zipping up your ***lccourse***. Please wait for your download.
+STAGE_FINISH_PROCESSING    = The processor is still working; you can not proceed to the final stage until the processor has finished working!
