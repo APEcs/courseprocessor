@@ -6,10 +6,10 @@ use strict;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(get_version);
 
-my $wiki2course = "1.6 (13 Apr 2012)";
-my $course2wiki = "1.6 (13 Apr 2012)";
-my $processor   = "3.8.8 (13 Apr 2012)";
-my $release     = "3.8.8 (Northolt)";
+my $wiki2course = "1.7 (20 Jun 2017)";
+my $course2wiki = "1.6 (20 Apr 2017)";
+my $processor   = "3.8.9 (20 Apr 2017)";
+my $release     = "3.8.9 (Sudbury Hill)";
 
 sub get_version {
     my $mode = shift;
